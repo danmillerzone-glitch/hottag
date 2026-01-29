@@ -84,11 +84,11 @@ async function PromotionsList() {
 
                     <div className="flex items-center gap-3 mt-3">
                       {promo.twitter_handle && (
-                        <a
-                          href={getTwitterUrl(promo.twitter_handle) || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                        <span className="text-foreground-muted text-xs">
+                          @{promo.twitter_handle}
+                        </span>
+                      )}
+                    </div>
                           className="text-foreground-muted hover:text-accent transition-colors"
                         >
                           <Twitter className="w-4 h-4" />
