@@ -1,0 +1,285 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Types for our database
+export interface Promotion {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  logo_url: string | null
+  banner_url: string | null
+  website: string | null
+  twitter_handle: string | null
+  instagram_handle: string | null
+  city: string | null
+  state: string | null
+  country: string
+  region: string | null
+  verification_status: 'unverified' | 'pending' | 'verified'
+  created_at: string
+}
+
+export interface Wrestler {
+  id: string
+  name: string
+  slug: string
+  bio: string | null
+  hometown: string | null
+  photo_url: string | null
+  twitter_handle: string | null
+  instagram_handle: string | null
+  merch_url: string | null
+  verification_status: 'unverified' | 'pending' | 'verified'
+  follower_count: number
+  upcoming_events_count: number
+  created_at: string
+}
+
+export interface Event {
+  id: string
+  name: string
+  slug: string | null
+  description: string | null
+  event_date: string
+  event_time: string | null
+  doors_time: string | null
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
+  is_featured: boolean
+  promotion_id: string | null
+  venue_id: string | null
+  venue_name: string | null
+  city: string | null
+  state: string | null
+  country: string
+  latitude: number | null
+  longitude: number | null
+  ticket_url: string | null
+  ticket_price_min: number | null
+  ticket_price_max: number | null
+  is_free: boolean
+  is_sold_out: boolean
+  poster_url: string | null
+  attending_count: number
+  interested_count: number
+  created_at: string
+  // Joined fields
+  promotion?: Promotion
+}
+
+export interface EventWithPromotion extends Event {
+  promotions: Promotion | null
+}
+
+// API Functions
+export async function getUpcomingEvents(limit = 20, offset = 0) {
+  const today = new Date().toISOString().split('T')[0]
+  
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      promotions (
+        id,
+        name,
+        slug,
+        logo_url,
+        twitter_handle
+      )
+    `)
+    .eq('status', 'upcoming')
+    .gte('event_date', today)
+    .order('event_date', { ascending: true })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching events:', error)
+    return []
+  }
+
+  return data as EventWithPromotion[]
+}
+
+export async function getEventsByLocation(
+  latitude: number,
+  longitude: number,
+  radiusMiles: number = 100,
+  limit: number = 50
+) {
+  // For now, we'll fetch all upcoming events and filter client-side
+  // In production, you'd use PostGIS for this
+  const events = await getUpcomingEvents(500)
+  
+  // Calculate distance for each event
+  const eventsWithDistance = events
+    .filter(e => e.latitude && e.longitude)
+    .map(event => ({
+      ...event,
+      distance: calculateDistance(
+        latitude,
+        longitude,
+        event.latitude!,
+        event.longitude!
+      )
+    }))
+    .filter(e => e.distance <= radiusMiles)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit)
+
+  return eventsWithDistance
+}
+
+export async function getEvent(idOrSlug: string) {
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      promotions (
+        id,
+        name,
+        slug,
+        logo_url,
+        website,
+        twitter_handle
+      )
+    `)
+    .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
+    .single()
+
+  if (error) {
+    console.error('Error fetching event:', error)
+    return null
+  }
+
+  return data as EventWithPromotion
+}
+
+export async function getPromotions(limit = 50) {
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('*')
+    .order('name')
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching promotions:', error)
+    return []
+  }
+
+  return data as Promotion[]
+}
+
+export async function getPromotion(slug: string) {
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (error) {
+    console.error('Error fetching promotion:', error)
+    return null
+  }
+
+  return data as Promotion
+}
+
+export async function getPromotionEvents(promotionId: string, limit = 20) {
+  const today = new Date().toISOString().split('T')[0]
+  
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('promotion_id', promotionId)
+    .gte('event_date', today)
+    .order('event_date', { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching promotion events:', error)
+    return []
+  }
+
+  return data as Event[]
+}
+
+export async function getWrestlers(limit = 50) {
+  const { data, error } = await supabase
+    .from('wrestlers')
+    .select('*')
+    .order('follower_count', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching wrestlers:', error)
+    return []
+  }
+
+  return data as Wrestler[]
+}
+
+export async function getWrestler(slug: string) {
+  const { data, error } = await supabase
+    .from('wrestlers')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (error) {
+    console.error('Error fetching wrestler:', error)
+    return null
+  }
+
+  return data as Wrestler
+}
+
+export async function searchEvents(query: string, limit = 20) {
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      promotions (
+        id,
+        name,
+        slug,
+        logo_url
+      )
+    `)
+    .or(`name.ilike.%${query}%,city.ilike.%${query}%`)
+    .eq('status', 'upcoming')
+    .order('event_date', { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error searching events:', error)
+    return []
+  }
+
+  return data as EventWithPromotion[]
+}
+
+// Utility function to calculate distance between two points
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 3959 // Earth's radius in miles
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180)
+}

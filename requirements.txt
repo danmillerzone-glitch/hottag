@@ -1,0 +1,29 @@
+# HotTag - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# Supabase client
+supabase>=2.0.0
+
+# Data processing
+python-slugify>=8.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+
+# Optional: For running scheduled jobs
+# schedule>=1.2.0
+# apscheduler>=3.10.0
+
+# Optional: For async scraping (future optimization)
+# aiohttp>=3.9.0
+# asyncio>=3.4.0
+
+# Development
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0
