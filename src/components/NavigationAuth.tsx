@@ -69,9 +69,12 @@ export default function Navigation() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              <button className="p-2 rounded-lg text-foreground-muted hover:text-foreground hover:bg-background-secondary transition-colors">
+              <Link 
+                href="/search"
+                className="p-2 rounded-lg text-foreground-muted hover:text-foreground hover:bg-background-secondary transition-colors"
+              >
                 <Search className="w-5 h-5" />
-              </button>
+              </Link>
 
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-foreground-muted" />
