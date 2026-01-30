@@ -8,7 +8,7 @@ import { formatNumber } from '@/lib/utils'
 export const revalidate = 300
 
 async function WrestlersList() {
-  const wrestlers = await getWrestlers(50)
+  const wrestlers = await getWrestlers(500)
 
   if (wrestlers.length === 0) {
     return (
