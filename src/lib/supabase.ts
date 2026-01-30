@@ -189,7 +189,11 @@ export async function getEventWrestlers(eventId: string) {
     return []
   }
 
-  return data.map(d => d.wrestlers).filter(Boolean) as Wrestler[]
+  const wrestlers = data
+    .map((d: any) => d.wrestlers)
+    .filter(Boolean)
+  
+  return wrestlers
 }
 
 export async function getPromotions(limit = 50) {
