@@ -186,9 +186,6 @@ export async function getEventWrestlers(eventId: string) {
   return wrestlers
 }
 
-  return data.map(d => d.wrestlers).filter(Boolean) as Wrestler[]
-}
-
 export async function getPromotions(limit = 50) {
   const { data, error } = await supabase
     .from('promotions')
