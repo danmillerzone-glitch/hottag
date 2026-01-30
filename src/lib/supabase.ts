@@ -80,7 +80,7 @@ export async function getUpcomingEvents(limit = 20, offset = 0) {
   const today = new Date().toISOString().split('T')[0]
   
   const { data, error } = await supabase
-    .from('events')
+    .from('events_with_counts')
     .select(`
       *,
       promotions (
@@ -101,7 +101,12 @@ export async function getUpcomingEvents(limit = 20, offset = 0) {
     return []
   }
 
-  return data as EventWithPromotion[]
+  // Map real counts to the expected field names
+  return data.map((e: any) => ({
+    ...e,
+    attending_count: e.real_attending_count || 0,
+    interested_count: e.real_interested_count || 0
+  })) as EventWithPromotion[]
 }
 
 export async function getEventsByLocation(
@@ -135,7 +140,7 @@ export async function getEventsByLocation(
 
 export async function getEvent(idOrSlug: string) {
   const { data, error } = await supabase
-    .from('events')
+    .from('events_with_counts')
     .select(`
       *,
       promotions (
@@ -155,7 +160,12 @@ export async function getEvent(idOrSlug: string) {
     return null
   }
 
-  return data as EventWithPromotion
+  // Map real counts
+  return {
+    ...data,
+    attending_count: data.real_attending_count || 0,
+    interested_count: data.real_interested_count || 0
+  } as EventWithPromotion
 }
 
 export async function getEventWrestlers(eventId: string) {
@@ -179,11 +189,7 @@ export async function getEventWrestlers(eventId: string) {
     return []
   }
 
-  const wrestlers = data
-    .map((d: any) => d.wrestlers)
-    .filter(Boolean)
-  
-  return wrestlers
+  return data.map(d => d.wrestlers).filter(Boolean) as Wrestler[]
 }
 
 export async function getPromotions(limit = 50) {
