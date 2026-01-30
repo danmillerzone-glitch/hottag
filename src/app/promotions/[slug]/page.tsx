@@ -5,6 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { Building2, MapPin, Twitter, ExternalLink, Calendar } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface PromotionPageProps {
   params: { slug: string }
 }

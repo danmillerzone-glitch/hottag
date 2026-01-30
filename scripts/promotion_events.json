@@ -1,0 +1,68 @@
+[
+  {
+    "name": "New Texas Pro The Audacity Of Hope",
+    "event_date": "2026-02-22",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Austin",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 444172,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=444172"
+  },
+  {
+    "name": "New Texas Pro 2026 Clutch City Classic Series #1",
+    "event_date": "2026-03-06",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Houston",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 445177,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=445177"
+  },
+  {
+    "name": "New Texas Pro Snakebite",
+    "event_date": "2026-03-15",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Baytown",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 445570,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=445570"
+  },
+  {
+    "name": "New Texas Pro 2026 Clutch City Classic Series #2",
+    "event_date": "2026-04-03",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Houston",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 445178,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=445178"
+  },
+  {
+    "name": "New Texas Pro Sin City Stampede",
+    "event_date": "2026-04-16",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Las Vegas",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 442814,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=442814"
+  },
+  {
+    "name": "New Texas Pro 2026 Clutch City Classic Series #3",
+    "event_date": "2026-05-01",
+    "promotion_name": "New Texas Pro Wrestling",
+    "promotion_cagematch_id": 2812,
+    "city": "Houston",
+    "state": null,
+    "country": "USA",
+    "cagematch_id": 445179,
+    "cagematch_url": "https://www.cagematch.net?id=1&nr=445179"
+  }
+]

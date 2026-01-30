@@ -6,6 +6,10 @@ import { User, MapPin, Twitter, Calendar, ExternalLink } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface WrestlerPageProps {
   params: { slug: string }
 }
