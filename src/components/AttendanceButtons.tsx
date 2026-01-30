@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Check, Heart, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-type AttendanceStatus = 'going' | 'interested' | null
+type AttendanceStatus = 'attending' | 'interested' | null
 
 interface AttendanceButtonsProps {
   eventId: string
@@ -51,7 +51,7 @@ export default function AttendanceButtons({
     fetchStatus()
   }, [user, eventId])
 
-  const handleAttendance = async (newStatus: 'going' | 'interested') => {
+  const handleAttendance = async (newStatus: 'attending' | 'interested') => {
     if (!user) {
       router.push('/signin')
       return
@@ -69,7 +69,7 @@ export default function AttendanceButtons({
           .eq('event_id', eventId)
 
         // Update counts
-        if (status === 'going') setGoingCount(c => Math.max(0, c - 1))
+        if (status === 'attending') setGoingCount(c => Math.max(0, c - 1))
         if (status === 'interested') setInterestedCount(c => Math.max(0, c - 1))
         
         setStatus(null)
@@ -86,9 +86,9 @@ export default function AttendanceButtons({
           })
 
         // Update counts
-        if (status === 'going') setGoingCount(c => Math.max(0, c - 1))
+        if (status === 'attending') setGoingCount(c => Math.max(0, c - 1))
         if (status === 'interested') setInterestedCount(c => Math.max(0, c - 1))
-        if (newStatus === 'going') setGoingCount(c => c + 1)
+        if (newStatus === 'attending') setGoingCount(c => c + 1)
         if (newStatus === 'interested') setInterestedCount(c => c + 1)
         
         setStatus(newStatus)
@@ -104,10 +104,10 @@ export default function AttendanceButtons({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => handleAttendance('going')}
+          onClick={() => handleAttendance('attending')}
           disabled={loading}
           className={`btn ${
-            status === 'going' 
+            status === 'attending' 
               ? 'bg-green-600 hover:bg-green-700 text-white' 
               : 'btn-secondary'
           }`}
@@ -117,7 +117,7 @@ export default function AttendanceButtons({
           ) : (
             <Check className="w-4 h-4 mr-2" />
           )}
-          {status === 'going' ? "I'm Going!" : "I'm Going"}
+          {status === 'attending' ? "I'm Going!" : "I'm Going"}
         </button>
 
         <button

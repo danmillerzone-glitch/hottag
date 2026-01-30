@@ -132,7 +132,7 @@ export default function ProfilePage() {
     return null
   }
 
-  const goingEvents = attendingEvents.filter(e => e.status === 'going')
+  const goingEvents = attendingEvents.filter(e => e.status === 'attending')
   const interestedEvents = attendingEvents.filter(e => e.status === 'interested')
 
   return (
