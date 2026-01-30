@@ -92,9 +92,14 @@ export default async function LocationPage({ params }: LocationPageProps) {
   const { events, isState, locationName } = await getEventsByLocation(params.location)
   
   // Get unique cities if showing a state
-  const cities = isState 
-    ? [...new Set(events.map((e: any) => e.city).filter(Boolean))]
-    : []
+  let cities: string[] = []
+  if (isState) {
+    const citySet = new Set<string>()
+    events.forEach((e: any) => {
+      if (e.city) citySet.add(e.city)
+    })
+    cities = Array.from(citySet)
+  }
   
   // Group events by month
   const eventsByMonth: Record<string, any[]> = {}
