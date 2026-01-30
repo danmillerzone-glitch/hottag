@@ -259,7 +259,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(
+                    src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyDqO4VaHd-k0xJW-KP4PZ7mx2unSW2wg7M&q=${encodeURIComponent(
                       [event.venue_name, event.city, event.state, 'USA'].filter(Boolean).join(', ')
                     )}`}
                   />
