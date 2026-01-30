@@ -1,0 +1,317 @@
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { getEvent, getEventWrestlers } from '@/lib/supabase'
+import { 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  Ticket, 
+  ExternalLink, 
+  Users, 
+  Share2,
+  Twitter,
+  Heart,
+  Check,
+  Bookmark,
+  User
+} from 'lucide-react'
+import { 
+  formatEventDateFull, 
+  formatEventTime, 
+  formatLocation, 
+  formatPrice,
+  getTwitterUrl 
+} from '@/lib/utils'
+
+interface EventPageProps {
+  params: { id: string }
+}
+
+export async function generateMetadata({ params }: EventPageProps) {
+  const event = await getEvent(params.id)
+  
+  if (!event) {
+    return { title: 'Event Not Found | HotTag' }
+  }
+
+  return {
+    title: `${event.name} | HotTag`,
+    description: `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state)}`,
+    openGraph: {
+      title: event.name,
+      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state)}`,
+      images: event.poster_url ? [event.poster_url] : undefined,
+    },
+  }
+}
+
+export default async function EventPage({ params }: EventPageProps) {
+  const event = await getEvent(params.id)
+
+  if (!event) {
+    notFound()
+  }
+
+  const promotion = event.promotions
+  const wrestlers = await getEventWrestlers(event.id)
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero/Banner */}
+      <div className="relative bg-background-secondary">
+        {event.poster_url ? (
+          <div className="relative h-64 md:h-80 lg:h-96">
+            <Image
+              src={event.poster_url}
+              alt={event.name}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/50 to-transparent" />
+          </div>
+        ) : (
+          <div className="h-32 md:h-40 bg-gradient-to-br from-accent/20 to-background-tertiary" />
+        )}
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+        {/* Main content card */}
+        <div className="card p-6 md:p-8">
+          {/* Promotion badge */}
+          {promotion && (
+            <Link 
+              href={`/promotions/${promotion.slug}`}
+              className="inline-flex items-center gap-2 badge badge-promotion mb-4 hover:bg-accent/30 transition-colors"
+            >
+              {promotion.name}
+            </Link>
+          )}
+
+          {/* Title */}
+          <h1 className="text-3xl md:text-4xl font-display font-bold mb-6">
+            {event.name}
+          </h1>
+
+          {/* Key info grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {/* Date */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
+              <Calendar className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm text-foreground-muted">Date</div>
+                <div className="font-semibold">{formatEventDateFull(event.event_date)}</div>
+              </div>
+            </div>
+
+            {/* Time */}
+            {(event.event_time || event.doors_time) && (
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
+                <Clock className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-sm text-foreground-muted">Time</div>
+                  <div className="font-semibold">
+                    {event.event_time && `Bell: ${formatEventTime(event.event_time)}`}
+                    {event.event_time && event.doors_time && ' • '}
+                    {event.doors_time && `Doors: ${formatEventTime(event.doors_time)}`}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Location */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
+              <MapPin className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm text-foreground-muted">Location</div>
+                <div className="font-semibold">
+                  {event.venue_name && <div>{event.venue_name}</div>}
+                  <div className="text-foreground-muted text-sm">
+                    {formatLocation(event.city, event.state)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
+              <Ticket className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm text-foreground-muted">Tickets</div>
+                <div className="font-semibold">
+                  {event.is_sold_out ? (
+                    <span className="text-red-400">Sold Out</span>
+                  ) : (
+                    formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free)
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-3 mb-8">
+            {event.ticket_url && !event.is_sold_out && (
+              <a
+                href={event.ticket_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+              >
+                <Ticket className="w-4 h-4 mr-2" />
+                Get Tickets
+                <ExternalLink className="w-3 h-3 ml-2" />
+              </a>
+            )}
+
+            <button className="btn btn-secondary">
+              <Check className="w-4 h-4 mr-2" />
+              I'm Going
+            </button>
+
+            <button className="btn btn-ghost">
+              <Heart className="w-4 h-4 mr-2" />
+              Interested
+            </button>
+
+            <button className="btn btn-ghost">
+              <Bookmark className="w-4 h-4 mr-2" />
+              Save
+            </button>
+
+            <button className="btn btn-ghost">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </button>
+          </div>
+
+          {/* Attendance */}
+          {(event.attending_count > 0 || event.interested_count > 0) && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary mb-8">
+              <Users className="w-5 h-5 text-accent" />
+              <div>
+                <span className="font-semibold">{event.attending_count}</span>
+                <span className="text-foreground-muted"> attending</span>
+                {event.interested_count > 0 && (
+                  <>
+                    <span className="text-foreground-muted"> • </span>
+                    <span className="font-semibold">{event.interested_count}</span>
+                    <span className="text-foreground-muted"> interested</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {event.description && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">About this event</h2>
+              <p className="text-foreground-muted whitespace-pre-wrap">
+                {event.description}
+              </p>
+            </div>
+          )}
+
+          {/* Wrestler Card */}
+          {wrestlers.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Card ({wrestlers.length} wrestlers)</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {wrestlers.map((wrestler) => (
+                  <Link
+                    key={wrestler.id}
+                    href={`/wrestlers/${wrestler.slug}`}
+                    className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
+                      {wrestler.photo_url ? (
+                        <Image
+                          src={wrestler.photo_url}
+                          alt={wrestler.name}
+                          width={64}
+                          height={64}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-foreground-muted" />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
+                      {wrestler.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Map link */}
+          {event.latitude && event.longitude && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">Location</h2>
+              <div className="aspect-video rounded-lg bg-background-tertiary flex items-center justify-center">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Open in Google Maps
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Promotion info */}
+          {promotion && (
+            <div className="border-t border-border pt-8">
+              <h2 className="text-xl font-semibold mb-4">Presented by</h2>
+              <Link
+                href={`/promotions/${promotion.slug}`}
+                className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
+              >
+                <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center overflow-hidden">
+                  <span className="text-2xl font-bold text-foreground-muted">
+                    {promotion.name.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-semibold text-lg">{promotion.name}</div>
+                  <div className="text-foreground-muted text-sm">View all events →</div>
+                </div>
+              </Link>
+
+              <div className="flex items-center gap-4 mt-4">
+                {promotion.website && (
+                  <a
+                    href={promotion.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Website
+                  </a>
+                )}
+                {promotion.twitter_handle && (
+                  <a
+                    href={getTwitterUrl(promotion.twitter_handle) || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <Twitter className="w-4 h-4" />
+                    @{promotion.twitter_handle}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

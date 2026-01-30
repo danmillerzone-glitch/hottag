@@ -158,6 +158,30 @@ export async function getEvent(idOrSlug: string) {
   return data as EventWithPromotion
 }
 
+export async function getEventWrestlers(eventId: string) {
+  const { data, error } = await supabase
+    .from('event_wrestlers')
+    .select(`
+      match_order,
+      wrestlers (
+        id,
+        name,
+        slug,
+        photo_url,
+        hometown
+      )
+    `)
+    .eq('event_id', eventId)
+    .order('match_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching event wrestlers:', error)
+    return []
+  }
+
+  return data.map(d => d.wrestlers).filter(Boolean) as Wrestler[]
+}
+
 export async function getPromotions(limit = 50) {
   const { data, error } = await supabase
     .from('promotions')

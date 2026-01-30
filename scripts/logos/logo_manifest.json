@@ -1,0 +1,212 @@
+{
+  "WWE": {
+    "cagematch_id": 1,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/1.gif",
+    "local_file": "WWE.gif"
+  },
+  "AEW": {
+    "cagematch_id": 87,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/87.gif",
+    "local_file": "AEW.gif"
+  },
+  "GCW": {
+    "cagematch_id": 3927,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/3927.gif",
+    "local_file": "GCW.gif"
+  },
+  "PWG": {
+    "cagematch_id": 4619,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Beyond_Wrestling": {
+    "cagematch_id": 8370,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Reality_of_Wrestling": {
+    "cagematch_id": 8656,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "DEFY_Wrestling": {
+    "cagematch_id": 8518,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "West_Coast_Pro": {
+    "cagematch_id": 8809,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Prestige_Wrestling": {
+    "cagematch_id": 8868,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Black_Label_Pro": {
+    "cagematch_id": 8478,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "ACTION_Wrestling": {
+    "cagematch_id": 8442,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Freelance_Wrestling": {
+    "cagematch_id": 4989,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Shimmer": {
+    "cagematch_id": 2889,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/2889.gif",
+    "local_file": "Shimmer.gif"
+  },
+  "Wrestling_Revolver": {
+    "cagematch_id": 8473,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "ICW_No_Holds_Barred": {
+    "cagematch_id": 8719,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Warrior_Wrestling": {
+    "cagematch_id": 8684,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Mission_Pro": {
+    "cagematch_id": 8912,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "New_Texas_Pro": {
+    "cagematch_id": 8869,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Terminus": {
+    "cagematch_id": 8895,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Glory_Pro": {
+    "cagematch_id": 8371,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Limitless_Wrestling": {
+    "cagematch_id": 8236,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Enjoy_Wrestling": {
+    "cagematch_id": 8677,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "St_Louis_Anarchy": {
+    "cagematch_id": 8495,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "House_of_Glory": {
+    "cagematch_id": 2936,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/2936.gif",
+    "local_file": "House_of_Glory.gif"
+  },
+  "CMLL": {
+    "cagematch_id": 29,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/29.gif",
+    "local_file": "CMLL.gif"
+  },
+  "AAW": {
+    "cagematch_id": 332,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/332.gif",
+    "local_file": "AAW.gif"
+  },
+  "AIW": {
+    "cagematch_id": 357,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/357.gif",
+    "local_file": "AIW.gif"
+  },
+  "Metroplex_Wrestling": {
+    "cagematch_id": 8701,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Future_Stars_of_Wrestling": {
+    "cagematch_id": 4026,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "NJPW": {
+    "cagematch_id": 7,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/7.gif",
+    "local_file": "NJPW.gif"
+  },
+  "Impact_Wrestling": {
+    "cagematch_id": 5,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "MLW": {
+    "cagematch_id": 4478,
+    "source_url": "https://www.cagematch.net/site/main/img/ligen/normal/4478.gif",
+    "local_file": "MLW.gif"
+  },
+  "ROH": {
+    "cagematch_id": 3,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "NWA": {
+    "cagematch_id": 2,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Atomic_Legacy_Wrestling": {
+    "cagematch_id": 10901,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Crimson_Crown_Wrestling": {
+    "cagematch_id": 11519,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Epic_Pro_Wrestling": {
+    "cagematch_id": 8827,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Higher_Ground_Wrestling": {
+    "cagematch_id": 11186,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Coastal_Championship_Wrestling": {
+    "cagematch_id": 9147,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Virginia_Championship_Wrestling": {
+    "cagematch_id": 8915,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Green_Mountain_Wrestling": {
+    "cagematch_id": 10679,
+    "local_file": null,
+    "error": "Not found"
+  },
+  "Pro_Wrestling_Alliance": {
+    "cagematch_id": 8909,
+    "local_file": null,
+    "error": "Not found"
+  }
+}
