@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getEvent } from '@/lib/supabase'
+import { getEvent, getEventWrestlers } from '@/lib/supabase'
 import { 
   Calendar, 
   MapPin, 
@@ -13,7 +13,8 @@ import {
   Twitter,
   Heart,
   Check,
-  Bookmark
+  Bookmark,
+  User
 } from 'lucide-react'
 import { 
   formatEventDateFull, 
@@ -53,6 +54,7 @@ export default async function EventPage({ params }: EventPageProps) {
   }
 
   const promotion = event.promotions
+  const wrestlers = await getEventWrestlers(event.id)
 
   return (
     <div className="min-h-screen">
@@ -209,6 +211,39 @@ export default async function EventPage({ params }: EventPageProps) {
               <p className="text-foreground-muted whitespace-pre-wrap">
                 {event.description}
               </p>
+            </div>
+          )}
+
+          {/* Wrestler Card */}
+          {wrestlers.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Card ({wrestlers.length} wrestlers)</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {wrestlers.map((wrestler) => (
+                  <Link
+                    key={wrestler.id}
+                    href={`/wrestlers/${wrestler.slug}`}
+                    className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
+                      {wrestler.photo_url ? (
+                        <Image
+                          src={wrestler.photo_url}
+                          alt={wrestler.name}
+                          width={64}
+                          height={64}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-foreground-muted" />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
+                      {wrestler.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 
