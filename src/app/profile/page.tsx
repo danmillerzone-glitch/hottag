@@ -18,53 +18,14 @@ import {
   Check
 } from 'lucide-react'
 
-interface AttendingEvent {
-  id: string
-  status: string
-  events: {
-    id: string
-    name: string
-    event_date: string
-    city: string
-    state: string
-    promotions: {
-      name: string
-      slug: string
-    } | null
-  }
-}
-
-interface FollowedWrestler {
-  id: string
-  wrestlers: {
-    id: string
-    name: string
-    slug: string
-    photo_url: string | null
-    hometown: string | null
-  }
-}
-
-interface FollowedPromotion {
-  id: string
-  promotions: {
-    id: string
-    name: string
-    slug: string
-    logo_url: string | null
-    city: string | null
-    state: string | null
-  }
-}
-
 export default function ProfilePage() {
   const { user, loading: authLoading, signOut } = useAuth()
   const router = useRouter()
   const supabase = createClient()
 
-  const [attendingEvents, setAttendingEvents] = useState<AttendingEvent[]>([])
-  const [followedWrestlers, setFollowedWrestlers] = useState<FollowedWrestler[]>([])
-  const [followedPromotions, setFollowedPromotions] = useState<FollowedPromotion[]>([])
+  const [attendingEvents, setAttendingEvents] = useState<any[]>([])
+  const [followedWrestlers, setFollowedWrestlers] = useState<any[]>([])
+  const [followedPromotions, setFollowedPromotions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -104,7 +65,7 @@ export default function ProfilePage() {
         const upcoming = eventsData.filter((e: any) => 
           e.events && new Date(e.events.event_date) >= new Date()
         )
-        setAttendingEvents(upcoming as AttendingEvent[])
+        setAttendingEvents(upcoming)
       }
 
       // Fetch followed wrestlers
@@ -124,7 +85,7 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
 
       if (wrestlersData) {
-        setFollowedWrestlers(wrestlersData as FollowedWrestler[])
+        setFollowedWrestlers(wrestlersData)
       }
 
       // Fetch followed promotions
@@ -145,7 +106,7 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
 
       if (promotionsData) {
-        setFollowedPromotions(promotionsData as FollowedPromotion[])
+        setFollowedPromotions(promotionsData)
       }
 
       setLoading(false)
