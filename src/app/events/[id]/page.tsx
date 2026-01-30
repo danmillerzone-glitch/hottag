@@ -11,8 +11,6 @@ import {
   Users, 
   Share2,
   Twitter,
-  Heart,
-  Check,
   Bookmark,
   User
 } from 'lucide-react'
@@ -23,6 +21,7 @@ import {
   formatPrice,
   getTwitterUrl 
 } from '@/lib/utils'
+import AttendanceButtons from '@/components/AttendanceButtons'
 
 interface EventPageProps {
   params: { id: string }
@@ -164,45 +163,16 @@ export default async function EventPage({ params }: EventPageProps) {
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             )}
-
-            <button className="btn btn-secondary">
-              <Check className="w-4 h-4 mr-2" />
-              I'm Going
-            </button>
-
-            <button className="btn btn-ghost">
-              <Heart className="w-4 h-4 mr-2" />
-              Interested
-            </button>
-
-            <button className="btn btn-ghost">
-              <Bookmark className="w-4 h-4 mr-2" />
-              Save
-            </button>
-
-            <button className="btn btn-ghost">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </button>
           </div>
 
-          {/* Attendance */}
-          {(event.attending_count > 0 || event.interested_count > 0) && (
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary mb-8">
-              <Users className="w-5 h-5 text-accent" />
-              <div>
-                <span className="font-semibold">{event.attending_count}</span>
-                <span className="text-foreground-muted"> attending</span>
-                {event.interested_count > 0 && (
-                  <>
-                    <span className="text-foreground-muted"> • </span>
-                    <span className="font-semibold">{event.interested_count}</span>
-                    <span className="text-foreground-muted"> interested</span>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Attendance buttons */}
+          <div className="mb-8">
+            <AttendanceButtons 
+              eventId={event.id}
+              initialGoingCount={event.attending_count || 0}
+              initialInterestedCount={event.interested_count || 0}
+            />
+          </div>
 
           {/* Description */}
           {event.description && (
