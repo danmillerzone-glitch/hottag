@@ -179,7 +179,6 @@ export async function getEventWrestlers(eventId: string) {
     return []
   }
 
-  // Extract wrestlers from the joined data
   const wrestlers = data
     .map((d: any) => d.wrestlers)
     .filter(Boolean)
