@@ -88,8 +88,12 @@ export default function EventsPage() {
       
       // Get unique states for dropdown
       if (!selectedState) {
-        const states = [...new Set(data.map((e: any) => e.state).filter(Boolean))] as string[]
-        setAvailableStates(states.sort())
+        const stateSet = new Set<string>()
+        data.forEach((e: any) => {
+          if (e.state) stateSet.add(e.state)
+        })
+        const states = Array.from(stateSet).sort()
+        setAvailableStates(states)
       }
     }
     
