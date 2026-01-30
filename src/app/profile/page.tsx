@@ -61,11 +61,8 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
 
       if (eventsData) {
-        // Filter for upcoming events only
-        const upcoming = eventsData.filter((e: any) => 
-          e.events && new Date(e.events.event_date) >= new Date()
-        )
-        setAttendingEvents(upcoming)
+        console.log('Events data:', eventsData)
+        setAttendingEvents(eventsData)
       }
 
       // Fetch followed wrestlers
