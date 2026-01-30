@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: VenuePageProps) {
 }
 
 export default async function VenuePage({ params }: VenuePageProps) {
-  const { upcoming, past, venueName, venueInfo } = await getEventsByVenue(params.venue)
+  const { upcoming = [], past = [], venueName, venueInfo } = await getEventsByVenue(params.venue)
   
   const totalEvents = upcoming.length + past.length
   
