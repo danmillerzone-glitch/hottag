@@ -126,10 +126,38 @@ export default async function EventPage({ params }: EventPageProps) {
                 <div className="text-sm text-foreground-muted">Location</div>
                 <div className="font-semibold">
                   {event.venue_name && <div>{event.venue_name}</div>}
-                  <div className="text-foreground-muted text-sm">
-                    {formatLocation(event.city, event.state)}
+                  <div className="text-sm mt-1">
+                    {event.city && (
+                      <Link 
+                        href={`/location/${encodeURIComponent(event.city.toLowerCase().replace(/\s+/g, '-'))}`}
+                        className="text-foreground-muted hover:text-accent hover:underline"
+                      >
+                        {event.city}
+                      </Link>
+                    )}
+                    {event.city && event.state && ', '}
+                    {event.state && (
+                      <Link 
+                        href={`/location/${event.state}`}
+                        className="text-foreground-muted hover:text-accent hover:underline"
+                      >
+                        {event.state}
+                      </Link>
+                    )}
                   </div>
                 </div>
+                {/* Google Maps link */}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    [event.venue_name, event.city, event.state].filter(Boolean).join(', ')
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Open in Maps
+                </a>
               </div>
             </div>
 
@@ -217,20 +245,44 @@ export default async function EventPage({ params }: EventPageProps) {
             </div>
           )}
 
-          {/* Map link */}
-          {event.latitude && event.longitude && (
+          {/* Map Section */}
+          {(event.city || event.venue_name) && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Location</h2>
-              <div className="aspect-video rounded-lg bg-background-tertiary flex items-center justify-center">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Open in Google Maps
-                </a>
+              <div className="rounded-lg bg-background-tertiary overflow-hidden">
+                {/* Embedded Google Maps iframe */}
+                <div className="aspect-video w-full">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(
+                      [event.venue_name, event.city, event.state, 'USA'].filter(Boolean).join(', ')
+                    )}`}
+                  />
+                </div>
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    {event.venue_name && <div className="font-semibold">{event.venue_name}</div>}
+                    <div className="text-sm text-foreground-muted">
+                      {[event.city, event.state].filter(Boolean).join(', ')}
+                    </div>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      [event.venue_name, event.city, event.state].filter(Boolean).join(', ')
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Get Directions
+                  </a>
+                </div>
               </div>
             </div>
           )}
