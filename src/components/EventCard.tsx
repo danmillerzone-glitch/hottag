@@ -3,12 +3,44 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Calendar, MapPin, Users, Ticket, ExternalLink } from 'lucide-react'
-import { cn, formatEventDate, formatLocation, formatAttendance, formatPrice } from '@/lib/utils'
+import { cn, formatEventDate, formatAttendance, formatPrice } from '@/lib/utils'
 import type { EventWithPromotion } from '@/lib/supabase'
 
 interface EventCardProps {
   event: EventWithPromotion
   variant?: 'default' | 'compact' | 'featured'
+}
+
+function LocationLinks({ city, state }: { city?: string | null, state?: string | null }) {
+  if (!city && !state) return null
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+  
+  return (
+    <span className="flex items-center gap-1">
+      {city && (
+        <Link 
+          href={`/location/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`}
+          onClick={handleClick}
+          className="hover:text-accent hover:underline"
+        >
+          {city}
+        </Link>
+      )}
+      {city && state && ', '}
+      {state && (
+        <Link 
+          href={`/location/${state}`}
+          onClick={handleClick}
+          className="hover:text-accent hover:underline"
+        >
+          {state}
+        </Link>
+      )}
+    </span>
+  )
 }
 
 export function EventCard({ event, variant = 'default' }: EventCardProps) {
@@ -34,7 +66,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
               )}
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                {formatLocation(event.city, event.state)}
+                <LocationLinks city={event.city} state={event.state} />
               </span>
             </div>
           </div>
@@ -101,7 +133,8 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
           <div className="flex flex-wrap items-center gap-4 text-sm text-foreground-muted">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
-              {event.venue_name || formatLocation(event.city, event.state)}
+              {event.venue_name && `${event.venue_name}, `}
+              <LocationLinks city={event.city} state={event.state} />
             </span>
             
             {(event.attending_count > 0 || event.interested_count > 0) && (
@@ -144,7 +177,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
           <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">
             {event.venue_name ? `${event.venue_name}, ` : ''}
-            {formatLocation(event.city, event.state)}
+            <LocationLinks city={event.city} state={event.state} />
           </span>
         </div>
         
@@ -170,6 +203,9 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
     </Link>
   )
 }
+
+// Also export as default for compatibility
+export default EventCard
 
 // Loading skeleton
 export function EventCardSkeleton({ variant = 'default' }: { variant?: 'default' | 'compact' | 'featured' }) {
