@@ -11,22 +11,14 @@ from bs4 import BeautifulSoup
 import json
 import time
 import re
+from config import SUPABASE_URL, SUPABASE_KEY, HEADERS as CONFIG_HEADERS
 
 BASE_URL = "https://www.cagematch.net"
-HEADERS = {
+SCRAPE_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
 }
 
-# Supabase configuration
-SUPABASE_URL = "https://floznswkfodjuigfzkki.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsb3puc3drZm9kanVpZ2Z6a2tpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTYzMzMzOSwiZXhwIjoyMDg1MjA5MzM5fQ.dRzAdv_LPUXeMv8Ns2HPR2VVQ3PxFZ3TGBtWznCA-Qk"
-
-API_HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=minimal"
-}
+API_HEADERS = {**CONFIG_HEADERS, "Prefer": "return=minimal"}
 
 
 def get_events_from_db():
@@ -66,7 +58,7 @@ def scrape_event_card(cagematch_id):
     
     try:
         time.sleep(1)
-        response = requests.get(url, headers=HEADERS, timeout=30)
+        response = requests.get(url, headers=SCRAPE_HEADERS, timeout=30)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
