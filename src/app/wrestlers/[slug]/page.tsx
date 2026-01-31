@@ -104,10 +104,10 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const events = await getWrestlerEvents(wrestler.id)
   const followerCount = await getFollowerCount(wrestler.id)
   
-  // Split events into upcoming and past
-  const now = new Date()
-  const upcomingEvents = events.filter((e: any) => new Date(e.event_date) >= now)
-  const pastEvents = events.filter((e: any) => new Date(e.event_date) < now)
+  // Split events into upcoming and past (compare dates only, not time)
+  const today = new Date().toISOString().split('T')[0]
+  const upcomingEvents = events.filter((e: any) => e.event_date >= today)
+  const pastEvents = events.filter((e: any) => e.event_date < today)
 
   return (
     <div className="min-h-screen">
