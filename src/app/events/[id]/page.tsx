@@ -22,6 +22,10 @@ import {
 } from '@/lib/utils'
 import AttendanceButtons from '@/components/AttendanceButtons'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
   return (
