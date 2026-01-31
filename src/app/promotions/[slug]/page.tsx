@@ -2,8 +2,17 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Building2, MapPin, Twitter, ExternalLink, Calendar } from 'lucide-react'
+import { Building2, MapPin, ExternalLink, Calendar } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
+
+// X (Twitter) icon component
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
@@ -123,12 +132,12 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 
                 {promotion.twitter_handle && (
                   <a
-                    href={`https://twitter.com/${promotion.twitter_handle}`}
+                    href={`https://x.com/${promotion.twitter_handle}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-ghost"
                   >
-                    <Twitter className="w-4 h-4 mr-2" />
+                    <XIcon className="w-4 h-4 mr-2" />
                     @{promotion.twitter_handle}
                   </a>
                 )}
