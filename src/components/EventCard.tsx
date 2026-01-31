@@ -11,34 +11,81 @@ interface EventCardProps {
   variant?: 'default' | 'compact' | 'featured'
 }
 
-function LocationLinks({ city, state }: { city?: string | null, state?: string | null }) {
-  if (!city && !state) return null
+function VenueLink({ venue }: { venue?: string | null }) {
+  if (!venue) return null
   
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
   }
   
   return (
-    <span className="flex items-center gap-1">
-      {city && (
-        <Link 
-          href={`/location/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`}
-          onClick={handleClick}
-          className="hover:text-accent hover:underline"
-        >
-          {city}
-        </Link>
-      )}
-      {city && state && ', '}
-      {state && (
-        <Link 
-          href={`/location/${state}`}
-          onClick={handleClick}
-          className="hover:text-accent hover:underline"
-        >
-          {state}
-        </Link>
-      )}
+    <Link 
+      href={`/venue/${encodeURIComponent(venue.toLowerCase().replace(/\s+/g, '-'))}`}
+      onClick={handleClick}
+      className="hover:text-accent hover:underline"
+    >
+      {venue}
+    </Link>
+  )
+}
+
+function LocationLinks({ city, state, venue }: { city?: string | null, state?: string | null, venue?: string | null }) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+  
+  const parts: React.ReactNode[] = []
+  
+  if (venue) {
+    parts.push(
+      <Link 
+        key="venue"
+        href={`/venue/${encodeURIComponent(venue.toLowerCase().replace(/\s+/g, '-'))}`}
+        onClick={handleClick}
+        className="hover:text-accent hover:underline"
+      >
+        {venue}
+      </Link>
+    )
+  }
+  
+  if (city) {
+    parts.push(
+      <Link 
+        key="city"
+        href={`/location/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`}
+        onClick={handleClick}
+        className="hover:text-accent hover:underline"
+      >
+        {city}
+      </Link>
+    )
+  }
+  
+  if (state) {
+    parts.push(
+      <Link 
+        key="state"
+        href={`/location/${state}`}
+        onClick={handleClick}
+        className="hover:text-accent hover:underline"
+      >
+        {state}
+      </Link>
+    )
+  }
+  
+  if (parts.length === 0) return null
+  
+  // Join with proper separators
+  return (
+    <span>
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {i < parts.length - 1 && ', '}
+        </span>
+      ))}
     </span>
   )
 }
@@ -66,7 +113,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
               )}
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                <LocationLinks city={event.city} state={event.state} />
+                <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
               </span>
             </div>
           </div>
@@ -133,8 +180,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
           <div className="flex flex-wrap items-center gap-4 text-sm text-foreground-muted">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
-              {event.venue_name && `${event.venue_name}, `}
-              <LocationLinks city={event.city} state={event.state} />
+              <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
             </span>
             
             {(event.attending_count > 0 || event.interested_count > 0) && (
@@ -176,8 +222,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
           <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">
-            {event.venue_name ? `${event.venue_name}, ` : ''}
-            <LocationLinks city={event.city} state={event.state} />
+            <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
           </span>
         </div>
         

@@ -10,7 +10,6 @@ import {
   ExternalLink, 
   Users, 
   Share2,
-  Twitter,
   Bookmark,
   User
 } from 'lucide-react'
@@ -22,6 +21,15 @@ import {
   getTwitterUrl 
 } from '@/lib/utils'
 import AttendanceButtons from '@/components/AttendanceButtons'
+
+// X (Twitter) icon component
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
 
 interface EventPageProps {
   params: { id: string }
@@ -303,9 +311,19 @@ export default async function EventPage({ params }: EventPageProps) {
                 className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
               >
                 <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center overflow-hidden">
-                  <span className="text-2xl font-bold text-foreground-muted">
-                    {promotion.name.charAt(0)}
-                  </span>
+                  {promotion.logo_url ? (
+                    <Image
+                      src={promotion.logo_url}
+                      alt={promotion.name}
+                      width={64}
+                      height={64}
+                      className="object-contain"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-foreground-muted">
+                      {promotion.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <div className="font-semibold text-lg">{promotion.name}</div>
@@ -332,7 +350,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     rel="noopener noreferrer"
                     className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
                   >
-                    <Twitter className="w-4 h-4" />
+                    <XIcon className="w-4 h-4" />
                     @{promotion.twitter_handle}
                   </a>
                 )}

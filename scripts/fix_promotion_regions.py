@@ -11,34 +11,39 @@ from config import SUPABASE_URL, SUPABASE_KEY, HEADERS
 
 # State to region mapping
 STATE_TO_REGION = {
-    # Texas
-    'TX': 'Texas',
-    
-    # California
-    'CA': 'California',
-    
-    # Florida
-    'FL': 'Florida',
-    
-    # Pacific Northwest
-    'WA': 'Pacific Northwest',
-    'OR': 'Pacific Northwest',
-    
     # Northeast
     'NY': 'Northeast',
     'NJ': 'Northeast',
-    'PA': 'Northeast',
-    'DE': 'Northeast',
-    'MD': 'Northeast',
-    'DC': 'Northeast',
+    'CT': 'Northeast',
+    'MA': 'Northeast',
+    'RI': 'Northeast',
+    'NH': 'Northeast',
+    'VT': 'Northeast',
+    'ME': 'Northeast',
     
-    # New England
-    'MA': 'New England',
-    'CT': 'New England',
-    'RI': 'New England',
-    'NH': 'New England',
-    'VT': 'New England',
-    'ME': 'New England',
+    # Mid Atlantic
+    'PA': 'Mid Atlantic',
+    'DE': 'Mid Atlantic',
+    'MD': 'Mid Atlantic',
+    'DC': 'Mid Atlantic',
+    'VA': 'Mid Atlantic',
+    'WV': 'Mid Atlantic',
+    
+    # Southeast
+    'NC': 'Southeast',
+    'SC': 'Southeast',
+    'GA': 'Southeast',
+    'FL': 'Southeast',
+    'AL': 'Southeast',
+    'MS': 'Southeast',
+    'TN': 'Southeast',
+    'KY': 'Southeast',
+    
+    # South
+    'TX': 'South',
+    'LA': 'South',
+    'AR': 'South',
+    'OK': 'South',
     
     # Midwest
     'OH': 'Midwest',
@@ -54,33 +59,22 @@ STATE_TO_REGION = {
     'SD': 'Midwest',
     'ND': 'Midwest',
     
-    # Southeast
-    'GA': 'Southeast',
-    'NC': 'Southeast',
-    'SC': 'Southeast',
-    'VA': 'Southeast',
-    'WV': 'Southeast',
-    'KY': 'Southeast',
-    'TN': 'Southeast',
-    'AL': 'Southeast',
-    'MS': 'Southeast',
-    'AR': 'Southeast',
-    'LA': 'Southeast',
+    # West
+    'CA': 'West',
+    'NV': 'West',
+    'AZ': 'West',
+    'NM': 'West',
+    'CO': 'West',
+    'UT': 'West',
+    'WY': 'West',
+    'MT': 'West',
+    'ID': 'West',
+    'HI': 'West',
     
-    # Southwest
-    'AZ': 'Southwest',
-    'NM': 'Southwest',
-    'NV': 'Southwest',
-    'UT': 'Southwest',
-    'CO': 'Southwest',
-    'OK': 'Southwest',
-    
-    # Mountain/Other
-    'ID': 'Mountain',
-    'MT': 'Mountain',
-    'WY': 'Mountain',
-    'AK': 'Other',
-    'HI': 'Other',
+    # Pacific Northwest
+    'WA': 'Pacific Northwest',
+    'OR': 'Pacific Northwest',
+    'AK': 'Pacific Northwest',
 }
 
 # Known national promotions

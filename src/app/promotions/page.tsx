@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getPromotions } from '@/lib/supabase'
-import { Building2, MapPin } from 'lucide-react'
+import { Building2, MapPin, ExternalLink, Twitter } from 'lucide-react'
+import { getTwitterUrl } from '@/lib/utils'
 
 export const revalidate = 300
 
@@ -19,14 +20,13 @@ async function PromotionsList() {
 
   const regionOrder = [
     'National',
-    'Texas',
-    'California',
-    'Pacific Northwest',
-    'Midwest',
-    'New England',
     'Northeast',
     'Southeast',
-    'Florida',
+    'Mid Atlantic',
+    'Midwest',
+    'South',
+    'West',
+    'Pacific Northwest',
     'Other',
   ]
 
@@ -54,6 +54,7 @@ async function PromotionsList() {
                 className="card p-5 hover:border-accent/50 transition-colors group"
               >
                 <div className="flex items-start gap-4">
+                  {/* Logo placeholder */}
                   <div className="w-16 h-16 rounded-lg bg-background-tertiary flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {promo.logo_url ? (
                       <Image
@@ -80,11 +81,13 @@ async function PromotionsList() {
                       </div>
                     )}
 
-                    {promo.twitter_handle && (
-                      <div className="text-foreground-muted text-xs mt-2">
-                        @{promo.twitter_handle}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3 mt-3">
+                      {promo.twitter_handle && (
+                        <span className="text-foreground-muted text-xs">
+                          @{promo.twitter_handle}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -125,6 +128,7 @@ export default function PromotionsPage() {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold mb-2">Promotions</h1>
           <p className="text-foreground-muted">
@@ -132,6 +136,7 @@ export default function PromotionsPage() {
           </p>
         </div>
 
+        {/* List */}
         <Suspense fallback={<PromotionsListSkeleton />}>
           <PromotionsList />
         </Suspense>
