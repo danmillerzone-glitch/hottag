@@ -80,25 +80,40 @@ export default function HomePage() {
         .from('user_event_attendance')
         .select(`
           status,
-          events:event_id (
-            id, name, event_date, city, state, venue_name,
-            promotions (id, name, slug, logo_url)
-          )
+          event_id
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (attending) {
-        const myEventsList = attending
-          .filter((a: any) => a.events && new Date(a.events.event_date) >= new Date())
-          .map((a: any) => ({
-            ...a.events,
-            promotions: a.events.promotions,
-            attendance_status: a.status,
-            attending_count: 0,
-            interested_count: 0
-          }))
-        setMyEvents(myEventsList)
+      if (attending && attending.length > 0) {
+        // Get the event IDs
+        const eventIds = attending.map((a: any) => a.event_id)
+        
+        // Fetch full event data with real counts
+        const { data: eventData } = await supabase
+          .from('events_with_counts')
+          .select(`
+            *,
+            promotions (id, name, slug, logo_url)
+          `)
+          .in('id', eventIds)
+        
+        if (eventData) {
+          // Create a map of attendance status by event ID
+          const statusMap = new Map(attending.map((a: any) => [a.event_id, a.status]))
+          
+          const myEventsList = eventData
+            .filter((e: any) => new Date(e.event_date) >= new Date())
+            .map((e: any) => ({
+              ...e,
+              attendance_status: statusMap.get(e.id),
+              attending_count: e.real_attending_count || 0,
+              interested_count: e.real_interested_count || 0
+            }))
+            .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+          
+          setMyEvents(myEventsList)
+        }
       }
 
       // Events from followed wrestlers/promotions

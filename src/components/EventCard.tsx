@@ -34,43 +34,48 @@ function LocationLinks({ city, state, venue }: { city?: string | null, state?: s
     e.stopPropagation()
   }
   
+  // Trim values to remove any extra spaces
+  const trimmedVenue = venue?.trim()
+  const trimmedCity = city?.trim()
+  const trimmedState = state?.trim()
+  
   const parts: React.ReactNode[] = []
   
-  if (venue) {
+  if (trimmedVenue) {
     parts.push(
       <Link 
         key="venue"
-        href={`/venue/${encodeURIComponent(venue.toLowerCase().replace(/\s+/g, '-'))}`}
+        href={`/venue/${encodeURIComponent(trimmedVenue.toLowerCase().replace(/\s+/g, '-'))}`}
         onClick={handleClick}
         className="hover:text-accent hover:underline"
       >
-        {venue}
+        {trimmedVenue}
       </Link>
     )
   }
   
-  if (city) {
+  if (trimmedCity) {
     parts.push(
       <Link 
         key="city"
-        href={`/location/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`}
+        href={`/location/${encodeURIComponent(trimmedCity.toLowerCase().replace(/\s+/g, '-'))}`}
         onClick={handleClick}
         className="hover:text-accent hover:underline"
       >
-        {city}
+        {trimmedCity}
       </Link>
     )
   }
   
-  if (state) {
+  if (trimmedState) {
     parts.push(
       <Link 
         key="state"
-        href={`/location/${state}`}
+        href={`/location/${trimmedState}`}
         onClick={handleClick}
         className="hover:text-accent hover:underline"
       >
-        {state}
+        {trimmedState}
       </Link>
     )
   }
