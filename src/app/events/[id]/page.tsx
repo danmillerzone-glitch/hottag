@@ -22,6 +22,8 @@ import {
 } from '@/lib/utils'
 import AttendanceButtons from '@/components/AttendanceButtons'
 import MatchCard from '@/components/MatchCard'
+import StreamingLinks from '@/components/StreamingLinks'
+import AnnouncedTalentList from '@/components/AnnouncedTalentList'
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
@@ -211,20 +213,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             )}
-            {(event as any).streaming_url && (
-              <a
-                href={(event as any).streaming_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary"
-              >
-                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-                Watch Live / VOD
-                <ExternalLink className="w-3 h-3 ml-2" />
-              </a>
-            )}
+            <StreamingLinks eventId={event.id} />
           </div>
 
           {/* Attendance buttons */}
@@ -248,6 +237,9 @@ export default async function EventPage({ params }: EventPageProps) {
 
           {/* Match Card (from promoter-managed matches) */}
           <MatchCard eventId={event.id} />
+
+          {/* Announced Talent */}
+          <AnnouncedTalentList eventId={event.id} />
 
           {/* Wrestler Card */}
           {wrestlers.length > 0 && (

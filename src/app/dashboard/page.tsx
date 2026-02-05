@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getPromoterDashboardData, getUserClaims, type PromoterDashboardData } from '@/lib/promoter'
+import { getPromoterDashboardData, getUserClaims, createEvent, deleteEvent, type PromoterDashboardData } from '@/lib/promoter'
 import {
   Loader2,
   Calendar,
@@ -23,6 +23,7 @@ import {
   Video,
   MapPin,
   AlertCircle,
+  Trash2,
 } from 'lucide-react'
 import { formatEventDate, formatLocation } from '@/lib/utils'
 
@@ -33,6 +34,18 @@ export default function DashboardPage() {
   const [claims, setClaims] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [hasPromotion, setHasPromotion] = useState(false)
+  const [showAddEvent, setShowAddEvent] = useState(false)
+
+  const handleDeleteEvent = async (eventId: string, eventName: string) => {
+    if (!confirm(`Delete "${eventName}"? This cannot be undone.`)) return
+    try {
+      await deleteEvent(eventId)
+      loadData() // Reload dashboard
+    } catch (err) {
+      console.error('Error deleting event:', err)
+      alert('Failed to delete event. It may have attendance records or other linked data.')
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return
@@ -262,7 +275,22 @@ export default function DashboardPage() {
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-display font-bold">Upcoming Events</h2>
+            <button onClick={() => setShowAddEvent(true)} className="btn btn-primary text-sm">
+              <Plus className="w-4 h-4 mr-1.5" /> Add Event
+            </button>
           </div>
+
+          {/* Add Event Modal */}
+          {showAddEvent && (
+            <AddEventModal
+              promotionId={promotion.id}
+              onCreated={(newEvent) => {
+                setShowAddEvent(false)
+                router.push(`/dashboard/events/${newEvent.id}`)
+              }}
+              onClose={() => setShowAddEvent(false)}
+            />
+          )}
 
           {upcomingEvents.length > 0 ? (
             <div className="space-y-3">
@@ -315,14 +343,23 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Edit button */}
-                      <Link
-                        href={`/dashboard/events/${event.id}`}
-                        className="btn btn-secondary text-sm flex-shrink-0"
-                      >
-                        <Edit3 className="w-4 h-4 mr-1.5" />
-                        Manage
-                      </Link>
+                      {/* Action buttons */}
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Link
+                          href={`/dashboard/events/${event.id}`}
+                          className="btn btn-secondary text-sm"
+                        >
+                          <Edit3 className="w-4 h-4 mr-1.5" />
+                          Manage
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteEvent(event.id, event.name)}
+                          className="p-2 rounded-lg hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors"
+                          title="Delete event"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
@@ -372,6 +409,130 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// ADD EVENT MODAL
+// ============================================
+
+function AddEventModal({ promotionId, onCreated, onClose }: {
+  promotionId: string
+  onCreated: (event: any) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState('')
+  const [eventDate, setEventDate] = useState('')
+  const [venueName, setVenueName] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [eventTime, setEventTime] = useState('')
+  const [doorsTime, setDoorsTime] = useState('')
+  const [isFree, setIsFree] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !eventDate) return
+    setCreating(true)
+    setError('')
+    try {
+      const event = await createEvent({
+        name,
+        event_date: eventDate,
+        promotion_id: promotionId,
+        venue_name: venueName || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        event_time: eventTime || undefined,
+        doors_time: doorsTime || undefined,
+        is_free: isFree,
+      })
+      onCreated(event)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create event.')
+    }
+    setCreating(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-background-secondary rounded-2xl border border-border shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h2 className="text-xl font-display font-bold">Add New Event</h2>
+            <p className="text-sm text-foreground-muted mt-1">Create a new event for your promotion</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-background-tertiary transition-colors" disabled={creating}>
+            <AlertCircle className="w-5 h-5 text-foreground-muted" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Event Name <span className="text-red-400">*</span></label>
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder='e.g., "Chaos Theory 2026"'
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Event Date <span className="text-red-400">*</span></label>
+            <input type="date" required value={eventDate} onChange={(e) => setEventDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Venue Name</label>
+            <input type="text" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="White Eagle Hall, American Legion Post..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">City</label>
+              <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Houston"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">State</label>
+              <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="TX"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Doors Time</label>
+              <input type="time" value={doorsTime} onChange={(e) => setDoorsTime(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Bell Time</label>
+              <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={isFree} onChange={(e) => setIsFree(e.target.checked)} className="w-4 h-4 rounded border-border bg-background-tertiary text-accent focus:ring-accent" />
+            <span className="text-sm">Free event</span>
+          </label>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn btn-ghost flex-1" disabled={creating}>Cancel</button>
+            <button type="submit" className="btn btn-primary flex-1" disabled={creating}>
+              {creating ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Creating...</> : <><Plus className="w-4 h-4 mr-1.5" /> Create Event</>}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

@@ -58,6 +58,32 @@ export interface MatchParticipant {
   }
 }
 
+export interface StreamingLink {
+  id: string
+  event_id: string
+  platform: string
+  url: string
+  label: string | null
+  is_live: boolean
+  created_at: string
+}
+
+export interface AnnouncedTalent {
+  id: string
+  event_id: string
+  wrestler_id: string
+  announcement_note: string | null
+  sort_order: number
+  // Joined
+  wrestlers?: {
+    id: string
+    name: string
+    slug: string
+    photo_url: string | null
+    hometown: string | null
+  }
+}
+
 export interface PromoterDashboardData {
   promotion: any
   upcomingEvents: any[]
@@ -437,4 +463,195 @@ export async function uploadEventPoster(eventId: string, file: File) {
   await updateEvent(eventId, { poster_url: publicUrl })
 
   return publicUrl
+}
+
+// ============================================
+// STREAMING LINKS
+// ============================================
+
+export async function getStreamingLinks(eventId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_streaming_links')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching streaming links:', error)
+    return []
+  }
+  return data as StreamingLink[]
+}
+
+export async function addStreamingLink(data: {
+  event_id: string
+  platform: string
+  url: string
+  label?: string
+  is_live?: boolean
+}) {
+  const supabase = createClient()
+
+  const { data: link, error } = await supabase
+    .from('event_streaming_links')
+    .insert(data)
+    .select()
+    .single()
+
+  if (error) throw error
+  return link as StreamingLink
+}
+
+export async function updateStreamingLink(linkId: string, updates: {
+  platform?: string
+  url?: string
+  label?: string | null
+  is_live?: boolean
+}) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_streaming_links')
+    .update(updates)
+    .eq('id', linkId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as StreamingLink
+}
+
+export async function deleteStreamingLink(linkId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_streaming_links')
+    .delete()
+    .eq('id', linkId)
+
+  if (error) throw error
+}
+
+// ============================================
+// ANNOUNCED TALENT
+// ============================================
+
+export async function getAnnouncedTalent(eventId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_talent')
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching announced talent:', error)
+    return []
+  }
+  return data as AnnouncedTalent[]
+}
+
+export async function addAnnouncedTalent(data: {
+  event_id: string
+  wrestler_id: string
+  announcement_note?: string
+  sort_order?: number
+}) {
+  const supabase = createClient()
+
+  const { data: talent, error } = await supabase
+    .from('event_announced_talent')
+    .insert(data)
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .single()
+
+  if (error) throw error
+  return talent as AnnouncedTalent
+}
+
+export async function updateAnnouncedTalent(talentId: string, updates: {
+  announcement_note?: string | null
+  sort_order?: number
+}) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_talent')
+    .update(updates)
+    .eq('id', talentId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function removeAnnouncedTalent(talentId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_announced_talent')
+    .delete()
+    .eq('id', talentId)
+
+  if (error) throw error
+}
+
+// ============================================
+// EVENT CRUD (Create / Delete)
+// ============================================
+
+export async function createEvent(data: {
+  name: string
+  event_date: string
+  promotion_id: string
+  venue_name?: string
+  city?: string
+  state?: string
+  country?: string
+  event_time?: string
+  doors_time?: string
+  description?: string
+  ticket_url?: string
+  is_free?: boolean
+}) {
+  const supabase = createClient()
+
+  // Generate a slug from the name
+  const slug = data.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
+  const { data: event, error } = await supabase
+    .from('events')
+    .insert({
+      ...data,
+      slug,
+      status: 'upcoming',
+      country: data.country || 'USA',
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return event
+}
+
+export async function deleteEvent(eventId: string) {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('events')
+    .delete()
+    .eq('id', eventId)
+
+  if (error) throw error
 }
