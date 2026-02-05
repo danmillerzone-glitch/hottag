@@ -26,6 +26,32 @@ interface Match {
   }[]
 }
 
+function WrestlerCard({ wrestler }: { wrestler: { name: string; slug: string; photo_url: string | null } }) {
+  return (
+    <Link
+      href={`/wrestlers/${wrestler.slug}`}
+      className="flex flex-col items-center gap-2 group"
+    >
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 border-border group-hover:border-accent transition-colors">
+        {wrestler.photo_url ? (
+          <Image
+            src={wrestler.photo_url}
+            alt={wrestler.name}
+            width={80}
+            height={80}
+            className="object-cover w-full h-full"
+          />
+        ) : (
+          <User className="w-8 h-8 text-foreground-muted" />
+        )}
+      </div>
+      <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2 max-w-[100px]">
+        {wrestler.name}
+      </span>
+    </Link>
+  )
+}
+
 export default function MatchCard({ eventId }: { eventId: string }) {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,7 +88,7 @@ export default function MatchCard({ eventId }: { eventId: string }) {
         <Swords className="w-5 h-5 text-accent" />
         Match Card
       </h2>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {matches.map((match, index) => {
           const participants = match.match_participants || []
           const team1 = participants.filter(p => p.team_number === 1)
@@ -72,12 +98,12 @@ export default function MatchCard({ eventId }: { eventId: string }) {
           return (
             <div
               key={match.id}
-              className="p-4 rounded-lg bg-background-tertiary border border-border"
+              className="p-5 rounded-xl bg-background-tertiary border border-border"
             >
               {/* Match header */}
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className="text-xs font-bold text-foreground-muted bg-background px-2 py-0.5 rounded">
-                  {match.match_order ? `#${match.match_order}` : `Match ${index + 1}`}
+                  {match.match_order ? `Match ${match.match_order}` : `Match ${index + 1}`}
                 </span>
                 {match.match_title && (
                   <span className="text-sm font-semibold">{match.match_title}</span>
@@ -88,99 +114,43 @@ export default function MatchCard({ eventId }: { eventId: string }) {
                     {match.championship_name || 'Title Match'}
                   </span>
                 )}
+                {(match.match_type || match.match_stipulation) && (
+                  <span className="text-xs text-foreground-muted">
+                    {[match.match_type, match.match_stipulation].filter(Boolean).join(' · ')}
+                  </span>
+                )}
               </div>
 
-              {/* Match type / stipulation */}
-              {(match.match_type || match.match_stipulation) && (
-                <div className="text-xs text-foreground-muted mb-3">
-                  {[match.match_type, match.match_stipulation].filter(Boolean).join(' · ')}
-                </div>
-              )}
-
-              {/* Participants */}
+              {/* Participants with large images */}
               {hasTeams ? (
-                <div className="flex items-center gap-4">
-                  {/* Team 1 */}
-                  <div className="flex-1 flex flex-wrap gap-2 justify-end">
+                /* Team vs Team layout */
+                <div className="flex items-center justify-center gap-6 sm:gap-10">
+                  <div className="flex flex-wrap justify-end gap-4">
                     {team1.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={`/wrestlers/${p.wrestlers.slug}`}
-                        className="flex items-center gap-1.5 hover:text-accent transition-colors"
-                      >
-                        {p.wrestlers.photo_url ? (
-                          <Image
-                            src={p.wrestlers.photo_url}
-                            alt={p.wrestlers.name}
-                            width={28}
-                            height={28}
-                            className="w-7 h-7 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-background flex items-center justify-center">
-                            <User className="w-4 h-4 text-foreground-muted" />
-                          </div>
-                        )}
-                        <span className="text-sm font-medium">{p.wrestlers.name}</span>
-                      </Link>
+                      <WrestlerCard key={p.id} wrestler={p.wrestlers} />
                     ))}
                   </div>
                   
-                  <span className="text-xs font-bold text-accent flex-shrink-0">VS</span>
+                  <div className="flex-shrink-0">
+                    <span className="text-lg font-bold text-accent">VS</span>
+                  </div>
                   
-                  {/* Team 2 */}
-                  <div className="flex-1 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-4">
                     {team2.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={`/wrestlers/${p.wrestlers.slug}`}
-                        className="flex items-center gap-1.5 hover:text-accent transition-colors"
-                      >
-                        {p.wrestlers.photo_url ? (
-                          <Image
-                            src={p.wrestlers.photo_url}
-                            alt={p.wrestlers.name}
-                            width={28}
-                            height={28}
-                            className="w-7 h-7 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-background flex items-center justify-center">
-                            <User className="w-4 h-4 text-foreground-muted" />
-                          </div>
-                        )}
-                        <span className="text-sm font-medium">{p.wrestlers.name}</span>
-                      </Link>
+                      <WrestlerCard key={p.id} wrestler={p.wrestlers} />
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-3">
+                /* Multi-way / singles layout */
+                <div className="flex flex-wrap items-center justify-center gap-4">
                   {participants.map((p, i) => (
-                    <span key={p.id} className="flex items-center gap-1.5">
-                      <Link
-                        href={`/wrestlers/${p.wrestlers.slug}`}
-                        className="flex items-center gap-1.5 hover:text-accent transition-colors"
-                      >
-                        {p.wrestlers.photo_url ? (
-                          <Image
-                            src={p.wrestlers.photo_url}
-                            alt={p.wrestlers.name}
-                            width={28}
-                            height={28}
-                            className="w-7 h-7 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-background flex items-center justify-center">
-                            <User className="w-4 h-4 text-foreground-muted" />
-                          </div>
-                        )}
-                        <span className="text-sm font-medium">{p.wrestlers.name}</span>
-                      </Link>
+                    <div key={p.id} className="flex items-center gap-4">
+                      <WrestlerCard wrestler={p.wrestlers} />
                       {i < participants.length - 1 && (
-                        <span className="text-xs text-accent font-bold ml-1">vs</span>
+                        <span className="text-sm font-bold text-accent">vs</span>
                       )}
-                    </span>
+                    </div>
                   ))}
                 </div>
               )}

@@ -426,6 +426,7 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
   const [name, setName] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [venueName, setVenueName] = useState('')
+  const [venueAddress, setVenueAddress] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [eventTime, setEventTime] = useState('')
@@ -445,6 +446,7 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
         event_date: eventDate,
         promotion_id: promotionId,
         venue_name: venueName || undefined,
+        venue_address: venueAddress || undefined,
         city: city || undefined,
         state: state || undefined,
         event_time: eventTime || undefined,
@@ -493,6 +495,13 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
             <label className="block text-sm font-medium mb-1.5">Venue Name</label>
             <input type="text" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="White Eagle Hall, American Legion Post..."
               className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Venue Address</label>
+            <input type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="123 Main St, Suite 100"
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            <p className="text-xs text-foreground-muted mt-1">Full address helps fans find the venue on Google Maps</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

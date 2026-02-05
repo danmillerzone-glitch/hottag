@@ -257,6 +257,10 @@ export async function updateEvent(eventId: string, updates: {
   event_time?: string | null
   doors_time?: string | null
   poster_url?: string | null
+  venue_address?: string | null
+  venue_name?: string | null
+  city?: string | null
+  state?: string | null
 }) {
   const supabase = createClient()
 
@@ -405,6 +409,11 @@ export async function updatePromotion(promotionId: string, updates: {
   youtube_url?: string | null
   logo_url?: string | null
   banner_url?: string | null
+  city?: string | null
+  state?: string | null
+  country?: string | null
+  booking_email?: string | null
+  merch_url?: string | null
 }) {
   const supabase = createClient()
 
@@ -613,6 +622,7 @@ export async function createEvent(data: {
   event_date: string
   promotion_id: string
   venue_name?: string
+  venue_address?: string
   city?: string
   state?: string
   country?: string

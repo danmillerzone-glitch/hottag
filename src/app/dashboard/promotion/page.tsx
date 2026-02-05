@@ -20,6 +20,9 @@ import {
   Check,
   ExternalLink,
   ImageIcon,
+  MapPin,
+  Mail,
+  ShoppingBag,
 } from 'lucide-react'
 
 // X (Twitter) icon component
@@ -48,6 +51,11 @@ export default function EditPromotionPage() {
   const [instagramHandle, setInstagramHandle] = useState('')
   const [facebookUrl, setFacebookUrl] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [country, setCountry] = useState('')
+  const [bookingEmail, setBookingEmail] = useState('')
+  const [merchUrl, setMerchUrl] = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -72,6 +80,11 @@ export default function EditPromotionPage() {
     setInstagramHandle(data.instagram_handle || '')
     setFacebookUrl(data.facebook_url || '')
     setYoutubeUrl(data.youtube_url || '')
+    setCity(data.city || '')
+    setState(data.state || '')
+    setCountry(data.country || 'USA')
+    setBookingEmail(data.booking_email || '')
+    setMerchUrl(data.merch_url || '')
     setLoading(false)
   }
 
@@ -87,6 +100,11 @@ export default function EditPromotionPage() {
         instagram_handle: instagramHandle || null,
         facebook_url: facebookUrl || null,
         youtube_url: youtubeUrl || null,
+        city: city || null,
+        state: state || null,
+        country: country || null,
+        booking_email: bookingEmail || null,
+        merch_url: merchUrl || null,
       })
       setPromotion(updated)
       setSaved(true)
@@ -296,6 +314,87 @@ export default function EditPromotionPage() {
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://youtube.com/@YourPromotion"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Location */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <MapPin className="w-5 h-5 text-accent" />
+            <h2 className="text-lg font-display font-bold">Location</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">City</label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Houston"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">State</label>
+                <input
+                  type="text"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  placeholder="TX"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Country</label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="USA"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Contact & Merch */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Mail className="w-5 h-5 text-accent" />
+            <h2 className="text-lg font-display font-bold">Contact & Merchandise</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-foreground-muted" />
+                Booking / Contact Email
+              </label>
+              <input
+                type="email"
+                value={bookingEmail}
+                onChange={(e) => setBookingEmail(e.target.value)}
+                placeholder="booking@yourpromotion.com"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-foreground-muted" />
+                Merchandise Link
+              </label>
+              <input
+                type="url"
+                value={merchUrl}
+                onChange={(e) => setMerchUrl(e.target.value)}
+                placeholder="https://shop.yourpromotion.com"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>

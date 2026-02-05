@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Building2, MapPin, ExternalLink, Calendar } from 'lucide-react'
+import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 
@@ -149,6 +149,42 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   </a>
                 )}
 
+                {promotion.instagram_handle && (
+                  <a
+                    href={`https://instagram.com/${promotion.instagram_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <Instagram className="w-4 h-4 mr-2" />
+                    @{promotion.instagram_handle}
+                  </a>
+                )}
+
+                {promotion.facebook_url && (
+                  <a
+                    href={promotion.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <Facebook className="w-4 h-4 mr-2" />
+                    Facebook
+                  </a>
+                )}
+
+                {promotion.youtube_url && (
+                  <a
+                    href={promotion.youtube_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <Youtube className="w-4 h-4 mr-2" />
+                    YouTube
+                  </a>
+                )}
+
                 {promotion.website && (
                   <a
                     href={promotion.website}
@@ -158,6 +194,28 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Website
+                  </a>
+                )}
+
+                {promotion.booking_email && (
+                  <a
+                    href={`mailto:${promotion.booking_email}`}
+                    className="btn btn-ghost"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email
+                  </a>
+                )}
+
+                {promotion.merch_url && (
+                  <a
+                    href={promotion.merch_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Merch
                   </a>
                 )}
               </div>
