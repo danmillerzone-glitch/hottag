@@ -150,7 +150,12 @@ export async function getEvent(idOrSlug: string) {
         slug,
         logo_url,
         website,
-        twitter_handle
+        twitter_handle,
+        instagram_handle,
+        facebook_url,
+        youtube_url,
+        booking_email,
+        merch_url
       )
     `)
     .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)

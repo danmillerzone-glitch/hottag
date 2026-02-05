@@ -11,7 +11,12 @@ import {
   Users, 
   Share2,
   Bookmark,
-  User
+  User,
+  Instagram,
+  Youtube,
+  Facebook,
+  Mail,
+  ShoppingBag
 } from 'lucide-react'
 import { 
   formatEventDateFull, 
@@ -171,7 +176,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 {/* Google Maps link */}
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    [event.venue_name, event.city, event.state].filter(Boolean).join(', ')
+                    [event.venue_name, (event as any).venue_address, event.city, event.state].filter(Boolean).join(', ')
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -345,7 +350,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 </div>
               </Link>
 
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex flex-wrap items-center gap-4 mt-4">
                 {promotion.website && (
                   <a
                     href={promotion.website}
@@ -366,6 +371,59 @@ export default async function EventPage({ params }: EventPageProps) {
                   >
                     <XIcon className="w-4 h-4" />
                     @{promotion.twitter_handle}
+                  </a>
+                )}
+                {promotion.instagram_handle && (
+                  <a
+                    href={`https://instagram.com/${promotion.instagram_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    @{promotion.instagram_handle}
+                  </a>
+                )}
+                {promotion.facebook_url && (
+                  <a
+                    href={promotion.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <Facebook className="w-4 h-4" />
+                    Facebook
+                  </a>
+                )}
+                {promotion.youtube_url && (
+                  <a
+                    href={promotion.youtube_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <Youtube className="w-4 h-4" />
+                    YouTube
+                  </a>
+                )}
+                {promotion.booking_email && (
+                  <a
+                    href={`mailto:${promotion.booking_email}`}
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </a>
+                )}
+                {promotion.merch_url && (
+                  <a
+                    href={promotion.merch_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    Merch
                   </a>
                 )}
               </div>
