@@ -66,6 +66,7 @@ export interface Event {
   poster_url: string | null
   attending_count: number
   interested_count: number
+  streaming_url: string | null
   created_at: string
   // Joined fields
   promotion?: Promotion

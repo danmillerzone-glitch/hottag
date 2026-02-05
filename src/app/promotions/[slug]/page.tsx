@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Building2, MapPin, ExternalLink, Calendar } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
+import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -128,6 +129,12 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   promotionId={promotion.id}
                   promotionName={promotion.name}
                   initialFollowerCount={followerCount}
+                />
+
+                <ClaimPromotionButton
+                  promotionId={promotion.id}
+                  promotionName={promotion.name}
+                  verificationStatus={promotion.verification_status}
                 />
                 
                 {promotion.twitter_handle && (

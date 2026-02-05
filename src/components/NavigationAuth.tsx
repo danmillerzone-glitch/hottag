@@ -93,6 +93,13 @@ export default function Navigation() {
                   {showDropdown && (
                     <div className="absolute right-0 mt-2 w-48 bg-background-secondary border border-border rounded-lg shadow-lg py-1">
                       <Link
+                        href="/dashboard"
+                        className="block px-4 py-2 text-sm hover:bg-background-tertiary transition-colors text-accent font-medium"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        🎤 Promoter Dashboard
+                      </Link>
+                      <Link
                         href="/profile"
                         className="block px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
                         onClick={() => setShowDropdown(false)}
