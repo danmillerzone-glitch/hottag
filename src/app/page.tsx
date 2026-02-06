@@ -5,6 +5,9 @@ import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
 import { EventCard, EventCardSkeleton } from '@/components/EventCard'
+import NearYouSection from '@/components/NearYouSection'
+import ThisWeekendSection from '@/components/ThisWeekendSection'
+import RecommendedSection from '@/components/RecommendedSection'
 import { 
   Calendar, 
   MapPin, 
@@ -157,14 +160,36 @@ export default function HomePage() {
       if (followedWrestlers && followedWrestlers.length > 0) {
         const wrestlerIds = followedWrestlers.map((f: any) => f.wrestler_id)
         
-        // Get events these wrestlers are on
-        const { data: wrestlerEventLinks } = await supabase
+        // Check event_wrestlers
+        const { data: ewLinks } = await supabase
           .from('event_wrestlers')
           .select('event_id')
           .in('wrestler_id', wrestlerIds)
 
-        if (wrestlerEventLinks && wrestlerEventLinks.length > 0) {
-          const eventIds = wrestlerEventLinks.map((l: any) => l.event_id)
+        // Check match_participants
+        const { data: mpLinks } = await supabase
+          .from('match_participants')
+          .select('event_matches(event_id)')
+          .in('wrestler_id', wrestlerIds)
+
+        // Check event_announced_talent
+        const { data: atLinks } = await supabase
+          .from('event_announced_talent')
+          .select('event_id')
+          .in('wrestler_id', wrestlerIds)
+
+        // Collect all event IDs
+        const eventIdSet = new Set<string>()
+        for (const l of (ewLinks || [])) eventIdSet.add(l.event_id)
+        for (const l of (mpLinks || [])) {
+          const eventId = (l as any).event_matches?.event_id
+          if (eventId) eventIdSet.add(eventId)
+        }
+        for (const l of (atLinks || [])) eventIdSet.add((l as any).event_id)
+
+        const eventIds = [...eventIdSet]
+
+        if (eventIds.length > 0) {
           
           const { data: wrestlerEvents } = await supabase
             .from('events_with_counts')
@@ -318,6 +343,15 @@ export default function HomePage() {
           )}
         </>
       )}
+
+      {/* Near You - geolocation based */}
+      <NearYouSection />
+
+      {/* This Weekend / This Week */}
+      <ThisWeekendSection />
+
+      {/* Recommended For You - logged in only */}
+      {!authLoading && user && <RecommendedSection />}
 
       {/* Hot Events */}
       {hotEvents.length > 0 && (
