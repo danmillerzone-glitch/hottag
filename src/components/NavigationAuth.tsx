@@ -65,7 +65,6 @@ export default function Navigation() {
       .eq('user_id', user.id)
       .limit(1)
       .then(({ data }) => setIsAdmin(!!(data && data.length > 0)))
-      .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
   }, [user])
 
   const handleSignOut = async () => {
