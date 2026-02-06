@@ -94,16 +94,27 @@ export default function Navigation() {
                     <div className="absolute right-0 mt-2 w-48 bg-background-secondary border border-border rounded-lg shadow-lg py-1">
                       <Link
                         href="/dashboard"
-                        className="block px-4 py-2 text-sm hover:bg-background-tertiary transition-colors text-accent font-medium"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
-                        🎤 Promoter Dashboard
+                        <Building2 className="w-4 h-4 text-accent" />
+                        <span className="text-accent font-medium">Promoter Dashboard</span>
                       </Link>
                       <Link
-                        href="/profile"
-                        className="block px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
+                        href="/dashboard/wrestler"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
+                        <Users className="w-4 h-4 text-accent" />
+                        <span className="text-accent font-medium">Wrestler Dashboard</span>
+                      </Link>
+                      <div className="border-t border-border my-1" />
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <User className="w-4 h-4" />
                         Profile
                       </Link>
                       <button
