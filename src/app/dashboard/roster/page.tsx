@@ -173,6 +173,7 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
   onDelete: () => void
 }) {
   const [showChampSearch, setShowChampSearch] = useState(false)
+  const [settingPartner, setSettingPartner] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searching, setSearching] = useState(false)
@@ -194,17 +195,30 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
   const handleSetChampion = async (wrestlerId: string, wrestlerData: any) => {
     setSaving(true)
     try {
-      await updateChampionship(championship.id, {
-        current_champion_id: wrestlerId,
-        won_date: new Date().toISOString().split('T')[0],
-      })
-      onUpdate({
-        ...championship,
-        current_champion_id: wrestlerId,
-        current_champion: wrestlerData,
-        won_date: new Date().toISOString().split('T')[0],
-      })
-      setShowChampSearch(false); setSearchQuery(''); setSearchResults([])
+      if (settingPartner) {
+        // Setting tag partner (champion 2)
+        await updateChampionship(championship.id, {
+          current_champion_2_id: wrestlerId,
+        })
+        onUpdate({
+          ...championship,
+          current_champion_2_id: wrestlerId,
+          current_champion_2: wrestlerData,
+        })
+      } else {
+        // Setting main champion (champion 1)
+        await updateChampionship(championship.id, {
+          current_champion_id: wrestlerId,
+          won_date: new Date().toISOString().split('T')[0],
+        })
+        onUpdate({
+          ...championship,
+          current_champion_id: wrestlerId,
+          current_champion: wrestlerData,
+          won_date: new Date().toISOString().split('T')[0],
+        })
+      }
+      setShowChampSearch(false); setSettingPartner(false); setSearchQuery(''); setSearchResults([])
     } catch (err) { console.error('Error setting champion:', err) }
     setSaving(false)
   }
@@ -261,9 +275,24 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
               </div>
             )}
           </div>
-          <div className="flex gap-1">
-            <button onClick={() => setShowChampSearch(true)} className="text-xs text-accent hover:text-accent-hover transition-colors">Change</button>
+          <div className="flex flex-wrap gap-1">
+            <button onClick={() => { setSettingPartner(false); setShowChampSearch(true) }} className="text-xs text-accent hover:text-accent-hover transition-colors">Change</button>
             <span className="text-foreground-muted/30">·</span>
+            {!champ2 && (
+              <>
+                <button onClick={() => { setSettingPartner(true); setShowChampSearch(true) }} className="text-xs text-accent hover:text-accent-hover transition-colors">Add Tag Partner</button>
+                <span className="text-foreground-muted/30">·</span>
+              </>
+            )}
+            {champ2 && (
+              <>
+                <button onClick={async () => {
+                  await updateChampionship(championship.id, { current_champion_2_id: null })
+                  onUpdate({ ...championship, current_champion_2_id: null, current_champion_2: null })
+                }} className="text-xs text-red-400 hover:text-red-300 transition-colors">Remove Partner</button>
+                <span className="text-foreground-muted/30">·</span>
+              </>
+            )}
             <button onClick={handleVacate} className="text-xs text-red-400 hover:text-red-300 transition-colors">Vacate</button>
           </div>
         </div>

@@ -294,22 +294,37 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
 
                     {champion ? (
                       <div className="flex items-center gap-4">
-                        <Link href={`/wrestlers/${champion.slug}`} className="flex-shrink-0">
-                          <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
-                            {champion.photo_url ? (
-                              <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" />
-                            ) : (
-                              <User className="w-8 h-8 text-foreground-muted" />
-                            )}
-                          </div>
-                        </Link>
-                        <div>
-                          <Link href={`/wrestlers/${champion.slug}`} className="font-bold text-lg hover:text-accent transition-colors">
-                            {champion.name}
+                        <div className="flex -space-x-3 flex-shrink-0">
+                          <Link href={`/wrestlers/${champion.slug}`}>
+                            <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
+                              {champion.photo_url ? (
+                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" />
+                              ) : (
+                                <User className="w-8 h-8 text-foreground-muted" />
+                              )}
+                            </div>
                           </Link>
                           {champion2 && (
-                            <span className="text-foreground-muted"> &amp; <Link href={`/wrestlers/${champion2.slug}`} className="font-bold hover:text-accent transition-colors">{champion2.name}</Link></span>
+                            <Link href={`/wrestlers/${champion2.slug}`}>
+                              <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
+                                {champion2.photo_url ? (
+                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" />
+                                ) : (
+                                  <User className="w-8 h-8 text-foreground-muted" />
+                                )}
+                              </div>
+                            </Link>
                           )}
+                        </div>
+                        <div>
+                          <div>
+                            <Link href={`/wrestlers/${champion.slug}`} className="font-bold text-lg hover:text-accent transition-colors">
+                              {champion.name}
+                            </Link>
+                            {champion2 && (
+                              <span className="text-foreground-muted"> &amp; <Link href={`/wrestlers/${champion2.slug}`} className="font-bold text-lg hover:text-accent transition-colors">{champion2.name}</Link></span>
+                            )}
+                          </div>
                           {champ.won_date && (
                             <div className="text-xs text-foreground-muted mt-0.5">
                               Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
