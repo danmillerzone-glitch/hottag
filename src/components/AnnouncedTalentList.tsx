@@ -73,10 +73,10 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
               {t.wrestlers.name}
             </span>
             {championMap[t.wrestlers.id] && (
-              <span className="flex items-center justify-center gap-0.5 text-xs text-yellow-500 mt-0.5 text-center w-full" title={championMap[t.wrestlers.id]}>
-                <Crown className="w-3 h-3 flex-shrink-0" />
-                <span className="text-center">{championMap[t.wrestlers.id]}</span>
-              </span>
+              <div className="flex flex-col items-center mt-0.5 w-full" title={championMap[t.wrestlers.id]}>
+                <Crown className="w-3 h-3 text-yellow-500" />
+                <span className="text-xs text-yellow-500 text-center leading-tight">{championMap[t.wrestlers.id]}</span>
+              </div>
             )}
             {t.announcement_note && (
               <span className="text-xs text-accent mt-0.5 text-center line-clamp-1 w-full">
