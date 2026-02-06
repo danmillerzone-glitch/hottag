@@ -816,6 +816,35 @@ export async function addToRoster(data: {
 }) {
   const supabase = createClient()
 
+  // First try to reactivate an existing inactive record
+  const { data: existing } = await supabase
+    .from('wrestler_promotions')
+    .select('id')
+    .eq('promotion_id', data.promotion_id)
+    .eq('wrestler_id', data.wrestler_id)
+    .maybeSingle()
+
+  if (existing) {
+    // Reactivate
+    const { data: member, error } = await supabase
+      .from('wrestler_promotions')
+      .update({
+        is_active: true,
+        ended_at: null,
+        started_at: new Date().toISOString().split('T')[0],
+      })
+      .eq('id', existing.id)
+      .select(`
+        *,
+        wrestlers (id, name, slug, photo_url, hometown)
+      `)
+      .single()
+
+    if (error) throw error
+    return member as RosterMember
+  }
+
+  // New record
   const { data: member, error } = await supabase
     .from('wrestler_promotions')
     .insert({

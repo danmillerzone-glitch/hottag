@@ -344,9 +344,9 @@ function RosterSection({ promotionId, roster, onUpdate }: {
       onUpdate([...roster, member])
       setSearchQuery(''); setSearchResults([])
     } catch (err: any) {
-      if (err?.code === '23505') {
-        alert('This wrestler is already on the roster.')
-      } else { console.error('Error adding to roster:', err) }
+      console.error('Error adding to roster:', err)
+      alert(err?.message || 'Failed to add wrestler to roster.')
+    }
     }
   }
 
