@@ -16,6 +16,7 @@ export interface Promotion {
   website: string | null
   twitter_handle: string | null
   instagram_handle: string | null
+  tiktok_handle: string | null
   facebook_url: string | null
   youtube_url: string | null
   booking_email: string | null
@@ -37,6 +38,10 @@ export interface Wrestler {
   photo_url: string | null
   twitter_handle: string | null
   instagram_handle: string | null
+  tiktok_handle: string | null
+  youtube_url: string | null
+  website: string | null
+  booking_email: string | null
   merch_url: string | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
