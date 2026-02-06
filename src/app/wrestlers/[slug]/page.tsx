@@ -88,14 +88,16 @@ async function getWrestlerEvents(wrestlerId: string) {
   const eventMap = new Map<string, any>()
 
   for (const d of (ewData || [])) {
-    if (d.events) eventMap.set(d.events.id, d.events)
+    const evt = (d as any).events
+    if (evt) eventMap.set(evt.id, evt)
   }
   for (const d of (mpData || [])) {
-    const event = (d as any).event_matches?.events
-    if (event) eventMap.set(event.id, event)
+    const evt = (d as any).event_matches?.events
+    if (evt) eventMap.set(evt.id, evt)
   }
   for (const d of (atData || [])) {
-    if (d.events) eventMap.set((d.events as any).id, d.events)
+    const evt = (d as any).events
+    if (evt) eventMap.set(evt.id, evt)
   }
 
   // Sort by date
