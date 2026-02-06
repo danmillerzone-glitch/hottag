@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink } from 'lucide-react'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Crown } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 
@@ -81,6 +81,39 @@ async function getFollowerCount(wrestlerId: string) {
   return count || 0
 }
 
+async function getWrestlerChampionships(wrestlerId: string) {
+  // Championships where this wrestler is current champion (either slot)
+  const { data: asChamp1, error: err1 } = await supabase
+    .from('promotion_championships')
+    .select(`
+      id, name, short_name, won_date, is_active,
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug),
+      promotions (id, name, slug, logo_url)
+    `)
+    .eq('current_champion_id', wrestlerId)
+    .eq('is_active', true)
+
+  const { data: asChamp2, error: err2 } = await supabase
+    .from('promotion_championships')
+    .select(`
+      id, name, short_name, won_date, is_active,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug),
+      promotions (id, name, slug, logo_url)
+    `)
+    .eq('current_champion_2_id', wrestlerId)
+    .eq('is_active', true)
+
+  if (err1) console.error('Error fetching championships (champ1):', err1)
+  if (err2) console.error('Error fetching championships (champ2):', err2)
+
+  const championships = [
+    ...(asChamp1 || []).map((c: any) => ({ ...c, partner: c.current_champion_2 })),
+    ...(asChamp2 || []).map((c: any) => ({ ...c, partner: c.current_champion })),
+  ]
+
+  return championships
+}
+
 export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   
@@ -103,6 +136,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
   const events = await getWrestlerEvents(wrestler.id)
   const followerCount = await getFollowerCount(wrestler.id)
+  const championships = await getWrestlerChampionships(wrestler.id)
   
   // Split events into upcoming and past (compare dates only, not time)
   const today = new Date().toISOString().split('T')[0]
@@ -172,6 +206,35 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Championships */}
+      {championships.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="flex flex-wrap gap-3">
+            {championships.map((champ: any) => (
+              <Link
+                key={champ.id}
+                href={`/promotions/${champ.promotions?.slug}`}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border border-yellow-600/30 hover:border-yellow-500/50 transition-colors group"
+              >
+                <Crown className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-sm group-hover:text-accent transition-colors">
+                    {champ.name}
+                  </div>
+                  <div className="text-xs text-foreground-muted">
+                    {champ.promotions?.name}
+                    {champ.partner && <> &middot; w/ {champ.partner.name}</>}
+                    {champ.won_date && (
+                      <> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Events */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
