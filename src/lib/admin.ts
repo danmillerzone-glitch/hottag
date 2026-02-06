@@ -521,3 +521,43 @@ export async function createPromotionAdmin(promotion: {
   if (error) throw error
   return data
 }
+
+// ============================================
+// ADMIN PHOTO UPLOADS
+// ============================================
+
+export async function uploadWrestlerPhotoAdmin(wrestlerId: string, file: File) {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${wrestlerId}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('wrestler-photos')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('wrestler-photos')
+    .getPublicUrl(filePath)
+
+  await updateWrestlerAdmin(wrestlerId, { photo_url: publicUrl })
+  return publicUrl
+}
+
+export async function uploadPromotionLogoAdmin(promotionId: string, file: File) {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const filePath = `promotion-logos/${promotionId}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('logos')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('logos')
+    .getPublicUrl(filePath)
+
+  await updatePromotionAdmin(promotionId, { logo_url: publicUrl })
+  return publicUrl
+}

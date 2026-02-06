@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   checkIsAdmin, getAdminStats,
   getPendingPromotionClaims, getPendingWrestlerClaims,
@@ -20,6 +21,7 @@ import {
   mergeWrestlers,
   bulkImportEvents, getAllPromotionsList,
   createWrestlerAdmin, createPromotionAdmin,
+  uploadWrestlerPhotoAdmin, uploadPromotionLogoAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -1007,18 +1009,37 @@ function ImportTab() {
 // ============================================
 
 function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onClose: () => void, onSaved: () => void }) {
-  const [form, setForm] = useState({ name: wrestler.name || '', slug: wrestler.slug || '', bio: wrestler.bio || '', hometown: wrestler.hometown || '', pwi_ranking: wrestler.pwi_ranking || '' })
+  const [form, setForm] = useState({
+    name: wrestler.name || '', slug: wrestler.slug || '', bio: wrestler.bio || '', hometown: wrestler.hometown || '',
+    pwi_ranking: wrestler.pwi_ranking || '',
+    twitter_handle: wrestler.twitter_handle || '', instagram_handle: wrestler.instagram_handle || '',
+    tiktok_handle: wrestler.tiktok_handle || '', youtube_url: wrestler.youtube_url || '',
+    website: wrestler.website || '', booking_email: wrestler.booking_email || '', merch_url: wrestler.merch_url || '',
+  })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState(wrestler.photo_url || '')
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadWrestlerPhotoAdmin(wrestler.id, file)
+      setPhotoUrl(url)
+    } catch (err: any) { alert(`Upload error: ${err.message}`) }
+    setUploading(false)
+  }
 
   async function handleSave() {
     setSaving(true)
     try {
       await updateWrestlerAdmin(wrestler.id, {
-        name: form.name,
-        slug: form.slug,
-        bio: form.bio || null,
-        hometown: form.hometown || null,
+        name: form.name, slug: form.slug, bio: form.bio || null, hometown: form.hometown || null,
         pwi_ranking: form.pwi_ranking ? parseInt(form.pwi_ranking) : null,
+        twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
+        tiktok_handle: form.tiktok_handle || null, youtube_url: form.youtube_url || null,
+        website: form.website || null, booking_email: form.booking_email || null, merch_url: form.merch_url || null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1028,11 +1049,37 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
   return (
     <Modal title={`Edit: ${wrestler.name}`} onClose={onClose}>
       <div className="space-y-3">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+            {photoUrl ? <Image src={photoUrl} alt="" width={64} height={64} className="object-cover w-full h-full" /> : <User className="w-8 h-8 text-foreground-muted" />}
+          </div>
+          <div>
+            <label className="btn btn-secondary text-xs cursor-pointer">
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Upload className="w-3 h-3 mr-1" />}
+              {uploading ? 'Uploading...' : 'Upload Photo'}
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
+            </label>
+          </div>
+        </div>
         <FieldRow label="Name"><input className="w-full input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></FieldRow>
         <FieldRow label="Slug"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} /></FieldRow>
         <FieldRow label="Hometown"><input className="w-full input-field" value={form.hometown} onChange={e => setForm({...form, hometown: e.target.value})} /></FieldRow>
         <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} /></FieldRow>
         <FieldRow label="Bio"><textarea className="w-full input-field" rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></FieldRow>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldRow label="X / Twitter"><input className="w-full input-field" value={form.twitter_handle} onChange={e => setForm({...form, twitter_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="Instagram"><input className="w-full input-field" value={form.instagram_handle} onChange={e => setForm({...form, instagram_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="TikTok"><input className="w-full input-field" value={form.tiktok_handle} onChange={e => setForm({...form, tiktok_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="YouTube"><input className="w-full input-field" value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})} placeholder="https://youtube.com/..." /></FieldRow>
+            <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." /></FieldRow>
+            <FieldRow label="Booking Email"><input className="w-full input-field" value={form.booking_email} onChange={e => setForm({...form, booking_email: e.target.value})} placeholder="email@..." /></FieldRow>
+          </div>
+          <div className="mt-3">
+            <FieldRow label="Merch URL"><input className="w-full input-field" value={form.merch_url} onChange={e => setForm({...form, merch_url: e.target.value})} placeholder="https://..." /></FieldRow>
+          </div>
+        </div>
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
@@ -1043,19 +1090,35 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
 }
 
 function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: () => void, onSaved: () => void }) {
-  const [form, setForm] = useState({ name: promo.name || '', slug: promo.slug || '', city: promo.city || '', state: promo.state || '', website: promo.website || '', description: promo.description || '' })
+  const [form, setForm] = useState({
+    name: promo.name || '', slug: promo.slug || '', city: promo.city || '', state: promo.state || '',
+    website: promo.website || '', description: promo.description || '',
+    twitter_handle: promo.twitter_handle || '', instagram_handle: promo.instagram_handle || '',
+    tiktok_handle: promo.tiktok_handle || '', facebook_url: promo.facebook_url || '', youtube_url: promo.youtube_url || '',
+  })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [logoUrl, setLogoUrl] = useState(promo.logo_url || '')
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadPromotionLogoAdmin(promo.id, file)
+      setLogoUrl(url)
+    } catch (err: any) { alert(`Upload error: ${err.message}`) }
+    setUploading(false)
+  }
 
   async function handleSave() {
     setSaving(true)
     try {
       await updatePromotionAdmin(promo.id, {
-        name: form.name,
-        slug: form.slug,
-        city: form.city || null,
-        state: form.state || null,
-        website: form.website || null,
-        description: form.description || null,
+        name: form.name, slug: form.slug, city: form.city || null, state: form.state || null,
+        website: form.website || null, description: form.description || null,
+        twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
+        tiktok_handle: form.tiktok_handle || null, facebook_url: form.facebook_url || null, youtube_url: form.youtube_url || null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1065,12 +1128,36 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
   return (
     <Modal title={`Edit: ${promo.name}`} onClose={onClose}>
       <div className="space-y-3">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-16 h-16 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+            {logoUrl ? <Image src={logoUrl} alt="" width={64} height={64} className="object-contain w-full h-full" /> : <Building2 className="w-8 h-8 text-foreground-muted" />}
+          </div>
+          <div>
+            <label className="btn btn-secondary text-xs cursor-pointer">
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Upload className="w-3 h-3 mr-1" />}
+              {uploading ? 'Uploading...' : 'Upload Logo'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+            </label>
+          </div>
+        </div>
         <FieldRow label="Name"><input className="w-full input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></FieldRow>
         <FieldRow label="Slug"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} /></FieldRow>
-        <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></FieldRow>
-        <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+        <div className="grid grid-cols-2 gap-3">
+          <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></FieldRow>
+          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+        </div>
         <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} /></FieldRow>
         <FieldRow label="Description"><textarea className="w-full input-field" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></FieldRow>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldRow label="X / Twitter"><input className="w-full input-field" value={form.twitter_handle} onChange={e => setForm({...form, twitter_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="Instagram"><input className="w-full input-field" value={form.instagram_handle} onChange={e => setForm({...form, instagram_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="TikTok"><input className="w-full input-field" value={form.tiktok_handle} onChange={e => setForm({...form, tiktok_handle: e.target.value})} placeholder="@handle" /></FieldRow>
+            <FieldRow label="Facebook"><input className="w-full input-field" value={form.facebook_url} onChange={e => setForm({...form, facebook_url: e.target.value})} placeholder="https://facebook.com/..." /></FieldRow>
+            <FieldRow label="YouTube"><input className="w-full input-field" value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})} placeholder="https://youtube.com/..." /></FieldRow>
+          </div>
+        </div>
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
@@ -1088,14 +1175,9 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
     setSaving(true)
     try {
       await updateEventAdmin(event.id, {
-        name: form.name,
-        event_date: form.event_date,
-        venue_name: form.venue_name || null,
-        city: form.city || null,
-        state: form.state || null,
-        ticket_url: form.ticket_url || null,
-        doors_time: form.doors_time || null,
-        start_time: form.start_time || null,
+        name: form.name, event_date: form.event_date, venue_name: form.venue_name || null,
+        city: form.city || null, state: form.state || null, ticket_url: form.ticket_url || null,
+        doors_time: form.doors_time || null, start_time: form.start_time || null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1131,8 +1213,15 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
 // ============================================
 
 function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
-  const [form, setForm] = useState({ name: '', slug: '', bio: '', hometown: '', pwi_ranking: '' })
+  const [form, setForm] = useState({
+    name: '', slug: '', bio: '', hometown: '', pwi_ranking: '',
+    twitter_handle: '', instagram_handle: '', tiktok_handle: '', youtube_url: '',
+    website: '', booking_email: '', merch_url: '',
+  })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [createdId, setCreatedId] = useState<string | null>(null)
+  const [photoUrl, setPhotoUrl] = useState('')
 
   function autoSlug(name: string) {
     return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
@@ -1142,34 +1231,77 @@ function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCr
     setForm({ ...form, name, slug: autoSlug(name) })
   }
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!createdId) { alert('Save the wrestler first, then upload a photo.'); return }
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadWrestlerPhotoAdmin(createdId, file)
+      setPhotoUrl(url)
+    } catch (err: any) { alert(`Upload error: ${err.message}`) }
+    setUploading(false)
+  }
+
   async function handleCreate() {
     if (!form.name.trim() || !form.slug.trim()) { alert('Name and slug are required'); return }
     setSaving(true)
     try {
-      await createWrestlerAdmin({
-        name: form.name.trim(),
-        slug: form.slug.trim(),
-        bio: form.bio || undefined,
-        hometown: form.hometown || undefined,
+      const data = await createWrestlerAdmin({
+        name: form.name.trim(), slug: form.slug.trim(),
+        bio: form.bio || undefined, hometown: form.hometown || undefined,
         pwi_ranking: form.pwi_ranking ? parseInt(form.pwi_ranking) : null,
       })
-      alert(`Created wrestler: ${form.name}`)
-      onCreated()
+      setCreatedId(data.id)
+      // Now update social links
+      await updateWrestlerAdmin(data.id, {
+        twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
+        tiktok_handle: form.tiktok_handle || null, youtube_url: form.youtube_url || null,
+        website: form.website || null, booking_email: form.booking_email || null, merch_url: form.merch_url || null,
+      })
+      alert(`Created wrestler: ${form.name}. You can now upload a photo or close.`)
     } catch (err: any) { alert(`Error: ${err.message}`) }
     setSaving(false)
   }
 
   return (
-    <Modal title="Create New Wrestler" onClose={onClose}>
+    <Modal title="Create New Wrestler" onClose={() => { onCreated(); onClose() }}>
       <div className="space-y-3">
-        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. John Doe" /></FieldRow>
-        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. john-doe" /></FieldRow>
-        <FieldRow label="Hometown"><input className="w-full input-field" value={form.hometown} onChange={e => setForm({...form, hometown: e.target.value})} placeholder="e.g. Houston, TX" /></FieldRow>
-        <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} placeholder="Optional" /></FieldRow>
-        <FieldRow label="Bio"><textarea className="w-full input-field" rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} placeholder="Optional bio..." /></FieldRow>
+        {createdId && (
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+              {photoUrl ? <Image src={photoUrl} alt="" width={64} height={64} className="object-cover w-full h-full" /> : <User className="w-8 h-8 text-foreground-muted" />}
+            </div>
+            <label className="btn btn-secondary text-xs cursor-pointer">
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Upload className="w-3 h-3 mr-1" />}
+              {uploading ? 'Uploading...' : 'Upload Photo'}
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
+            </label>
+          </div>
+        )}
+        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. John Doe" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. john-doe" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Hometown"><input className="w-full input-field" value={form.hometown} onChange={e => setForm({...form, hometown: e.target.value})} placeholder="e.g. Houston, TX" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} placeholder="Optional" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Bio"><textarea className="w-full input-field" rows={2} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} placeholder="Optional bio..." disabled={!!createdId} /></FieldRow>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldRow label="X / Twitter"><input className="w-full input-field" value={form.twitter_handle} onChange={e => setForm({...form, twitter_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="Instagram"><input className="w-full input-field" value={form.instagram_handle} onChange={e => setForm({...form, instagram_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="TikTok"><input className="w-full input-field" value={form.tiktok_handle} onChange={e => setForm({...form, tiktok_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="YouTube"><input className="w-full input-field" value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})} placeholder="https://youtube.com/..." disabled={!!createdId} /></FieldRow>
+            <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." disabled={!!createdId} /></FieldRow>
+            <FieldRow label="Booking Email"><input className="w-full input-field" value={form.booking_email} onChange={e => setForm({...form, booking_email: e.target.value})} placeholder="email@..." disabled={!!createdId} /></FieldRow>
+          </div>
+        </div>
         <div className="flex gap-2 pt-2">
-          <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Wrestler</>}</button>
-          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+          {!createdId ? (
+            <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Wrestler</>}</button>
+          ) : (
+            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm flex-1">✓ Wrestler created! Upload a photo above or close this modal.</div>
+          )}
+          <button onClick={() => { if (createdId) onCreated(); onClose() }} className="btn btn-ghost text-sm">{createdId ? 'Done' : 'Cancel'}</button>
         </div>
       </div>
     </Modal>
@@ -1177,8 +1309,14 @@ function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCr
 }
 
 function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
-  const [form, setForm] = useState({ name: '', slug: '', city: '', state: '', website: '', description: '' })
+  const [form, setForm] = useState({
+    name: '', slug: '', city: '', state: '', website: '', description: '',
+    twitter_handle: '', instagram_handle: '', tiktok_handle: '', facebook_url: '', youtube_url: '',
+  })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [createdId, setCreatedId] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState('')
 
   function autoSlug(name: string) {
     return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
@@ -1188,38 +1326,78 @@ function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onC
     setForm({ ...form, name, slug: autoSlug(name) })
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!createdId) { alert('Save the promotion first, then upload a logo.'); return }
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadPromotionLogoAdmin(createdId, file)
+      setLogoUrl(url)
+    } catch (err: any) { alert(`Upload error: ${err.message}`) }
+    setUploading(false)
+  }
+
   async function handleCreate() {
     if (!form.name.trim() || !form.slug.trim()) { alert('Name and slug are required'); return }
     setSaving(true)
     try {
-      await createPromotionAdmin({
-        name: form.name.trim(),
-        slug: form.slug.trim(),
-        city: form.city || undefined,
-        state: form.state || undefined,
-        website: form.website || undefined,
-        description: form.description || undefined,
+      const data = await createPromotionAdmin({
+        name: form.name.trim(), slug: form.slug.trim(),
+        city: form.city || undefined, state: form.state || undefined,
+        website: form.website || undefined, description: form.description || undefined,
       })
-      alert(`Created promotion: ${form.name}`)
-      onCreated()
+      setCreatedId(data.id)
+      // Now update social links
+      await updatePromotionAdmin(data.id, {
+        twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
+        tiktok_handle: form.tiktok_handle || null, facebook_url: form.facebook_url || null, youtube_url: form.youtube_url || null,
+      })
+      alert(`Created promotion: ${form.name}. You can now upload a logo or close.`)
     } catch (err: any) { alert(`Error: ${err.message}`) }
     setSaving(false)
   }
 
   return (
-    <Modal title="Create New Promotion" onClose={onClose}>
+    <Modal title="Create New Promotion" onClose={() => { onCreated(); onClose() }}>
       <div className="space-y-3">
-        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. New Texas Pro Wrestling" /></FieldRow>
-        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. new-texas-pro-wrestling" /></FieldRow>
+        {createdId && (
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-16 h-16 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+              {logoUrl ? <Image src={logoUrl} alt="" width={64} height={64} className="object-contain w-full h-full" /> : <Building2 className="w-8 h-8 text-foreground-muted" />}
+            </div>
+            <label className="btn btn-secondary text-xs cursor-pointer">
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Upload className="w-3 h-3 mr-1" />}
+              {uploading ? 'Uploading...' : 'Upload Logo'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+            </label>
+          </div>
+        )}
+        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. New Texas Pro Wrestling" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. new-texas-pro-wrestling" disabled={!!createdId} /></FieldRow>
         <div className="grid grid-cols-2 gap-3">
-          <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="e.g. Houston" /></FieldRow>
-          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="e.g. TX" /></FieldRow>
+          <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="e.g. Houston" disabled={!!createdId} /></FieldRow>
+          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="e.g. TX" disabled={!!createdId} /></FieldRow>
         </div>
-        <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." /></FieldRow>
-        <FieldRow label="Description"><textarea className="w-full input-field" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Optional description..." /></FieldRow>
+        <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Description"><textarea className="w-full input-field" rows={2} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Optional description..." disabled={!!createdId} /></FieldRow>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldRow label="X / Twitter"><input className="w-full input-field" value={form.twitter_handle} onChange={e => setForm({...form, twitter_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="Instagram"><input className="w-full input-field" value={form.instagram_handle} onChange={e => setForm({...form, instagram_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="TikTok"><input className="w-full input-field" value={form.tiktok_handle} onChange={e => setForm({...form, tiktok_handle: e.target.value})} placeholder="@handle" disabled={!!createdId} /></FieldRow>
+            <FieldRow label="Facebook"><input className="w-full input-field" value={form.facebook_url} onChange={e => setForm({...form, facebook_url: e.target.value})} placeholder="https://facebook.com/..." disabled={!!createdId} /></FieldRow>
+            <FieldRow label="YouTube"><input className="w-full input-field" value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})} placeholder="https://youtube.com/..." disabled={!!createdId} /></FieldRow>
+          </div>
+        </div>
         <div className="flex gap-2 pt-2">
-          <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Promotion</>}</button>
-          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+          {!createdId ? (
+            <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Promotion</>}</button>
+          ) : (
+            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm flex-1">✓ Promotion created! Upload a logo above or close this modal.</div>
+          )}
+          <button onClick={() => { if (createdId) onCreated(); onClose() }} className="btn btn-ghost text-sm">{createdId ? 'Done' : 'Cancel'}</button>
         </div>
       </div>
     </Modal>
