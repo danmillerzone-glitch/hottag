@@ -153,6 +153,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   width={160}
                   height={160}
                   className="object-contain w-full h-full p-2"
+                  unoptimized
                 />
               ) : (
                 <Building2 className="w-16 h-16 text-foreground-muted" />
@@ -319,7 +320,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                           <Link href={`/wrestlers/${champion.slug}`}>
                             <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
                               {champion.photo_url ? (
-                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" />
+                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
                               ) : (
                                 <User className="w-8 h-8 text-foreground-muted" />
                               )}
@@ -329,7 +330,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                             <Link href={`/wrestlers/${champion2.slug}`}>
                               <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
                                 {champion2.photo_url ? (
-                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" />
+                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
                                 ) : (
                                   <User className="w-8 h-8 text-foreground-muted" />
                                 )}
@@ -392,6 +393,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                         width={64}
                         height={64}
                         className="object-cover w-full h-full"
+                        unoptimized
                       />
                     ) : (
                       <User className="w-8 h-8 text-foreground-muted" />

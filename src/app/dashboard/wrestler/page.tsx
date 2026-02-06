@@ -51,6 +51,14 @@ export default function WrestlerDashboardPage() {
   // Form state
   const [bio, setBio] = useState('')
   const [hometown, setHometown] = useState('')
+  const [moniker, setMoniker] = useState('')
+  const [birthplace, setBirthplace] = useState('')
+  const [residence, setResidence] = useState('')
+  const [height, setHeight] = useState('')
+  const [weight, setWeight] = useState('')
+  const [birthday, setBirthday] = useState('')
+  const [debutYear, setDebutYear] = useState('')
+  const [trainer, setTrainer] = useState('')
   const [twitterHandle, setTwitterHandle] = useState('')
   const [instagramHandle, setInstagramHandle] = useState('')
   const [tiktokHandle, setTiktokHandle] = useState('')
@@ -84,6 +92,14 @@ export default function WrestlerDashboardPage() {
       // Populate form
       setBio(data.wrestler.bio || '')
       setHometown(data.wrestler.hometown || '')
+      setMoniker(data.wrestler.moniker || '')
+      setBirthplace(data.wrestler.birthplace || '')
+      setResidence(data.wrestler.residence || data.wrestler.hometown || '')
+      setHeight(data.wrestler.height || '')
+      setWeight(data.wrestler.weight || '')
+      setBirthday(data.wrestler.birthday || '')
+      setDebutYear(data.wrestler.debut_year ? String(data.wrestler.debut_year) : '')
+      setTrainer(data.wrestler.trainer || '')
       setTwitterHandle(data.wrestler.twitter_handle || '')
       setInstagramHandle(data.wrestler.instagram_handle || '')
       setTiktokHandle(data.wrestler.tiktok_handle || '')
@@ -106,7 +122,15 @@ export default function WrestlerDashboardPage() {
     try {
       const updated = await updateWrestlerProfile(dashboardData.wrestler.id, {
         bio: bio || null,
-        hometown: hometown || null,
+        hometown: residence || hometown || null,
+        moniker: moniker || null,
+        birthplace: birthplace || null,
+        residence: residence || null,
+        height: height || null,
+        weight: weight || null,
+        birthday: birthday || null,
+        debut_year: debutYear ? parseInt(debutYear) : null,
+        trainer: trainer || null,
         twitter_handle: twitterHandle || null,
         instagram_handle: instagramHandle || null,
         tiktok_handle: tiktokHandle || null,
@@ -338,7 +362,7 @@ export default function WrestlerDashboardPage() {
           </div>
         </section>
 
-        {/* Bio */}
+        {/* Bio & Details */}
         <section className="card p-6">
           <div className="flex items-center gap-2 mb-5">
             <User className="w-5 h-5 text-accent" />
@@ -358,12 +382,91 @@ export default function WrestlerDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Hometown</label>
+              <label className="block text-sm font-medium mb-1.5">Moniker</label>
               <input
                 type="text"
-                value={hometown}
-                onChange={(e) => setHometown(e.target.value)}
-                placeholder="Houston, TX"
+                value={moniker}
+                onChange={(e) => setMoniker(e.target.value)}
+                placeholder='e.g. "The Phenomenal One"'
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Birthplace</label>
+                <input
+                  type="text"
+                  value={birthplace}
+                  onChange={(e) => setBirthplace(e.target.value)}
+                  placeholder="e.g. Gainesville, GA"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Currently Residing In</label>
+                <input
+                  type="text"
+                  value={residence}
+                  onChange={(e) => setResidence(e.target.value)}
+                  placeholder="e.g. Houston, TX"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Height</label>
+                <input
+                  type="text"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  placeholder="e.g. 6 ft 1 in"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Weight</label>
+                <input
+                  type="text"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="e.g. 218 lbs"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Birthday</label>
+                <input
+                  type="date"
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Debut Year</label>
+                <input
+                  type="number"
+                  value={debutYear}
+                  onChange={(e) => setDebutYear(e.target.value)}
+                  placeholder="e.g. 2015"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Trainer</label>
+              <input
+                type="text"
+                value={trainer}
+                onChange={(e) => setTrainer(e.target.value)}
+                placeholder="e.g. Booker T"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>

@@ -194,6 +194,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   width={160}
                   height={160}
                   className="object-cover w-full h-full"
+                  unoptimized
                 />
               ) : (
                 <User className="w-16 h-16 text-foreground-muted" />

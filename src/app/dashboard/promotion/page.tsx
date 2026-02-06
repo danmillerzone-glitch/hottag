@@ -150,7 +150,7 @@ export default function EditPromotionPage() {
         .from('logos')
         .getPublicUrl(filePath)
 
-      const updated = await updatePromotion(promotion.id, { logo_url: publicUrl })
+      const updated = await updatePromotion(promotion.id, { logo_url: `${publicUrl}?v=${Date.now()}` })
       setPromotion(updated)
     } catch (err) {
       console.error('Error uploading logo:', err)

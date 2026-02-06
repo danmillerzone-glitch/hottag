@@ -540,8 +540,9 @@ export async function uploadWrestlerPhotoAdmin(wrestlerId: string, file: File) {
     .from('wrestler-photos')
     .getPublicUrl(filePath)
 
-  await updateWrestlerAdmin(wrestlerId, { photo_url: publicUrl })
-  return publicUrl
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  await updateWrestlerAdmin(wrestlerId, { photo_url: urlWithBust })
+  return urlWithBust
 }
 
 export async function uploadPromotionLogoAdmin(promotionId: string, file: File) {
@@ -558,6 +559,7 @@ export async function uploadPromotionLogoAdmin(promotionId: string, file: File) 
     .from('logos')
     .getPublicUrl(filePath)
 
-  await updatePromotionAdmin(promotionId, { logo_url: publicUrl })
-  return publicUrl
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  await updatePromotionAdmin(promotionId, { logo_url: urlWithBust })
+  return urlWithBust
 }

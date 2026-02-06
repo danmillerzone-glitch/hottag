@@ -294,6 +294,7 @@ export default async function EventPage({ params }: EventPageProps) {
                           width={64}
                           height={64}
                           className="object-cover w-full h-full"
+                          unoptimized
                         />
                       ) : (
                         <User className="w-8 h-8 text-foreground-muted" />
@@ -372,6 +373,7 @@ export default async function EventPage({ params }: EventPageProps) {
                       width={64}
                       height={64}
                       className="object-contain"
+                      unoptimized
                     />
                   ) : (
                     <span className="text-2xl font-bold text-foreground-muted">

@@ -210,6 +210,14 @@ export async function getWrestlerDashboardData(): Promise<WrestlerDashboardData 
 export async function updateWrestlerProfile(wrestlerId: string, updates: {
   bio?: string | null
   hometown?: string | null
+  moniker?: string | null
+  birthplace?: string | null
+  residence?: string | null
+  height?: string | null
+  weight?: string | null
+  birthday?: string | null
+  debut_year?: number | null
+  trainer?: string | null
   twitter_handle?: string | null
   instagram_handle?: string | null
   tiktok_handle?: string | null
@@ -256,7 +264,8 @@ export async function uploadWrestlerPhoto(wrestlerId: string, file: File) {
     .from('wrestler-photos')
     .getPublicUrl(filePath)
 
-  // Update wrestler record with new photo URL
-  const updated = await updateWrestlerProfile(wrestlerId, { photo_url: publicUrl })
+  // Update wrestler record with new photo URL (add cache-busting param)
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  const updated = await updateWrestlerProfile(wrestlerId, { photo_url: urlWithBust })
   return updated
 }
