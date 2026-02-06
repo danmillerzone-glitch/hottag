@@ -51,8 +51,8 @@ export default function RecommendedSection() {
         .in('id', followedPromoIds)
 
       if (promoData) {
-        regions = [...new Set(promoData.map((p: any) => p.region).filter(Boolean))]
-        states = [...new Set(promoData.map((p: any) => p.state).filter(Boolean))]
+        regions = Array.from(new Set(promoData.map((p: any) => p.region).filter(Boolean)))
+        states = Array.from(new Set(promoData.map((p: any) => p.state).filter(Boolean)))
       }
     }
 

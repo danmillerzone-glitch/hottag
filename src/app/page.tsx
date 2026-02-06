@@ -187,7 +187,7 @@ export default function HomePage() {
         }
         for (const l of (atLinks || [])) eventIdSet.add((l as any).event_id)
 
-        const eventIds = [...eventIdSet]
+        const eventIds = Array.from(eventIdSet)
 
         if (eventIds.length > 0) {
           
