@@ -203,15 +203,22 @@ export async function updateWrestlerProfile(wrestlerId: string, updates: {
   photo_url?: string | null
 }) {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
 
+  // Use claimed_by filter to satisfy RLS policy
   const { data, error } = await supabase
     .from('wrestlers')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', wrestlerId)
+    .eq('claimed_by', user.id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('Error updating wrestler profile:', error)
+    throw error
+  }
   return data
 }
 

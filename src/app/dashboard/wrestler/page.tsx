@@ -109,8 +109,9 @@ export default function WrestlerDashboardPage() {
       setDashboardData({ ...dashboardData, wrestler: updated })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving wrestler profile:', err)
+      alert(`Failed to save: ${err?.message || 'Unknown error'}. Check browser console for details.`)
     }
     setSaving(false)
   }
