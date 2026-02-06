@@ -33,8 +33,16 @@ export interface Wrestler {
   id: string
   name: string
   slug: string
+  moniker: string | null
   bio: string | null
   hometown: string | null
+  birthplace: string | null
+  residence: string | null
+  height: string | null
+  weight: string | null
+  birthday: string | null
+  debut_year: number | null
+  trainer: string | null
   photo_url: string | null
   twitter_handle: string | null
   instagram_handle: string | null

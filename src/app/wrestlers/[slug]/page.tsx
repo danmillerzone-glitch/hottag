@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag } from 'lucide-react'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -202,7 +202,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-1">
                 <h1 className="text-3xl md:text-4xl font-display font-bold">
                   {wrestler.name}
                 </h1>
@@ -212,11 +212,46 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </span>
                 )}
               </div>
+
+              {wrestler.moniker && (
+                <p className="text-lg text-accent italic mb-2">&ldquo;{wrestler.moniker}&rdquo;</p>
+              )}
               
-              {wrestler.hometown && (
-                <div className="flex items-center justify-center md:justify-start gap-2 text-foreground-muted mb-4">
-                  <MapPin className="w-4 h-4" />
-                  {wrestler.hometown}
+              {(wrestler.residence || wrestler.birthplace || wrestler.hometown) && (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-foreground-muted mb-3">
+                  {(wrestler.residence || wrestler.hometown) && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">{wrestler.residence || wrestler.hometown}</span>
+                    </div>
+                  )}
+                  {wrestler.birthplace && (
+                    <div className="flex items-center gap-1.5">
+                      <Home className="w-4 h-4" />
+                      <span className="text-sm">From {wrestler.birthplace}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick stats */}
+              {(wrestler.height || wrestler.weight || wrestler.debut_year || wrestler.birthday || wrestler.trainer) && (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-sm text-foreground-muted mb-4">
+                  {wrestler.height && (
+                    <span className="flex items-center gap-1"><Ruler className="w-3.5 h-3.5" /> {wrestler.height}</span>
+                  )}
+                  {wrestler.weight && (
+                    <span className="flex items-center gap-1"><Dumbbell className="w-3.5 h-3.5" /> {wrestler.weight}</span>
+                  )}
+                  {wrestler.birthday && (
+                    <span className="flex items-center gap-1"><Cake className="w-3.5 h-3.5" /> {new Date(wrestler.birthday + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                  )}
+                  {wrestler.debut_year && (
+                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> Debut {wrestler.debut_year}</span>
+                  )}
+                  {wrestler.trainer && (
+                    <span className="flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5" /> Trained by {wrestler.trainer}</span>
+                  )}
                 </div>
               )}
 
