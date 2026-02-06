@@ -214,6 +214,13 @@ export default function DashboardPage() {
                 <Edit3 className="w-4 h-4 mr-1.5" />
                 Edit Profile
               </Link>
+              <Link
+                href="/dashboard/roster"
+                className="btn btn-secondary text-sm"
+              >
+                <Users className="w-4 h-4 mr-1.5" />
+                Roster & Titles
+              </Link>
             </div>
           </div>
         </div>

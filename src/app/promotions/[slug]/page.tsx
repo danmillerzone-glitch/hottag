@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag } from 'lucide-react'
+import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 
@@ -62,6 +62,43 @@ async function getFollowerCount(promotionId: string) {
   return count || 0
 }
 
+async function getChampionships(promotionId: string) {
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .select(`
+      *,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching championships:', error)
+    return []
+  }
+  return data
+}
+
+async function getRoster(promotionId: string) {
+  const { data, error } = await supabase
+    .from('wrestler_promotions')
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching roster:', error)
+    return []
+  }
+  return data
+}
+
 export async function generateMetadata({ params }: PromotionPageProps) {
   const promotion = await getPromotion(params.slug)
   
@@ -84,6 +121,8 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
 
   const events = await getPromotionEvents(promotion.id)
   const followerCount = await getFollowerCount(promotion.id)
+  const championships = await getChampionships(promotion.id)
+  const roster = await getRoster(promotion.id)
   
   // Split events into upcoming and past (compare dates only, not time)
   const today = new Date().toISOString().split('T')[0]
@@ -230,8 +269,105 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         </div>
       </div>
 
-      {/* Events */}
+      {/* Championships & Roster */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Championships */}
+        {championships.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-interested" />
+              Championships
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {championships.map((champ: any) => {
+                const champion = champ.current_champion
+                const champion2 = champ.current_champion_2
+                return (
+                  <div key={champ.id} className="card p-5 relative overflow-hidden">
+                    {/* Gold accent top border */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
+                    
+                    <div className="text-sm font-semibold text-interested mb-3 flex items-center gap-1.5">
+                      <Crown className="w-4 h-4" />
+                      {champ.name}
+                    </div>
+
+                    {champion ? (
+                      <div className="flex items-center gap-4">
+                        <Link href={`/wrestlers/${champion.slug}`} className="flex-shrink-0">
+                          <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
+                            {champion.photo_url ? (
+                              <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" />
+                            ) : (
+                              <User className="w-8 h-8 text-foreground-muted" />
+                            )}
+                          </div>
+                        </Link>
+                        <div>
+                          <Link href={`/wrestlers/${champion.slug}`} className="font-bold text-lg hover:text-accent transition-colors">
+                            {champion.name}
+                          </Link>
+                          {champion2 && (
+                            <span className="text-foreground-muted"> &amp; <Link href={`/wrestlers/${champion2.slug}`} className="font-bold hover:text-accent transition-colors">{champion2.name}</Link></span>
+                          )}
+                          {champ.won_date && (
+                            <div className="text-xs text-foreground-muted mt-0.5">
+                              Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 text-foreground-muted">
+                        <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center border-2 border-dashed border-border">
+                          <Trophy className="w-6 h-6 text-foreground-muted/30" />
+                        </div>
+                        <span className="text-sm italic">Vacant</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Roster */}
+        {roster.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
+              <Users className="w-6 h-6 text-accent" />
+              Roster ({roster.length})
+            </h2>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+              {roster.map((member: any) => (
+                <Link
+                  key={member.id}
+                  href={`/wrestlers/${member.wrestlers.slug}`}
+                  className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
+                >
+                  <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2 border-2 border-transparent group-hover:border-accent transition-colors">
+                    {member.wrestlers.photo_url ? (
+                      <Image
+                        src={member.wrestlers.photo_url}
+                        alt={member.wrestlers.name}
+                        width={64}
+                        height={64}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 text-foreground-muted" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
+                    {member.wrestlers.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
           <div className="mb-12">

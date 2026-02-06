@@ -665,3 +665,181 @@ export async function deleteEvent(eventId: string) {
 
   if (error) throw error
 }
+
+// ============================================
+// CHAMPIONSHIPS
+// ============================================
+
+export interface Championship {
+  id: string
+  promotion_id: string
+  name: string
+  short_name: string | null
+  current_champion_id: string | null
+  current_champion_2_id: string | null
+  is_active: boolean
+  sort_order: number
+  image_url: string | null
+  won_date: string | null
+  created_at: string
+  // Joined
+  current_champion?: {
+    id: string
+    name: string
+    slug: string
+    photo_url: string | null
+  } | null
+  current_champion_2?: {
+    id: string
+    name: string
+    slug: string
+    photo_url: string | null
+  } | null
+}
+
+export async function getPromotionChampionships(promotionId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .select(`
+      *,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching championships:', error)
+    return []
+  }
+  return data as Championship[]
+}
+
+export async function createChampionship(data: {
+  promotion_id: string
+  name: string
+  short_name?: string
+  sort_order?: number
+}) {
+  const supabase = createClient()
+
+  const { data: championship, error } = await supabase
+    .from('promotion_championships')
+    .insert(data)
+    .select()
+    .single()
+
+  if (error) throw error
+  return championship
+}
+
+export async function updateChampionship(championshipId: string, updates: {
+  name?: string
+  short_name?: string | null
+  current_champion_id?: string | null
+  current_champion_2_id?: string | null
+  is_active?: boolean
+  sort_order?: number
+  image_url?: string | null
+  won_date?: string | null
+}) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .update(updates)
+    .eq('id', championshipId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function deleteChampionship(championshipId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('promotion_championships')
+    .delete()
+    .eq('id', championshipId)
+
+  if (error) throw error
+}
+
+// ============================================
+// ROSTER MANAGEMENT
+// ============================================
+
+export interface RosterMember {
+  id: string
+  wrestler_id: string
+  promotion_id: string
+  is_active: boolean
+  is_exclusive: boolean
+  started_at: string | null
+  wrestlers?: {
+    id: string
+    name: string
+    slug: string
+    photo_url: string | null
+    hometown: string | null
+  }
+}
+
+export async function getPromotionRoster(promotionId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('wrestler_promotions')
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching roster:', error)
+    return []
+  }
+  return data as RosterMember[]
+}
+
+export async function addToRoster(data: {
+  promotion_id: string
+  wrestler_id: string
+  is_exclusive?: boolean
+}) {
+  const supabase = createClient()
+
+  const { data: member, error } = await supabase
+    .from('wrestler_promotions')
+    .insert({
+      ...data,
+      is_active: true,
+      started_at: new Date().toISOString().split('T')[0],
+    })
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .single()
+
+  if (error) throw error
+  return member as RosterMember
+}
+
+export async function removeFromRoster(memberId: string) {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('wrestler_promotions')
+    .update({ is_active: false, ended_at: new Date().toISOString().split('T')[0] })
+    .eq('id', memberId)
+
+  if (error) throw error
+}
