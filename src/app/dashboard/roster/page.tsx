@@ -347,7 +347,6 @@ function RosterSection({ promotionId, roster, onUpdate }: {
       console.error('Error adding to roster:', err)
       alert(err?.message || 'Failed to add wrestler to roster.')
     }
-    }
   }
 
   const handleRemove = async (memberId: string) => {
