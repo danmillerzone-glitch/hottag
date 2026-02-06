@@ -140,21 +140,38 @@ export async function getWrestlerDashboardData(): Promise<WrestlerDashboardData 
     .select('*', { count: 'exact', head: true })
     .eq('wrestler_id', wrestler.id)
 
-  // Get upcoming events
+  // Get upcoming events from all sources
   const today = new Date().toISOString().split('T')[0]
-  const { data: eventLinks } = await supabase
+  
+  const { data: ewData } = await supabase
     .from('event_wrestlers')
-    .select(`
-      events (
-        id, name, slug, event_date, city, state,
-        promotions (name, slug)
-      )
-    `)
+    .select(`events (id, name, slug, event_date, city, state, promotions (name, slug))`)
     .eq('wrestler_id', wrestler.id)
 
-  const upcomingEvents = (eventLinks || [])
-    .map((e: any) => e.events)
-    .filter((e: any) => e && e.event_date >= today)
+  const { data: mpData } = await supabase
+    .from('match_participants')
+    .select(`event_matches ( events (id, name, slug, event_date, city, state, promotions (name, slug)) )`)
+    .eq('wrestler_id', wrestler.id)
+
+  const { data: atData } = await supabase
+    .from('event_announced_talent')
+    .select(`events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .eq('wrestler_id', wrestler.id)
+
+  const eventMap = new Map<string, any>()
+  for (const d of (ewData || [])) {
+    if ((d as any).events) eventMap.set((d as any).events.id, (d as any).events)
+  }
+  for (const d of (mpData || [])) {
+    const event = (d as any).event_matches?.events
+    if (event) eventMap.set(event.id, event)
+  }
+  for (const d of (atData || [])) {
+    if ((d as any).events) eventMap.set((d as any).events.id, (d as any).events)
+  }
+
+  const upcomingEvents = Array.from(eventMap.values())
+    .filter((e: any) => e.event_date >= today)
     .sort((a: any, b: any) => a.event_date.localeCompare(b.event_date))
 
   // Get championships

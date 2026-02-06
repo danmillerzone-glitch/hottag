@@ -49,34 +49,57 @@ async function getWrestler(slug: string) {
 }
 
 async function getWrestlerEvents(wrestlerId: string) {
-  const { data, error } = await supabase
+  // 1. Events from event_wrestlers (scraped card)
+  const { data: ewData } = await supabase
     .from('event_wrestlers')
     .select(`
       events (
-        id,
-        name,
-        slug,
-        event_date,
-        city,
-        state,
-        promotions (
-          name,
-          slug
+        id, name, slug, event_date, city, state,
+        promotions ( name, slug )
+      )
+    `)
+    .eq('wrestler_id', wrestlerId)
+
+  // 2. Events from match_participants (promoter-managed matches)
+  const { data: mpData } = await supabase
+    .from('match_participants')
+    .select(`
+      event_matches (
+        events (
+          id, name, slug, event_date, city, state,
+          promotions ( name, slug )
         )
       )
     `)
     .eq('wrestler_id', wrestlerId)
-    .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching wrestler events:', error)
-    return []
+  // 3. Events from event_announced_talent
+  const { data: atData } = await supabase
+    .from('event_announced_talent')
+    .select(`
+      events (
+        id, name, slug, event_date, city, state,
+        promotions ( name, slug )
+      )
+    `)
+    .eq('wrestler_id', wrestlerId)
+
+  // Combine and deduplicate by event id
+  const eventMap = new Map<string, any>()
+
+  for (const d of (ewData || [])) {
+    if (d.events) eventMap.set(d.events.id, d.events)
+  }
+  for (const d of (mpData || [])) {
+    const event = (d as any).event_matches?.events
+    if (event) eventMap.set(event.id, event)
+  }
+  for (const d of (atData || [])) {
+    if (d.events) eventMap.set((d.events as any).id, d.events)
   }
 
-  // Extract events and sort by date
-  const events = data
-    .map((d: any) => d.events)
-    .filter(Boolean)
+  // Sort by date
+  const events = Array.from(eventMap.values())
     .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
 
   return events
