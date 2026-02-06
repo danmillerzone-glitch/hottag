@@ -24,8 +24,11 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
   const [panX, setPanX] = useState(0)
   const [panY, setPanY] = useState(0)
   const [dragging, setDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const dragRef = useRef({ startX: 0, startY: 0, panStartX: 0, panStartY: 0 })
+
+  // Store image natural dimensions in state so renders update properly
+  const [natW, setNatW] = useState(0)
+  const [natH, setNatH] = useState(0)
   const [baseScale, setBaseScale] = useState(1)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -48,6 +51,9 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
     const img = new window.Image()
     img.onload = () => {
       imgRef.current = img
+      setNatW(img.naturalWidth)
+      setNatH(img.naturalHeight)
+      // Base scale: at zoom=1, image covers the crop box entirely
       const s = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight)
       setBaseScale(s)
       setCropping(true)
@@ -55,40 +61,58 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
     img.src = url
   }
 
-  function getDims() {
-    if (!imgRef.current) return { w: 0, h: 0, x: 0, y: 0 }
-    const s = baseScale * zoom
-    const w = imgRef.current.naturalWidth * s
-    const h = imgRef.current.naturalHeight * s
-    const x = (CROP_SIZE - w) / 2 + panX
-    const y = (CROP_SIZE - h) / 2 + panY
-    return { w, h, x, y }
+  // Computed display dimensions
+  const scale = baseScale * zoom
+  const dispW = natW * scale
+  const dispH = natH * scale
+
+  // Clamp pan so image edges never leave the crop box
+  function clampPan(px: number, py: number, w: number, h: number) {
+    // Image must cover the entire crop box:
+    // left edge of image <= 0 (left edge of crop)
+    // right edge of image >= CROP_SIZE
+    const minX = CROP_SIZE - w  // right edge at CROP_SIZE when left = CROP_SIZE - w
+    const maxX = 0
+    const minY = CROP_SIZE - h
+    const maxY = 0
+    return {
+      x: Math.min(maxX, Math.max(minX, px)),
+      y: Math.min(maxY, Math.max(minY, py)),
+    }
   }
+
+  // Image position: centered + pan offset, clamped
+  const centered = clampPan(
+    (CROP_SIZE - dispW) / 2 + panX,
+    (CROP_SIZE - dispH) / 2 + panY,
+    dispW,
+    dispH
+  )
 
   function handleMouseDown(e: React.MouseEvent) {
     e.preventDefault()
     setDragging(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
-    setPanStart({ x: panX, y: panY })
+    dragRef.current = { startX: e.clientX, startY: e.clientY, panStartX: panX, panStartY: panY }
   }
 
   function handleTouchStart(e: React.TouchEvent) {
     if (e.touches.length !== 1) return
     setDragging(true)
-    setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY })
-    setPanStart({ x: panX, y: panY })
+    dragRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, panStartX: panX, panStartY: panY }
   }
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!dragging) return
-    setPanX(panStart.x + (clientX - dragStart.x))
-    setPanY(panStart.y + (clientY - dragStart.y))
-  }, [dragging, dragStart, panStart])
+    const d = dragRef.current
+    const newPanX = d.panStartX + (clientX - d.startX)
+    const newPanY = d.panStartY + (clientY - d.startY)
+    setPanX(newPanX)
+    setPanY(newPanY)
+  }, [])
 
   const handleEnd = useCallback(() => { setDragging(false) }, [])
 
   useEffect(() => {
-    if (!cropping) return
+    if (!cropping || !dragging) return
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY)
     const onTouchMove = (e: TouchEvent) => { if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY) }
     window.addEventListener('mousemove', onMouseMove)
@@ -101,12 +125,16 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', handleEnd)
     }
-  }, [cropping, handleMove, handleEnd])
+  }, [cropping, dragging, handleMove, handleEnd])
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.05 : 0.05
     setZoom(z => Math.max(1, Math.min(5, z + delta)))
+  }
+
+  function handleZoomChange(newZoom: number) {
+    setZoom(newZoom)
   }
 
   async function handleCropConfirm() {
@@ -122,7 +150,6 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
     canvas.height = outputSize
 
     const img = imgRef.current
-    const { w, h, x, y } = getDims()
     const ratio = outputSize / CROP_SIZE
 
     if (shape === 'circle') {
@@ -132,7 +159,7 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
       ctx.clip()
     }
 
-    ctx.drawImage(img, x * ratio, y * ratio, w * ratio, h * ratio)
+    ctx.drawImage(img, centered.x * ratio, centered.y * ratio, dispW * ratio, dispH * ratio)
 
     canvas.toBlob(async (blob) => {
       if (!blob || !selectedFile) { setUploading(false); return }
@@ -159,7 +186,6 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
   }
 
   const borderRadius = shape === 'circle' ? '50%' : '8px'
-  const dims = getDims()
 
   return (
     <div>
@@ -170,8 +196,8 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
           <p className="text-sm text-foreground-muted flex items-center gap-1"><Move className="w-3 h-3" /> Drag to reposition, scroll to zoom</p>
 
           <div
-            className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent bg-black"
-            style={{ width: CROP_SIZE, height: CROP_SIZE, borderRadius }}
+            className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent"
+            style={{ width: CROP_SIZE, height: CROP_SIZE, borderRadius, background: '#000' }}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
             onWheel={handleWheel}
@@ -180,7 +206,12 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
               src={previewUrl}
               alt="Crop preview"
               className="absolute select-none pointer-events-none"
-              style={{ width: dims.w, height: dims.h, left: dims.x, top: dims.y }}
+              style={{
+                width: `${dispW}px`,
+                height: `${dispH}px`,
+                left: `${centered.x}px`,
+                top: `${centered.y}px`,
+              }}
               draggable={false}
             />
           </div>
@@ -189,7 +220,7 @@ export default function ImageCropUploader({ currentUrl, shape = 'circle', size =
             <ZoomOut className="w-4 h-4 text-foreground-muted" />
             <input
               type="range" min="1" max="5" step="0.05" value={zoom}
-              onChange={(e) => setZoom(parseFloat(e.target.value))}
+              onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
               className="w-40 accent-accent"
             />
             <ZoomIn className="w-4 h-4 text-foreground-muted" />
