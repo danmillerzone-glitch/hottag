@@ -25,6 +25,15 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
+// TikTok icon component
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.65a8.35 8.35 0 0 0 4.76 1.49V6.69h-1z" />
+    </svg>
+  )
+}
+
 export default function WrestlerDashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -43,6 +52,7 @@ export default function WrestlerDashboardPage() {
   const [hometown, setHometown] = useState('')
   const [twitterHandle, setTwitterHandle] = useState('')
   const [instagramHandle, setInstagramHandle] = useState('')
+  const [tiktokHandle, setTiktokHandle] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [website, setWebsite] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
@@ -68,6 +78,7 @@ export default function WrestlerDashboardPage() {
       setHometown(data.wrestler.hometown || '')
       setTwitterHandle(data.wrestler.twitter_handle || '')
       setInstagramHandle(data.wrestler.instagram_handle || '')
+      setTiktokHandle(data.wrestler.tiktok_handle || '')
       setYoutubeUrl(data.wrestler.youtube_url || '')
       setWebsite(data.wrestler.website || '')
       setBookingEmail(data.wrestler.booking_email || '')
@@ -89,6 +100,7 @@ export default function WrestlerDashboardPage() {
         hometown: hometown || null,
         twitter_handle: twitterHandle || null,
         instagram_handle: instagramHandle || null,
+        tiktok_handle: tiktokHandle || null,
         youtube_url: youtubeUrl || null,
         website: website || null,
         booking_email: bookingEmail || null,
@@ -397,6 +409,23 @@ export default function WrestlerDashboardPage() {
                   type="text"
                   value={instagramHandle}
                   onChange={(e) => setInstagramHandle(e.target.value.replace('@', ''))}
+                  placeholder="YourHandle"
+                  className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5">
+                <TikTokIcon className="w-3.5 h-3.5 text-foreground-muted" />
+                TikTok Handle
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">@</span>
+                <input
+                  type="text"
+                  value={tiktokHandle}
+                  onChange={(e) => setTiktokHandle(e.target.value.replace('@', ''))}
                   placeholder="YourHandle"
                   className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
                 />

@@ -195,6 +195,7 @@ export async function updateWrestlerProfile(wrestlerId: string, updates: {
   hometown?: string | null
   twitter_handle?: string | null
   instagram_handle?: string | null
+  tiktok_handle?: string | null
   youtube_url?: string | null
   website?: string | null
   booking_email?: string | null

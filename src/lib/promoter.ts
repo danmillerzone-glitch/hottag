@@ -405,6 +405,7 @@ export async function updatePromotion(promotionId: string, updates: {
   website?: string | null
   twitter_handle?: string | null
   instagram_handle?: string | null
+  tiktok_handle?: string | null
   facebook_url?: string | null
   youtube_url?: string | null
   logo_url?: string | null
