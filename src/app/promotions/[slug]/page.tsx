@@ -355,7 +355,9 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
               Roster ({roster.length})
             </h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {roster.map((member: any) => (
+              {roster
+                .sort((a: any, b: any) => (a.wrestlers?.name || '').localeCompare(b.wrestlers?.name || ''))
+                .map((member: any) => (
                 <Link
                   key={member.id}
                   href={`/wrestlers/${member.wrestlers.slug}`}

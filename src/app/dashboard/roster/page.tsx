@@ -12,7 +12,7 @@ import {
   type RosterMember, type Championship,
 } from '@/lib/promoter'
 import {
-  Loader2, ArrowLeft, Plus, Trash2, Search, X, User, Trophy, Users, Crown, Check, Save, Edit3, EyeOff,
+  Loader2, ArrowLeft, Plus, Trash2, Search, X, User, Trophy, Users, Crown, Check, Save, Edit3, EyeOff, ChevronUp, ChevronDown, ArrowDownAZ,
 } from 'lucide-react'
 
 export default function RosterPage() {
@@ -114,6 +114,25 @@ function ChampionshipsSection({ promotionId, championships, roster, onUpdate }: 
     catch (err) { console.error('Error deleting:', err) }
   }
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    const swapIndex = direction === 'up' ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= championships.length) return
+
+    const newOrder = [...championships]
+    const temp = newOrder[index]
+    newOrder[index] = newOrder[swapIndex]
+    newOrder[swapIndex] = temp
+
+    // Update sort_order for both
+    onUpdate(newOrder)
+    try {
+      await Promise.all([
+        updateChampionship(newOrder[index].id, { sort_order: index }),
+        updateChampionship(newOrder[swapIndex].id, { sort_order: swapIndex }),
+      ])
+    } catch (err) { console.error('Error reordering:', err) }
+  }
+
   return (
     <section className="card p-6">
       <div className="flex items-center justify-between mb-5">
@@ -129,10 +148,33 @@ function ChampionshipsSection({ promotionId, championships, roster, onUpdate }: 
 
       {championships.length > 0 ? (
         <div className="space-y-4">
-          {championships.map((champ) => (
-            <ChampionshipItem key={champ.id} championship={champ} roster={roster} onUpdate={(updated) => {
-              onUpdate(championships.map(c => c.id === updated.id ? updated : c))
-            }} onDelete={() => handleDelete(champ.id)} />
+          {championships.map((champ, index) => (
+            <div key={champ.id} className="flex gap-2">
+              {/* Move arrows */}
+              <div className="flex flex-col justify-center gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() => handleMove(index, 'up')}
+                  disabled={index === 0}
+                  className="p-1 rounded hover:bg-background text-foreground-muted hover:text-foreground transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                  title="Move up"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleMove(index, 'down')}
+                  disabled={index === championships.length - 1}
+                  className="p-1 rounded hover:bg-background text-foreground-muted hover:text-foreground transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                  title="Move down"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1">
+                <ChampionshipItem championship={champ} roster={roster} onUpdate={(updated) => {
+                  onUpdate(championships.map(c => c.id === updated.id ? updated : c))
+                }} onDelete={() => handleDelete(champ.id)} />
+              </div>
+            </div>
           ))}
         </div>
       ) : (
@@ -454,9 +496,25 @@ function RosterSection({ promotionId, roster, onUpdate }: {
           <h2 className="text-lg font-display font-bold">Roster</h2>
           <span className="text-sm text-foreground-muted">({roster.length})</span>
         </div>
-        <button onClick={() => setShowSearch(true)} className="btn btn-primary text-sm">
-          <Plus className="w-4 h-4 mr-1.5" /> Add Wrestler
-        </button>
+        <div className="flex gap-2">
+          {roster.length > 1 && (
+            <button
+              onClick={() => {
+                const sorted = [...roster].sort((a, b) =>
+                  (a.wrestlers?.name || '').localeCompare(b.wrestlers?.name || '')
+                )
+                onUpdate(sorted)
+              }}
+              className="btn btn-ghost text-sm"
+              title="Sort A-Z"
+            >
+              <ArrowDownAZ className="w-4 h-4 mr-1.5" /> A–Z
+            </button>
+          )}
+          <button onClick={() => setShowSearch(true)} className="btn btn-primary text-sm">
+            <Plus className="w-4 h-4 mr-1.5" /> Add Wrestler
+          </button>
+        </div>
       </div>
 
       {roster.length > 0 ? (
