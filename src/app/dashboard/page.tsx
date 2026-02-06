@@ -24,6 +24,7 @@ import {
   MapPin,
   AlertCircle,
   Trash2,
+  User,
 } from 'lucide-react'
 import { formatEventDate, formatLocation } from '@/lib/utils'
 
@@ -226,6 +227,13 @@ export default function DashboardPage() {
               >
                 <Users className="w-4 h-4 mr-1.5" />
                 Roster & Titles
+              </Link>
+              <Link
+                href="/dashboard/wrestler"
+                className="btn btn-secondary text-sm"
+              >
+                <User className="w-4 h-4 mr-1.5" />
+                Wrestler Profile
               </Link>
             </div>
           </div>
