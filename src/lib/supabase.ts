@@ -162,6 +162,7 @@ export async function getEvent(idOrSlug: string) {
         website,
         twitter_handle,
         instagram_handle,
+        tiktok_handle,
         facebook_url,
         youtube_url,
         booking_email,

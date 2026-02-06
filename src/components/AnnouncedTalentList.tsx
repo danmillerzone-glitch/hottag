@@ -69,17 +69,17 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                 <User className="w-8 h-8 text-foreground-muted" />
               )}
             </div>
-            <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
+            <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2 w-full">
               {t.wrestlers.name}
             </span>
             {championMap[t.wrestlers.id] && (
-              <span className="flex items-center justify-center gap-0.5 text-xs text-yellow-500 mt-0.5 text-center" title={championMap[t.wrestlers.id]}>
+              <span className="flex items-center justify-center gap-0.5 text-xs text-yellow-500 mt-0.5 text-center w-full" title={championMap[t.wrestlers.id]}>
                 <Crown className="w-3 h-3 flex-shrink-0" />
-                {championMap[t.wrestlers.id]}
+                <span className="text-center">{championMap[t.wrestlers.id]}</span>
               </span>
             )}
             {t.announcement_note && (
-              <span className="text-xs text-accent mt-0.5 text-center line-clamp-1">
+              <span className="text-xs text-accent mt-0.5 text-center line-clamp-1 w-full">
                 {t.announcement_note}
               </span>
             )}
