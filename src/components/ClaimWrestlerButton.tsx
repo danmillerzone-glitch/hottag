@@ -75,7 +75,7 @@ export default function ClaimWrestlerButton({
     return (
       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-attending/10 text-attending text-sm font-medium">
         <ShieldCheck className="w-4 h-4" />
-        Verified Wrestler
+        Verified
       </div>
     )
   }
