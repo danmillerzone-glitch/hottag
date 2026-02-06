@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Megaphone, User } from 'lucide-react'
+import { Megaphone, User, Crown } from 'lucide-react'
 
 interface Talent {
   id: string
@@ -17,7 +17,7 @@ interface Talent {
   }
 }
 
-export default function AnnouncedTalentList({ eventId }: { eventId: string }) {
+export default function AnnouncedTalentList({ eventId, championMap = {} }: { eventId: string; championMap?: Record<string, string> }) {
   const [talent, setTalent] = useState<Talent[]>([])
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function AnnouncedTalentList({ eventId }: { eventId: string }) {
             href={`/wrestlers/${t.wrestlers.slug}`}
             className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
           >
-            <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
+            <div className={`w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2 border-2 ${championMap[t.wrestlers.id] ? 'border-yellow-500' : 'border-transparent'}`}>
               {t.wrestlers.photo_url ? (
                 <Image
                   src={t.wrestlers.photo_url}
@@ -72,6 +72,12 @@ export default function AnnouncedTalentList({ eventId }: { eventId: string }) {
             <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
               {t.wrestlers.name}
             </span>
+            {championMap[t.wrestlers.id] && (
+              <span className="flex items-center gap-0.5 text-xs text-yellow-500 mt-0.5">
+                <Crown className="w-3 h-3" />
+                <span className="line-clamp-1">{championMap[t.wrestlers.id]}</span>
+              </span>
+            )}
             {t.announcement_note && (
               <span className="text-xs text-accent mt-0.5 text-center line-clamp-1">
                 {t.announcement_note}

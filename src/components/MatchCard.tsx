@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
-import { Swords, Trophy, User } from 'lucide-react'
+import { Swords, Trophy, User, Crown } from 'lucide-react'
 
 interface Match {
   id: string
@@ -26,13 +26,13 @@ interface Match {
   }[]
 }
 
-function WrestlerCard({ wrestler }: { wrestler: { name: string; slug: string; photo_url: string | null } }) {
+function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; name: string; slug: string; photo_url: string | null }; championTitle?: string }) {
   return (
     <Link
       href={`/wrestlers/${wrestler.slug}`}
       className="flex flex-col items-center gap-2 group"
     >
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 border-border group-hover:border-accent transition-colors">
+      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 ${championTitle ? 'border-yellow-500' : 'border-border'} group-hover:border-accent transition-colors`}>
         {wrestler.photo_url ? (
           <Image
             src={wrestler.photo_url}
@@ -48,11 +48,17 @@ function WrestlerCard({ wrestler }: { wrestler: { name: string; slug: string; ph
       <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2 max-w-[100px]">
         {wrestler.name}
       </span>
+      {championTitle && (
+        <span className="flex items-center gap-0.5 text-xs text-yellow-500 -mt-1">
+          <Crown className="w-3 h-3" />
+          <span className="line-clamp-1 max-w-[90px] text-center">{championTitle}</span>
+        </span>
+      )}
     </Link>
   )
 }
 
-export default function MatchCard({ eventId }: { eventId: string }) {
+export default function MatchCard({ eventId, championMap = {} }: { eventId: string; championMap?: Record<string, string> }) {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -127,7 +133,7 @@ export default function MatchCard({ eventId }: { eventId: string }) {
                 <div className="flex items-center justify-center gap-6 sm:gap-10">
                   <div className="flex flex-wrap justify-end gap-4">
                     {team1.map((p) => (
-                      <WrestlerCard key={p.id} wrestler={p.wrestlers} />
+                      <WrestlerCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                     ))}
                   </div>
                   
@@ -137,7 +143,7 @@ export default function MatchCard({ eventId }: { eventId: string }) {
                   
                   <div className="flex flex-wrap gap-4">
                     {team2.map((p) => (
-                      <WrestlerCard key={p.id} wrestler={p.wrestlers} />
+                      <WrestlerCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                     ))}
                   </div>
                 </div>
@@ -146,7 +152,7 @@ export default function MatchCard({ eventId }: { eventId: string }) {
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   {participants.map((p, i) => (
                     <div key={p.id} className="flex items-center gap-4">
-                      <WrestlerCard wrestler={p.wrestlers} />
+                      <WrestlerCard wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                       {i < participants.length - 1 && (
                         <span className="text-sm font-bold text-accent">vs</span>
                       )}

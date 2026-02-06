@@ -16,7 +16,8 @@ import {
   Youtube,
   Facebook,
   Mail,
-  ShoppingBag
+  ShoppingBag,
+  Crown
 } from 'lucide-react'
 import { 
   formatEventDateFull, 
@@ -25,6 +26,7 @@ import {
   formatPrice,
   getTwitterUrl 
 } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 import AttendanceButtons from '@/components/AttendanceButtons'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
@@ -74,6 +76,24 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const promotion = event.promotions
   const wrestlers = await getEventWrestlers(event.id)
+
+  // Fetch current championships for this promotion to show champion badges
+  let championMap: Record<string, string> = {} // wrestler_id -> championship short_name or name
+  if (promotion?.id) {
+    const { data: championships } = await supabase
+      .from('promotion_championships')
+      .select('name, short_name, current_champion_id, current_champion_2_id')
+      .eq('promotion_id', promotion.id)
+      .eq('is_active', true)
+
+    if (championships) {
+      for (const c of championships) {
+        const label = c.short_name || c.name
+        if (c.current_champion_id) championMap[c.current_champion_id] = label
+        if (c.current_champion_2_id) championMap[c.current_champion_2_id] = label
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -241,10 +261,10 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
 
           {/* Match Card (from promoter-managed matches) */}
-          <MatchCard eventId={event.id} />
+          <MatchCard eventId={event.id} championMap={championMap} />
 
           {/* Announced Talent */}
-          <AnnouncedTalentList eventId={event.id} />
+          <AnnouncedTalentList eventId={event.id} championMap={championMap} />
 
           {/* Wrestler Card */}
           {wrestlers.length > 0 && (
@@ -273,6 +293,12 @@ export default async function EventPage({ params }: EventPageProps) {
                     <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
                       {wrestler.name}
                     </span>
+                    {championMap[wrestler.id] && (
+                      <span className="flex items-center gap-0.5 text-xs text-yellow-500 mt-0.5">
+                        <Crown className="w-3 h-3" />
+                        {championMap[wrestler.id]}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
