@@ -482,3 +482,42 @@ export async function getAllPromotionsList() {
   if (error) { console.error(error); return [] }
   return data || []
 }
+
+// ============================================
+// CREATE WRESTLER / PROMOTION
+// ============================================
+
+export async function createWrestlerAdmin(wrestler: {
+  name: string
+  slug: string
+  bio?: string
+  hometown?: string
+  pwi_ranking?: number | null
+}) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('wrestlers')
+    .insert(wrestler)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function createPromotionAdmin(promotion: {
+  name: string
+  slug: string
+  city?: string
+  state?: string
+  website?: string
+  description?: string
+}) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotions')
+    .insert(promotion)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

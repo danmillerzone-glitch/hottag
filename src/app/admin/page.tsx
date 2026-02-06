@@ -19,6 +19,7 @@ import {
   verifyWrestler, unverifyWrestler, verifyPromotion, unverifyPromotion,
   mergeWrestlers,
   bulkImportEvents, getAllPromotionsList,
+  createWrestlerAdmin, createPromotionAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -411,6 +412,7 @@ function PromotionsTab() {
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<any>(null)
+  const [creating, setCreating] = useState(false)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -435,9 +437,15 @@ function PromotionsTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-display font-bold mb-6">Manage Promotions</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-display font-bold">Manage Promotions</h2>
+        <button onClick={() => setCreating(true)} className="btn btn-primary text-sm">
+          <Plus className="w-4 h-4 mr-1" /> New Promotion
+        </button>
+      </div>
       <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} loading={loading} placeholder="Search promotions by name..." />
 
+      {creating && <CreatePromotionModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); if (query) handleSearch() }} />}
       {editing && <EditPromotionModal promo={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); handleSearch() }} />}
 
       {results.length > 0 && (
@@ -474,6 +482,7 @@ function WrestlersTab() {
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<any>(null)
+  const [creating, setCreating] = useState(false)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -504,9 +513,15 @@ function WrestlersTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-display font-bold mb-6">Manage Wrestlers</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-display font-bold">Manage Wrestlers</h2>
+        <button onClick={() => setCreating(true)} className="btn btn-primary text-sm">
+          <Plus className="w-4 h-4 mr-1" /> New Wrestler
+        </button>
+      </div>
       <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} loading={loading} placeholder="Search wrestlers by name..." />
 
+      {creating && <CreateWrestlerModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); if (query) handleSearch() }} />}
       {editing && <EditWrestlerModal wrestler={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); handleSearch() }} />}
 
       {results.length > 0 && (
@@ -1104,6 +1119,106 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
         </div>
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
+          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ============================================
+// CREATE MODALS
+// ============================================
+
+function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
+  const [form, setForm] = useState({ name: '', slug: '', bio: '', hometown: '', pwi_ranking: '' })
+  const [saving, setSaving] = useState(false)
+
+  function autoSlug(name: string) {
+    return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  }
+
+  function handleNameChange(name: string) {
+    setForm({ ...form, name, slug: autoSlug(name) })
+  }
+
+  async function handleCreate() {
+    if (!form.name.trim() || !form.slug.trim()) { alert('Name and slug are required'); return }
+    setSaving(true)
+    try {
+      await createWrestlerAdmin({
+        name: form.name.trim(),
+        slug: form.slug.trim(),
+        bio: form.bio || undefined,
+        hometown: form.hometown || undefined,
+        pwi_ranking: form.pwi_ranking ? parseInt(form.pwi_ranking) : null,
+      })
+      alert(`Created wrestler: ${form.name}`)
+      onCreated()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <Modal title="Create New Wrestler" onClose={onClose}>
+      <div className="space-y-3">
+        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. John Doe" /></FieldRow>
+        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. john-doe" /></FieldRow>
+        <FieldRow label="Hometown"><input className="w-full input-field" value={form.hometown} onChange={e => setForm({...form, hometown: e.target.value})} placeholder="e.g. Houston, TX" /></FieldRow>
+        <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} placeholder="Optional" /></FieldRow>
+        <FieldRow label="Bio"><textarea className="w-full input-field" rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} placeholder="Optional bio..." /></FieldRow>
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Wrestler</>}</button>
+          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
+  const [form, setForm] = useState({ name: '', slug: '', city: '', state: '', website: '', description: '' })
+  const [saving, setSaving] = useState(false)
+
+  function autoSlug(name: string) {
+    return name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+  }
+
+  function handleNameChange(name: string) {
+    setForm({ ...form, name, slug: autoSlug(name) })
+  }
+
+  async function handleCreate() {
+    if (!form.name.trim() || !form.slug.trim()) { alert('Name and slug are required'); return }
+    setSaving(true)
+    try {
+      await createPromotionAdmin({
+        name: form.name.trim(),
+        slug: form.slug.trim(),
+        city: form.city || undefined,
+        state: form.state || undefined,
+        website: form.website || undefined,
+        description: form.description || undefined,
+      })
+      alert(`Created promotion: ${form.name}`)
+      onCreated()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <Modal title="Create New Promotion" onClose={onClose}>
+      <div className="space-y-3">
+        <FieldRow label="Name *"><input className="w-full input-field" value={form.name} onChange={e => handleNameChange(e.target.value)} placeholder="e.g. New Texas Pro Wrestling" /></FieldRow>
+        <FieldRow label="Slug *"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="e.g. new-texas-pro-wrestling" /></FieldRow>
+        <div className="grid grid-cols-2 gap-3">
+          <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="e.g. Houston" /></FieldRow>
+          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="e.g. TX" /></FieldRow>
+        </div>
+        <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." /></FieldRow>
+        <FieldRow label="Description"><textarea className="w-full input-field" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Optional description..." /></FieldRow>
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Promotion</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
         </div>
       </div>
