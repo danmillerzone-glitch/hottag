@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -57,6 +57,7 @@ export default function WrestlerDashboardPage() {
   const [website, setWebsite] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
+  const dataLoaded = useRef(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -64,7 +65,9 @@ export default function WrestlerDashboardPage() {
       router.push('/signin')
       return
     }
-    loadData()
+    if (!dataLoaded.current) {
+      loadData()
+    }
   }, [user, authLoading])
 
   const loadData = async () => {
@@ -73,6 +76,7 @@ export default function WrestlerDashboardPage() {
     if (data) {
       setDashboardData(data)
       setHasWrestler(true)
+      dataLoaded.current = true
       // Populate form
       setBio(data.wrestler.bio || '')
       setHometown(data.wrestler.hometown || '')
