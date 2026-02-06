@@ -12,7 +12,8 @@ import {
   Search,
   User,
   LogOut,
-  Loader2
+  Loader2,
+  Shield
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -30,11 +31,13 @@ export default function Navigation() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [hasPromotion, setHasPromotion] = useState(false)
   const [hasWrestler, setHasWrestler] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     if (!user) {
       setHasPromotion(false)
       setHasWrestler(false)
+      setIsAdmin(false)
       return
     }
     const supabase = createClient()
@@ -53,6 +56,15 @@ export default function Navigation() {
       .select('id')
       .eq('claimed_by', user.id)
       .limit(1)
+      .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
+
+    // Check if user is admin
+    supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .then(({ data }) => setIsAdmin(!!(data && data.length > 0)))
       .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
   }, [user])
 
@@ -140,8 +152,18 @@ export default function Navigation() {
                           <span className="text-accent font-medium">Wrestler Dashboard</span>
                         </Link>
                       )}
-                      {(hasPromotion || hasWrestler) && (
+                      {(hasPromotion || hasWrestler || isAdmin) && (
                         <div className="border-t border-border my-1" />
+                      )}
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Shield className="w-4 h-4 text-yellow-400" />
+                          <span className="text-yellow-400 font-medium">Admin Panel</span>
+                        </Link>
                       )}
                       <Link
                         href="/profile"
