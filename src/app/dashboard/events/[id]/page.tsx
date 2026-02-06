@@ -1,376 +1,103 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { getEvent, getEventWrestlers } from '@/lib/supabase'
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Ticket, 
-  ExternalLink, 
-  Users, 
-  Share2,
-  Bookmark,
-  User
-} from 'lucide-react'
-import { 
-  formatEventDateFull, 
-  formatEventTime, 
-  formatLocation, 
-  formatPrice,
-  getTwitterUrl 
-} from '@/lib/utils'
-import AttendanceButtons from '@/components/AttendanceButtons'
-import MatchCard from '@/components/MatchCard'
-import StreamingLinks from '@/components/StreamingLinks'
-import AnnouncedTalentList from '@/components/AnnouncedTalentList'
+import {
+  getEventForEditing, getEventMatches, getStreamingLinks, getAnnouncedTalent,
+  type EventMatch, type StreamingLink, type AnnouncedTalent,
+} from '@/lib/promoter'
+import { Loader2, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react'
+import { formatEventDateFull, formatLocation } from '@/lib/utils'
+import {
+  TicketsSection, StreamingLinksSection, EventDetailsSection,
+  PosterSection, AnnouncedTalentSection, MatchCardSection,
+} from '@/components/DashboardEventSections'
 
-// Force dynamic rendering - no caching
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export default function ManageEventPage() {
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const params = useParams()
+  const eventId = params.id as string
+  const [event, setEvent] = useState<any>(null)
+  const [matches, setMatches] = useState<EventMatch[]>([])
+  const [streamingLinks, setStreamingLinks] = useState<StreamingLink[]>([])
+  const [announcedTalent, setAnnouncedTalent] = useState<AnnouncedTalent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [authorized, setAuthorized] = useState(false)
 
-// X (Twitter) icon component
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  )
-}
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) { router.push('/signin'); return }
+    loadEvent()
+  }, [user, authLoading, eventId])
 
-interface EventPageProps {
-  params: { id: string }
-}
-
-export async function generateMetadata({ params }: EventPageProps) {
-  const event = await getEvent(params.id)
-  
-  if (!event) {
-    return { title: 'Event Not Found | HotTag' }
+  const loadEvent = async () => {
+    setLoading(true)
+    try {
+      const data = await getEventForEditing(eventId)
+      if (!data) { router.push('/dashboard'); return }
+      if (data.promotions?.claimed_by !== user?.id) { setAuthorized(false); setLoading(false); return }
+      setEvent(data)
+      setAuthorized(true)
+      const [eventMatches, links, talent] = await Promise.all([
+        getEventMatches(eventId), getStreamingLinks(eventId), getAnnouncedTalent(eventId),
+      ])
+      setMatches(eventMatches)
+      setStreamingLinks(links)
+      setAnnouncedTalent(talent)
+    } catch (err) { console.error('Error loading event:', err) }
+    setLoading(false)
   }
 
-  return {
-    title: `${event.name} | HotTag`,
-    description: `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state)}`,
-    openGraph: {
-      title: event.name,
-      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state)}`,
-      images: event.poster_url ? [event.poster_url] : undefined,
-    },
-  }
-}
-
-export default async function EventPage({ params }: EventPageProps) {
-  const event = await getEvent(params.id)
-
-  if (!event) {
-    notFound()
+  if (authLoading || loading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
   }
 
-  const promotion = event.promotions
-  const wrestlers = await getEventWrestlers(event.id)
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h1 className="text-xl font-bold mb-2">Not Authorized</h1>
+          <p className="text-foreground-muted mb-4">You don&apos;t have permission to manage this event.</p>
+          <Link href="/dashboard" className="btn btn-primary">Back to Dashboard</Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!event) return null
 
   return (
     <div className="min-h-screen">
-      {/* Hero/Banner */}
-      <div className="relative bg-background-secondary">
-        {event.poster_url ? (
-          <div className="relative h-64 md:h-80 lg:h-96">
-            <Image
-              src={event.poster_url}
-              alt={event.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/50 to-transparent" />
+      <div className="bg-background-secondary border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground mb-3 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          </Link>
+          <h1 className="text-2xl font-display font-bold">{event.name}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-foreground-muted">
+            <span>{formatEventDateFull(event.event_date)}</span>
+            <span>·</span>
+            <span>{formatLocation(event.city, event.state)}</span>
           </div>
-        ) : (
-          <div className="h-32 md:h-40 bg-gradient-to-br from-accent/20 to-background-tertiary" />
-        )}
+        </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-        {/* Main content card */}
-        <div className="card p-6 md:p-8">
-          {/* Promotion badge */}
-          {promotion && (
-            <Link 
-              href={`/promotions/${promotion.slug}`}
-              className="inline-flex items-center gap-2 badge badge-promotion mb-4 hover:bg-accent/30 transition-colors"
-            >
-              {promotion.name}
-            </Link>
-          )}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <TicketsSection event={event} onUpdate={setEvent} />
+        <StreamingLinksSection eventId={eventId} links={streamingLinks} onUpdate={setStreamingLinks} />
+        <EventDetailsSection event={event} onUpdate={setEvent} />
+        <PosterSection event={event} eventId={eventId} onUpdate={setEvent} />
+        <AnnouncedTalentSection eventId={eventId} talent={announcedTalent} onUpdate={setAnnouncedTalent} />
+        <MatchCardSection eventId={eventId} matches={matches} onUpdate={setMatches} />
 
-          {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-6">
-            {event.name}
-          </h1>
-
-          {/* Key info grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            {/* Date */}
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
-              <Calendar className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm text-foreground-muted">Date</div>
-                <div className="font-semibold">{formatEventDateFull(event.event_date)}</div>
-              </div>
-            </div>
-
-            {/* Time */}
-            {(event.event_time || event.doors_time) && (
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
-                <Clock className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-sm text-foreground-muted">Time</div>
-                  <div className="font-semibold">
-                    {event.event_time && `Bell: ${formatEventTime(event.event_time)}`}
-                    {event.event_time && event.doors_time && ' • '}
-                    {event.doors_time && `Doors: ${formatEventTime(event.doors_time)}`}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Location */}
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
-              <MapPin className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm text-foreground-muted">Location</div>
-                <div className="font-semibold">
-                  {event.venue_name && (
-                    <Link 
-                      href={`/venue/${encodeURIComponent(event.venue_name.toLowerCase().replace(/\s+/g, '-'))}`}
-                      className="hover:text-accent hover:underline"
-                    >
-                      {event.venue_name}
-                    </Link>
-                  )}
-                  <div className="text-sm mt-1">
-                    {event.city && (
-                      <Link 
-                        href={`/location/${encodeURIComponent(event.city.toLowerCase().replace(/\s+/g, '-'))}`}
-                        className="text-foreground-muted hover:text-accent hover:underline"
-                      >
-                        {event.city}
-                      </Link>
-                    )}
-                    {event.city && event.state && ', '}
-                    {event.state && (
-                      <Link 
-                        href={`/location/${event.state}`}
-                        className="text-foreground-muted hover:text-accent hover:underline"
-                      >
-                        {event.state}
-                      </Link>
-                    )}
-                  </div>
-                </div>
-                {/* Google Maps link */}
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    [event.venue_name, (event as any).venue_address, event.city, event.state].filter(Boolean).join(', ')
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Open in Maps
-                </a>
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
-              <Ticket className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm text-foreground-muted">Tickets</div>
-                <div className="font-semibold">
-                  {event.is_sold_out ? (
-                    <span className="text-red-400">Sold Out</span>
-                  ) : (
-                    formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free)
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-3 mb-8">
-            {event.ticket_url && !event.is_sold_out && (
-              <a
-                href={event.ticket_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary"
-              >
-                <Ticket className="w-4 h-4 mr-2" />
-                Get Tickets
-                <ExternalLink className="w-3 h-3 ml-2" />
-              </a>
-            )}
-            <StreamingLinks eventId={event.id} />
-          </div>
-
-          {/* Attendance buttons */}
-          <div className="mb-8">
-            <AttendanceButtons 
-              eventId={event.id}
-              initialGoingCount={event.attending_count || 0}
-              initialInterestedCount={event.interested_count || 0}
-            />
-          </div>
-
-          {/* Description */}
-          {event.description && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-3">About this event</h2>
-              <p className="text-foreground-muted whitespace-pre-wrap">
-                {event.description}
-              </p>
-            </div>
-          )}
-
-          {/* Match Card (from promoter-managed matches) */}
-          <MatchCard eventId={event.id} />
-
-          {/* Announced Talent */}
-          <AnnouncedTalentList eventId={event.id} />
-
-          {/* Wrestler Card */}
-          {wrestlers.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Card ({wrestlers.length} wrestlers)</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {wrestlers.map((wrestler) => (
-                  <Link
-                    key={wrestler.id}
-                    href={`/wrestlers/${wrestler.slug}`}
-                    className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
-                      {wrestler.photo_url ? (
-                        <Image
-                          src={wrestler.photo_url}
-                          alt={wrestler.name}
-                          width={64}
-                          height={64}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <User className="w-8 h-8 text-foreground-muted" />
-                      )}
-                    </div>
-                    <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
-                      {wrestler.name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Map Section */}
-          {(event.city || event.venue_name) && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-3">Location</h2>
-              <div className="rounded-lg bg-background-tertiary overflow-hidden">
-                {/* Embedded Google Maps iframe */}
-                <div className="aspect-video w-full">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/search?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
-                      [event.venue_name, event.city, event.state, 'USA'].filter(Boolean).join(', ')
-                    )}`}
-                  />
-                </div>
-                <div className="p-4 flex items-center justify-between">
-                  <div>
-                    {event.venue_name && <div className="font-semibold">{event.venue_name}</div>}
-                    <div className="text-sm text-foreground-muted">
-                      {[event.city, event.state].filter(Boolean).join(', ')}
-                    </div>
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      [event.venue_name, event.city, event.state].filter(Boolean).join(', ')
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Get Directions
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Promotion info */}
-          {promotion && (
-            <div className="border-t border-border pt-8">
-              <h2 className="text-xl font-semibold mb-4">Presented by</h2>
-              <Link
-                href={`/promotions/${promotion.slug}`}
-                className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
-              >
-                <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center overflow-hidden">
-                  {promotion.logo_url ? (
-                    <Image
-                      src={promotion.logo_url}
-                      alt={promotion.name}
-                      width={64}
-                      height={64}
-                      className="object-contain"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-foreground-muted">
-                      {promotion.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-lg">{promotion.name}</div>
-                  <div className="text-foreground-muted text-sm">View all events →</div>
-                </div>
-              </Link>
-
-              <div className="flex items-center gap-4 mt-4">
-                {promotion.website && (
-                  <a
-                    href={promotion.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Website
-                  </a>
-                )}
-                {promotion.twitter_handle && (
-                  <a
-                    href={getTwitterUrl(promotion.twitter_handle) || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <XIcon className="w-4 h-4" />
-                    @{promotion.twitter_handle}
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="text-center pt-4">
+          <Link href={`/events/${eventId}`} className="btn btn-ghost text-sm">
+            <ExternalLink className="w-4 h-4 mr-1.5" /> View Public Event Page
+          </Link>
         </div>
       </div>
     </div>
