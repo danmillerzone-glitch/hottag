@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Upload, ZoomIn, ZoomOut, Check, X, Loader2, Move } from 'lucide-react'
 
-interface ImageCropUploaderProps {
+interface Props {
   currentUrl?: string
   shape?: 'circle' | 'square'
   size?: number
@@ -16,10 +16,10 @@ const OUT = 512
 
 export default function ImageCropUploader({
   currentUrl, shape = 'circle', size = 80, onUpload, label = 'Upload Photo',
-}: ImageCropUploaderProps) {
+}: Props) {
   const [imageUrl, setImageUrl] = useState(currentUrl || '')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+  const [bitmapUrl, setBitmapUrl] = useState<string | null>(null)
   const [cropping, setCropping] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -27,74 +27,79 @@ export default function ImageCropUploader({
   const [offX, setOffX] = useState(0)
   const [offY, setOffY] = useState(0)
 
-  // Natural image dimensions
-  const [natW, setNatW] = useState(0)
-  const [natH, setNatH] = useState(0)
+  // TRUE rendered dimensions (after EXIF rotation)
+  const [trueW, setTrueW] = useState(0)
+  const [trueH, setTrueH] = useState(0)
 
   const draggingRef = useRef(false)
   const lastPt = useRef({ x: 0, y: 0 })
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const imgElRef = useRef<HTMLImageElement | null>(null)
+  // We keep a reference to the bitmap canvas for export
+  const sourceCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => { if (currentUrl) setImageUrl(currentUrl) }, [currentUrl])
 
-  // At zoom=1 the image must fully cover the BOX.
-  // We figure out the base width that achieves that.
-  // If image is landscape (w>h): height is the limiting dim, so baseW = w * (BOX/h)
-  // If image is portrait (h>=w): width is the limiting dim, so baseW = BOX (width fills box)
-  // Then height auto-maintains aspect ratio.
-  let baseW = BOX
-  if (natW > 0 && natH > 0) {
-    const scaleToFill = Math.max(BOX / natW, BOX / natH)
-    baseW = natW * scaleToFill
-  }
-  const displayW = baseW * zoom
-  // Height is derived from aspect ratio — this guarantees no stretch
-  const displayH = natW > 0 ? displayW * (natH / natW) : BOX
+  // --- Derived layout ---
+  const coverScale = trueW > 0 && trueH > 0 ? Math.max(BOX / trueW, BOX / trueH) : 1
+  const dW = Math.round(trueW * coverScale * zoom)
+  const dH = Math.round(trueH * coverScale * zoom)
 
-  // Clamp offsets so image always covers the box
   function clampOff(off: number, dim: number) {
-    const slack = (dim - BOX) / 2
-    if (slack <= 0) return 0
+    const slack = Math.max(0, (dim - BOX) / 2)
     return Math.max(-slack, Math.min(slack, off))
   }
-  const cx = clampOff(offX, displayW)
-  const cy = clampOff(offY, displayH)
 
-  // Final position of image top-left
-  const imgLeft = (BOX - displayW) / 2 + cx
-  const imgTop = (BOX - displayH) / 2 + cy
+  const cx = clampOff(offX, dW)
+  const cy = clampOff(offY, dH)
+  const imgLeft = Math.round((BOX - dW) / 2 + cx)
+  const imgTop = Math.round((BOX - dH) / 2 + cy)
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  // --- File handling: draw to offscreen canvas to normalize EXIF ---
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setSelectedFile(file)
-    const url = URL.createObjectURL(file)
-    setPreviewSrc(url)
     setZoom(1)
     setOffX(0)
     setOffY(0)
 
-    const img = new window.Image()
-    img.onload = () => {
-      imgElRef.current = img
-      setNatW(img.naturalWidth)
-      setNatH(img.naturalHeight)
-      setCropping(true)
-    }
-    img.src = url
+    // createImageBitmap respects EXIF orientation in all modern browsers
+    const bitmap = await createImageBitmap(file)
+    const w = bitmap.width
+    const h = bitmap.height
+
+    // Draw bitmap to an offscreen canvas to get a clean, orientation-corrected source
+    const offCanvas = document.createElement('canvas')
+    offCanvas.width = w
+    offCanvas.height = h
+    const ctx = offCanvas.getContext('2d')!
+    ctx.drawImage(bitmap, 0, 0)
+    bitmap.close()
+
+    sourceCanvasRef.current = offCanvas
+    setTrueW(w)
+    setTrueH(h)
+
+    // Create a blob URL from the corrected canvas for display
+    offCanvas.toBlob((blob) => {
+      if (blob) {
+        setBitmapUrl(URL.createObjectURL(blob))
+        setCropping(true)
+      }
+    }, 'image/jpeg', 0.95)
   }
 
-  function ptrDown(cx: number, cy: number) {
+  // --- Pointer handling ---
+  function ptrDown(x: number, y: number) {
     draggingRef.current = true
-    lastPt.current = { x: cx, y: cy }
+    lastPt.current = { x, y }
   }
 
-  const ptrMove = useCallback((cx: number, cy: number) => {
+  const ptrMove = useCallback((x: number, y: number) => {
     if (!draggingRef.current) return
-    const dx = cx - lastPt.current.x
-    const dy = cy - lastPt.current.y
-    lastPt.current = { x: cx, y: cy }
+    const dx = x - lastPt.current.x
+    const dy = y - lastPt.current.y
+    lastPt.current = { x, y }
     setOffX(p => p + dx)
     setOffY(p => p + dy)
   }, [])
@@ -124,8 +129,10 @@ export default function ImageCropUploader({
     setZoom(z => Math.max(1, Math.min(5, z + (e.deltaY > 0 ? -0.05 : 0.05))))
   }
 
+  // --- Export ---
   async function handleCropConfirm() {
-    if (!imgElRef.current || !canvasRef.current) return
+    const src = sourceCanvasRef.current
+    if (!src || !canvasRef.current) return
     setUploading(true)
 
     const canvas = canvasRef.current
@@ -140,7 +147,8 @@ export default function ImageCropUploader({
       ctx.clip()
     }
 
-    ctx.drawImage(imgElRef.current, imgLeft * r, imgTop * r, displayW * r, displayH * r)
+    // Draw from the orientation-corrected source canvas
+    ctx.drawImage(src, imgLeft * r, imgTop * r, dW * r, dH * r)
 
     canvas.toBlob(async (blob) => {
       if (!blob) { setUploading(false); return }
@@ -148,18 +156,22 @@ export default function ImageCropUploader({
         const url = await onUpload(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
         setImageUrl(url.includes('?') ? url : `${url}?t=${Date.now()}`)
         setCropping(false)
-        setPreviewSrc(null)
-        setSelectedFile(null)
+        cleanup()
       } catch (err: any) { alert(`Upload error: ${err.message}`) }
       setUploading(false)
     }, 'image/jpeg', 0.92)
   }
 
+  function cleanup() {
+    if (bitmapUrl) URL.revokeObjectURL(bitmapUrl)
+    setBitmapUrl(null)
+    setSelectedFile(null)
+    sourceCanvasRef.current = null
+  }
+
   function handleCancel() {
     setCropping(false)
-    if (previewSrc) URL.revokeObjectURL(previewSrc)
-    setPreviewSrc(null)
-    setSelectedFile(null)
+    cleanup()
   }
 
   const bdr = shape === 'circle' ? '50%' : '8px'
@@ -168,7 +180,7 @@ export default function ImageCropUploader({
     <div>
       <canvas ref={canvasRef} className="hidden" />
 
-      {cropping && previewSrc && natW > 0 ? (
+      {cropping && bitmapUrl && trueW > 0 ? (
         <div className="space-y-3">
           <p className="text-sm text-foreground-muted flex items-center gap-1">
             <Move className="w-3 h-3" /> Drag to reposition, scroll to zoom
@@ -181,22 +193,22 @@ export default function ImageCropUploader({
             onTouchStart={e => { if (e.touches.length === 1) ptrDown(e.touches[0].clientX, e.touches[0].clientY) }}
             onWheel={handleWheel}
           >
-            {/* 
-              KEY: only set width, let height be auto via aspect-ratio.
-              This makes it IMPOSSIBLE for the browser to stretch.
+            {/*
+              The bitmapUrl is from a canvas that already has correct orientation.
+              We set explicit width AND height in px — both derived from the SAME
+              coverScale * zoom factor, so aspect ratio is guaranteed.
             */}
             <img
-              src={previewSrc}
+              src={bitmapUrl}
               draggable={false}
+              alt=""
               className="absolute select-none pointer-events-none"
               style={{
-                width: displayW,
-                height: 'auto',
-                aspectRatio: `${natW} / ${natH}`,
-                left: imgLeft,
-                top: imgTop,
+                width: `${dW}px`,
+                height: `${dH}px`,
+                left: `${imgLeft}px`,
+                top: `${imgTop}px`,
               }}
-              alt=""
             />
           </div>
 
