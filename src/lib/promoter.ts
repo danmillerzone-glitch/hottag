@@ -779,7 +779,6 @@ export interface RosterMember {
   promotion_id: string
   is_active: boolean
   is_exclusive: boolean
-  started_at: string | null
   wrestlers?: {
     id: string
     name: string
@@ -830,8 +829,6 @@ export async function addToRoster(data: {
       .from('wrestler_promotions')
       .update({
         is_active: true,
-        ended_at: null,
-        started_at: new Date().toISOString().split('T')[0],
       })
       .eq('id', existing.id)
       .select(`
@@ -850,7 +847,6 @@ export async function addToRoster(data: {
     .insert({
       ...data,
       is_active: true,
-      started_at: new Date().toISOString().split('T')[0],
     })
     .select(`
       *,
@@ -867,7 +863,7 @@ export async function removeFromRoster(memberId: string) {
 
   const { error } = await supabase
     .from('wrestler_promotions')
-    .update({ is_active: false, ended_at: new Date().toISOString().split('T')[0] })
+    .update({ is_active: false })
     .eq('id', memberId)
 
   if (error) throw error
