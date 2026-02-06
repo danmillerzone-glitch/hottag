@@ -44,6 +44,7 @@ export interface Wrestler {
   booking_email: string | null
   merch_url: string | null
   countries_wrestled: string[] | null
+  pwi_ranking: number | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number

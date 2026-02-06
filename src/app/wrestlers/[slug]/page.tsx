@@ -202,9 +202,16 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-                {wrestler.name}
-              </h1>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
+                <h1 className="text-3xl md:text-4xl font-display font-bold">
+                  {wrestler.name}
+                </h1>
+                {wrestler.pwi_ranking && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold">
+                    PWI #{wrestler.pwi_ranking}
+                  </span>
+                )}
+              </div>
               
               {wrestler.hometown && (
                 <div className="flex items-center justify-center md:justify-start gap-2 text-foreground-muted mb-4">
