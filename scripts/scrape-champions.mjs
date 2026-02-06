@@ -45,29 +45,39 @@ function slugify(text) {
 function parseTitlesPage(html) {
   const championships = []
 
-  // Find the table rows - each row has: #, Title, Champion(s), Since, Rating, Votes
-  // The table is inside the main content area after "Active Titles"
-  const tableRegex = /<tr[^>]*class="TRow[12]"[^>]*>([\s\S]*?)<\/tr>/gi
+  // Find table rows with class TRow1 or TRow2
+  const tableRegex = /<tr\s+class="TRow[12]">([\s\S]*?)<\/tr>/gi
   let match
 
   while ((match = tableRegex.exec(html)) !== null) {
     const row = match[1]
 
-    // Extract title name and cagematch ID
-    const titleMatch = row.match(/<a[^>]*href="\?id=5&nr=(\d+)"[^>]*>([^<]+)<\/a>/)
+    // Split into cells by TCol TColSeparator
+    // Cells: #, Title, Champion(s), Since, Rating, Votes
+    const cellRegex = /<td\s+class="TCol TColSeparator">([\s\S]*?)<\/td>/gi
+    const cells = []
+    let cellMatch
+    while ((cellMatch = cellRegex.exec(row)) !== null) {
+      cells.push(cellMatch[1])
+    }
+
+    if (cells.length < 3) continue
+
+    const titleCell = cells[0]
+    const championCell = cells[1]
+    const sinceCell = cells[2]
+
+    // Extract title name and cagematch ID (uses &amp; in HTML)
+    const titleMatch = titleCell.match(/<a\s+href="\?id=5&amp;nr=(\d+)">([^<]+)<\/a>/)
     if (!titleMatch) continue
 
     const titleCagematchId = parseInt(titleMatch[1])
     const titleName = titleMatch[2].trim()
 
-    // Extract champion(s) - could be multiple links for tag teams
+    // Extract champion wrestler links (id=2)
     const championLinks = []
-    const champRegex = /<a[^>]*href="\?id=2&nr=(\d+)(?:&[^"]*)?"\s*[^>]*>([^<]+)<\/a>/g
+    const champRegex = /<a\s+href="\?id=2&amp;nr=(\d+)(?:&amp;[^"]*)?">([^<]+)<\/a>/g
     let champMatch
-
-    // We need to get champions from the right cell (3rd td)
-    const cells = row.split(/<\/td>/i)
-    const championCell = cells.length >= 3 ? cells[2] : ''
 
     while ((champMatch = champRegex.exec(championCell)) !== null) {
       championLinks.push({
@@ -76,12 +86,12 @@ function parseTitlesPage(html) {
       })
     }
 
-    // Also check for stable/team names
-    const stableMatch = championCell.match(/<a[^>]*href="\?id=29&nr=(\d+)[^"]*"[^>]*>([^<]+)<\/a>/)
-    const stableName = stableMatch ? stableMatch[2].trim() : null
+    // Check for tag team name (id=28)
+    const teamMatch = championCell.match(/<a\s+href="\?id=28&amp;nr=(\d+)[^"]*">([^<]+)<\/a>/)
+    const teamName = teamMatch ? teamMatch[2].trim() : null
 
-    // Extract "since" date
-    const sinceMatch = row.match(/(\d{2}\.\d{2}\.\d{4})/)
+    // Extract "since" date (format: DD.MM.YYYY)
+    const sinceMatch = sinceCell.match(/(\d{2}\.\d{2}\.\d{4})/)
     let wonDate = null
     if (sinceMatch) {
       const [day, month, year] = sinceMatch[1].split('.')
@@ -95,7 +105,7 @@ function parseTitlesPage(html) {
       cagematch_title_id: titleCagematchId,
       name: titleName,
       champions: championLinks,
-      stable_name: stableName,
+      team_name: teamName,
       won_date: wonDate,
       is_vacant: isVacant,
     })
@@ -146,7 +156,6 @@ async function findOrCreateWrestler(name, cagematchId) {
       name,
       slug,
       cagematch_id: cagematchId || null,
-      cagematch_url: cagematchId ? `https://www.cagematch.net/?id=2&nr=${cagematchId}` : null,
     })
     .select('id, name, slug')
     .single()
@@ -211,6 +220,14 @@ async function scrapeChampions(promotionSlug) {
   }
 
   const html = await response.text()
+
+  // Debug: show a snippet around the table
+  const tableStart = html.indexOf('TRow1')
+  if (tableStart === -1) {
+    console.log('⚠️  No table rows found in HTML. Page might have a different structure.')
+    console.log('HTML snippet (first 500 chars of body):', html.substring(html.indexOf('<div class="LayoutBody">'), html.indexOf('<div class="LayoutBody">') + 500))
+    return
+  }
 
   // 3. Parse championships
   const championships = parseTitlesPage(html)

@@ -322,7 +322,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                               {champion.name}
                             </Link>
                             {champion2 && (
-                              <span className="text-foreground-muted"> &amp; <Link href={`/wrestlers/${champion2.slug}`} className="font-bold text-lg hover:text-accent transition-colors">{champion2.name}</Link></span>
+                              <><span className="text-foreground-muted"> &amp; </span><Link href={`/wrestlers/${champion2.slug}`} className="font-bold text-lg hover:text-accent transition-colors">{champion2.name}</Link></>
                             )}
                           </div>
                           {champ.won_date && (

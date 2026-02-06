@@ -12,7 +12,7 @@ import {
   type RosterMember, type Championship,
 } from '@/lib/promoter'
 import {
-  Loader2, ArrowLeft, Plus, Trash2, Search, X, User, Trophy, Users, Crown, Check, Save,
+  Loader2, ArrowLeft, Plus, Trash2, Search, X, User, Trophy, Users, Crown, Check, Save, Edit3, EyeOff,
 } from 'lucide-react'
 
 export default function RosterPage() {
@@ -179,6 +179,12 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
   const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Editing states
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(championship.name)
+  const [editShortName, setEditShortName] = useState(championship.short_name || '')
+  const [editWonDate, setEditWonDate] = useState(championship.won_date || '')
+
   const handleSearch = useCallback(async (query: string) => {
     if (query.length < 2) { setSearchResults([]); return }
     setSearching(true)
@@ -196,17 +202,9 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
     setSaving(true)
     try {
       if (settingPartner) {
-        // Setting tag partner (champion 2)
-        await updateChampionship(championship.id, {
-          current_champion_2_id: wrestlerId,
-        })
-        onUpdate({
-          ...championship,
-          current_champion_2_id: wrestlerId,
-          current_champion_2: wrestlerData,
-        })
+        await updateChampionship(championship.id, { current_champion_2_id: wrestlerId })
+        onUpdate({ ...championship, current_champion_2_id: wrestlerId, current_champion_2: wrestlerData })
       } else {
-        // Setting main champion (champion 1)
         await updateChampionship(championship.id, {
           current_champion_id: wrestlerId,
           won_date: new Date().toISOString().split('T')[0],
@@ -227,12 +225,33 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
     if (!confirm('Vacate this championship?')) return
     setSaving(true)
     try {
-      await updateChampionship(championship.id, {
-        current_champion_id: null,
-        current_champion_2_id: null,
-      })
+      await updateChampionship(championship.id, { current_champion_id: null, current_champion_2_id: null })
       onUpdate({ ...championship, current_champion_id: null, current_champion: null, current_champion_2_id: null, current_champion_2: null })
     } catch (err) { console.error('Error vacating:', err) }
+    setSaving(false)
+  }
+
+  const handleSaveEdits = async () => {
+    setSaving(true)
+    try {
+      await updateChampionship(championship.id, {
+        name: editName,
+        short_name: editShortName || null,
+        won_date: editWonDate || null,
+      })
+      onUpdate({ ...championship, name: editName, short_name: editShortName || null, won_date: editWonDate || null })
+      setEditing(false)
+    } catch (err) { console.error('Error saving edits:', err) }
+    setSaving(false)
+  }
+
+  const handleDeactivate = async () => {
+    if (!confirm('Deactivate this championship? It will be hidden from the public page.')) return
+    setSaving(true)
+    try {
+      await updateChampionship(championship.id, { is_active: false })
+      onDelete() // Remove from list
+    } catch (err) { console.error('Error deactivating:', err) }
     setSaving(false)
   }
 
@@ -241,17 +260,59 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
 
   return (
     <div className="p-4 rounded-lg bg-background-tertiary border border-border">
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <Crown className="w-4 h-4 text-interested" />
-            <span className="font-semibold">{championship.name}</span>
-          </div>
-          {championship.short_name && <span className="text-xs text-foreground-muted">{championship.short_name}</span>}
+        <div className="flex-1">
+          {editing ? (
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-foreground-muted mb-1">Title Name</label>
+                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none transition-colors text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-foreground-muted mb-1">Short Name</label>
+                <input type="text" value={editShortName} onChange={(e) => setEditShortName(e.target.value)} placeholder="Optional"
+                  className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent outline-none transition-colors text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-foreground-muted mb-1">Championship Won Date</label>
+                <input type="date" value={editWonDate} onChange={(e) => setEditWonDate(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none transition-colors text-sm" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleSaveEdits} disabled={saving || !editName} className="btn btn-primary text-xs">
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3 mr-1" /> Save</>}
+                </button>
+                <button onClick={() => {
+                  setEditing(false); setEditName(championship.name)
+                  setEditShortName(championship.short_name || ''); setEditWonDate(championship.won_date || '')
+                }} className="btn btn-ghost text-xs">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-interested" />
+                <span className="font-semibold">{championship.name}</span>
+              </div>
+              {championship.short_name && <span className="text-xs text-foreground-muted ml-6">{championship.short_name}</span>}
+            </div>
+          )}
         </div>
-        <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors">
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {!editing && (
+          <div className="flex items-center gap-1">
+            <button onClick={() => setEditing(true)} className="p-1.5 rounded hover:bg-background text-foreground-muted hover:text-foreground transition-colors" title="Edit title">
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button onClick={handleDeactivate} className="p-1.5 rounded hover:bg-yellow-500/10 text-foreground-muted hover:text-yellow-400 transition-colors" title="Deactivate">
+              <EyeOff className="w-4 h-4" />
+            </button>
+            <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors" title="Delete">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Current champion display */}
@@ -263,12 +324,14 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
             <div className="w-12 h-12 rounded-full bg-background-tertiary border-2 border-interested flex items-center justify-center"><User className="w-6 h-6 text-foreground-muted" /></div>
           )}
           <div className="flex-1">
-            <Link href={`/wrestlers/${champ.slug}`} className="font-semibold hover:text-accent transition-colors">
-              {champ.name}
-            </Link>
-            {champ2 && (
-              <span className="text-foreground-muted"> &amp; <Link href={`/wrestlers/${champ2.slug}`} className="font-semibold hover:text-accent transition-colors">{champ2.name}</Link></span>
-            )}
+            <div>
+              <Link href={`/wrestlers/${champ.slug}`} className="font-semibold hover:text-accent transition-colors">
+                {champ.name}
+              </Link>
+              {champ2 && (
+                <> <span className="text-foreground-muted">&amp;</span> <Link href={`/wrestlers/${champ2.slug}`} className="font-semibold hover:text-accent transition-colors">{champ2.name}</Link></>
+              )}
+            </div>
             {championship.won_date && (
               <div className="text-xs text-foreground-muted">
                 Champion since {new Date(championship.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
