@@ -49,9 +49,9 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
         {wrestler.name}
       </span>
       {championTitle && (
-        <span className="flex items-center gap-0.5 text-xs text-yellow-500 -mt-1">
-          <Crown className="w-3 h-3" />
-          <span className="line-clamp-1 max-w-[90px] text-center">{championTitle}</span>
+        <span className="flex items-center justify-center gap-0.5 text-xs text-yellow-500 -mt-1 max-w-[100px]" title={championTitle}>
+          <Crown className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{championTitle}</span>
         </span>
       )}
     </Link>

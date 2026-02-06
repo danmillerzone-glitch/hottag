@@ -277,7 +277,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     href={`/wrestlers/${wrestler.slug}`}
                     className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
                   >
-                    <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
+                    <div className={`w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2 border-2 ${championMap[wrestler.id] ? 'border-yellow-500' : 'border-transparent'}`}>
                       {wrestler.photo_url ? (
                         <Image
                           src={wrestler.photo_url}
