@@ -13,8 +13,9 @@ import {
 import {
   Loader2, ArrowLeft, Save, User, Globe, Instagram, Youtube,
   Upload, Check, ExternalLink, ImageIcon, Mail, ShoppingBag,
-  Shield, ShieldCheck, Clock, Crown, Calendar, Users,
+  Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X,
 } from 'lucide-react'
+import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -57,6 +58,9 @@ export default function WrestlerDashboardPage() {
   const [website, setWebsite] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
+  const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
+  const [countrySearch, setCountrySearch] = useState('')
+  const [showCountryPicker, setShowCountryPicker] = useState(false)
   const dataLoaded = useRef(false)
 
   useEffect(() => {
@@ -87,6 +91,7 @@ export default function WrestlerDashboardPage() {
       setWebsite(data.wrestler.website || '')
       setBookingEmail(data.wrestler.booking_email || '')
       setMerchUrl(data.wrestler.merch_url || '')
+      setCountriesWrestled(data.wrestler.countries_wrestled || [])
     } else {
       const userClaims = await getUserWrestlerClaims()
       setClaims(userClaims)
@@ -109,6 +114,7 @@ export default function WrestlerDashboardPage() {
         website: website || null,
         booking_email: bookingEmail || null,
         merch_url: merchUrl || null,
+        countries_wrestled: countriesWrestled,
       })
       setDashboardData({ ...dashboardData, wrestler: updated })
       setSaved(true)
@@ -489,6 +495,91 @@ export default function WrestlerDashboardPage() {
               />
             </div>
           </div>
+        </section>
+
+        {/* Countries Wrestled */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <MapPin className="w-5 h-5 text-accent" />
+            <h2 className="text-lg font-display font-bold">Countries Wrestled</h2>
+          </div>
+
+          {/* Current flags */}
+          {countriesWrestled.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {countriesWrestled.map((code) => (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background-tertiary border border-border text-sm group"
+                >
+                  <span className="text-lg">{getFlag(code)}</span>
+                  {getCountryName(code)}
+                  <button
+                    onClick={() => setCountriesWrestled(countriesWrestled.filter(c => c !== code))}
+                    className="ml-1 p-0.5 rounded hover:bg-red-500/20 text-foreground-muted hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Add country */}
+          <div className="relative"
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setTimeout(() => setShowCountryPicker(false), 150)
+              }
+            }}
+          >
+            <input
+              type="text"
+              value={countrySearch}
+              onChange={(e) => {
+                setCountrySearch(e.target.value)
+                setShowCountryPicker(true)
+              }}
+              onFocus={() => setShowCountryPicker(true)}
+              placeholder="Search for a country to add..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+            {showCountryPicker && (
+              <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-background-secondary border border-border rounded-lg shadow-lg">
+                {COUNTRIES
+                  .filter(c => 
+                    !countriesWrestled.includes(c.code) &&
+                    (c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                     c.code.toLowerCase().includes(countrySearch.toLowerCase()))
+                  )
+                  .slice(0, 10)
+                  .map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => {
+                        setCountriesWrestled([...countriesWrestled, country.code])
+                        setCountrySearch('')
+                        setShowCountryPicker(false)
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-background-tertiary transition-colors flex items-center gap-2 text-sm"
+                    >
+                      <span className="text-lg">{country.flag}</span>
+                      {country.name}
+                    </button>
+                  ))}
+                {COUNTRIES.filter(c => 
+                  !countriesWrestled.includes(c.code) &&
+                  (c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                   c.code.toLowerCase().includes(countrySearch.toLowerCase()))
+                ).length === 0 && (
+                  <div className="px-3 py-2 text-sm text-foreground-muted">No countries found</div>
+                )}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-foreground-muted mt-2">
+            Add countries where you've performed. Click the × to remove.
+          </p>
         </section>
 
         {/* Save */}

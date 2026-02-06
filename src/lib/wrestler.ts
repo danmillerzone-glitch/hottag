@@ -218,6 +218,7 @@ export async function updateWrestlerProfile(wrestlerId: string, updates: {
   booking_email?: string | null
   merch_url?: string | null
   photo_url?: string | null
+  countries_wrestled?: string[]
 }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()

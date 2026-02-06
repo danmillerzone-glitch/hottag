@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
+import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 
@@ -312,6 +313,20 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 <p className="text-foreground-muted max-w-2xl">
                   {wrestler.bio}
                 </p>
+              )}
+
+              {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-3" title="Countries wrestled in">
+                  {wrestler.countries_wrestled.map((code: string) => (
+                    <span
+                      key={code}
+                      className="text-2xl cursor-default"
+                      title={getCountryName(code)}
+                    >
+                      {getFlag(code)}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           </div>

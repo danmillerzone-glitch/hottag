@@ -43,6 +43,7 @@ export interface Wrestler {
   website: string | null
   booking_email: string | null
   merch_url: string | null
+  countries_wrestled: string[] | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number
