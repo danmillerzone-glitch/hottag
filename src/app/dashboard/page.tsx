@@ -159,10 +159,16 @@ export default function DashboardPage() {
                 To access the promoter dashboard, you need to claim your promotion first. 
                 Find your promotion and click "Claim This Promotion."
               </p>
-              <Link href="/promotions" className="btn btn-primary">
-                <Building2 className="w-4 h-4 mr-2" />
-                Browse Promotions
-              </Link>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Link href="/promotions" className="btn btn-primary">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Browse Promotions
+                </Link>
+                <Link href="/dashboard/wrestler" className="btn btn-secondary">
+                  <Users className="w-4 h-4 mr-2" />
+                  Wrestler Dashboard
+                </Link>
+              </div>
             </div>
           )}
         </div>

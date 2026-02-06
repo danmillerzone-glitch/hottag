@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Crown } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
+import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -184,6 +185,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   initialFollowerCount={followerCount}
                 />
                 
+                <ClaimWrestlerButton
+                  wrestlerId={wrestler.id}
+                  wrestlerName={wrestler.name}
+                  verificationStatus={wrestler.verification_status || 'unverified'}
+                />
+
                 {wrestler.twitter_handle && (
                   <a
                     href={`https://x.com/${wrestler.twitter_handle}`}
@@ -193,6 +200,37 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   >
                     <XIcon className="w-4 h-4 mr-2" />
                     @{wrestler.twitter_handle}
+                  </a>
+                )}
+
+                {wrestler.instagram_handle && (
+                  <a
+                    href={`https://instagram.com/${wrestler.instagram_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    Instagram
+                  </a>
+                )}
+
+                {wrestler.booking_email && (
+                  <a
+                    href={`mailto:${wrestler.booking_email}`}
+                    className="btn btn-ghost"
+                  >
+                    Booking
+                  </a>
+                )}
+
+                {wrestler.merch_url && (
+                  <a
+                    href={wrestler.merch_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    Merch
                   </a>
                 )}
               </div>
