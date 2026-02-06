@@ -49,10 +49,10 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
         {wrestler.name}
       </span>
       {championTitle && (
-        <span className="flex items-center justify-center gap-0.5 text-xs text-yellow-500 -mt-1" title={championTitle}>
-          <Crown className="w-3 h-3 flex-shrink-0" />
-          <span className="text-center">{championTitle}</span>
-        </span>
+        <div className="flex flex-col items-center -mt-1" title={championTitle}>
+          <Crown className="w-3 h-3 text-yellow-500" />
+          <span className="text-xs text-yellow-500 text-center leading-tight">{championTitle}</span>
+        </div>
       )}
     </Link>
   )

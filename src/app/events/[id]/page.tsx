@@ -303,10 +303,10 @@ export default async function EventPage({ params }: EventPageProps) {
                       {wrestler.name}
                     </span>
                     {championMap[wrestler.id] && (
-                      <span className="flex items-center gap-0.5 text-xs text-yellow-500 mt-0.5">
-                        <Crown className="w-3 h-3" />
-                        {championMap[wrestler.id]}
-                      </span>
+                      <div className="flex flex-col items-center mt-0.5" title={championMap[wrestler.id]}>
+                        <Crown className="w-3 h-3 text-yellow-500" />
+                        <span className="text-xs text-yellow-500 text-center leading-tight">{championMap[wrestler.id]}</span>
+                      </div>
                     )}
                   </Link>
                 ))}
