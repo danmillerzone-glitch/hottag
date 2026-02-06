@@ -87,6 +87,11 @@ a {
   @apply bg-background-secondary rounded-xl border border-border overflow-hidden transition-all duration-200;
 }
 
+/* Input field */
+.input-field {
+  @apply px-4 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none;
+}
+
 .card:hover {
   @apply border-border-hover;
 }

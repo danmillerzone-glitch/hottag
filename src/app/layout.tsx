@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 import Navigation from '@/components/NavigationAuth'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
 
 export const metadata: Metadata = {
   title: 'HotTag - Indie Wrestling Event Tracker',
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className="bg-background text-foreground min-h-screen">
         <AuthProvider>
           <Navigation />
+          <AnnouncementBanner />
           <main className="pb-20 md:pb-0">
             {children}
           </main>
