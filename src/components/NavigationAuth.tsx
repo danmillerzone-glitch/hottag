@@ -14,7 +14,8 @@ import {
   LogOut,
   Loader2
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase-browser'
 
 const navItems = [
   { href: '/events', label: 'Events', icon: Calendar },
@@ -27,6 +28,33 @@ export default function Navigation() {
   const pathname = usePathname()
   const { user, loading, signOut } = useAuth()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [hasPromotion, setHasPromotion] = useState(false)
+  const [hasWrestler, setHasWrestler] = useState(false)
+
+  useEffect(() => {
+    if (!user) {
+      setHasPromotion(false)
+      setHasWrestler(false)
+      return
+    }
+    const supabase = createClient()
+
+    // Check if user has a claimed promotion
+    supabase
+      .from('promotions')
+      .select('id')
+      .eq('claimed_by', user.id)
+      .limit(1)
+      .then(({ data }) => setHasPromotion(!!(data && data.length > 0)))
+
+    // Check if user has a claimed wrestler
+    supabase
+      .from('wrestlers')
+      .select('id')
+      .eq('claimed_by', user.id)
+      .limit(1)
+      .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
+  }, [user])
 
   const handleSignOut = async () => {
     await signOut()
@@ -92,23 +120,29 @@ export default function Navigation() {
 
                   {showDropdown && (
                     <div className="absolute right-0 mt-2 w-48 bg-background-secondary border border-border rounded-lg shadow-lg py-1">
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
-                        onClick={() => setShowDropdown(false)}
-                      >
-                        <Building2 className="w-4 h-4 text-accent" />
-                        <span className="text-accent font-medium">Promoter Dashboard</span>
-                      </Link>
-                      <Link
-                        href="/dashboard/wrestler"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
-                        onClick={() => setShowDropdown(false)}
-                      >
-                        <Users className="w-4 h-4 text-accent" />
-                        <span className="text-accent font-medium">Wrestler Dashboard</span>
-                      </Link>
-                      <div className="border-t border-border my-1" />
+                      {hasPromotion && (
+                        <Link
+                          href="/dashboard"
+                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Building2 className="w-4 h-4 text-accent" />
+                          <span className="text-accent font-medium">Promoter Dashboard</span>
+                        </Link>
+                      )}
+                      {hasWrestler && (
+                        <Link
+                          href="/dashboard/wrestler"
+                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Users className="w-4 h-4 text-accent" />
+                          <span className="text-accent font-medium">Wrestler Dashboard</span>
+                        </Link>
+                      )}
+                      {(hasPromotion || hasWrestler) && (
+                        <div className="border-t border-border my-1" />
+                      )}
                       <Link
                         href="/profile"
                         className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors"
