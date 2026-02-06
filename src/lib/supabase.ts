@@ -16,6 +16,10 @@ export interface Promotion {
   website: string | null
   twitter_handle: string | null
   instagram_handle: string | null
+  facebook_url: string | null
+  youtube_url: string | null
+  booking_email: string | null
+  merch_url: string | null
   city: string | null
   state: string | null
   country: string
