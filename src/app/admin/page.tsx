@@ -1060,7 +1060,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
           <FieldRow label="Currently Residing In"><input className="w-full input-field" value={form.residence} onChange={e => setForm({...form, residence: e.target.value})} placeholder="e.g. Houston, TX" /></FieldRow>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FieldRow label="Height"><input className="w-full input-field" value={form.height} onChange={e => setForm({...form, height: e.target.value})} placeholder='e.g. 6\'1"' /></FieldRow>
+          <FieldRow label="Height"><input className="w-full input-field" value={form.height} onChange={e => setForm({...form, height: e.target.value})} placeholder="e.g. 6 ft 1 in" /></FieldRow>
           <FieldRow label="Weight"><input className="w-full input-field" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} placeholder="e.g. 218 lbs" /></FieldRow>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -1259,7 +1259,7 @@ function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCr
           <FieldRow label="Currently Residing In"><input className="w-full input-field" value={form.residence} onChange={e => setForm({...form, residence: e.target.value})} placeholder="e.g. Houston, TX" disabled={!!createdId} /></FieldRow>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FieldRow label="Height"><input className="w-full input-field" value={form.height} onChange={e => setForm({...form, height: e.target.value})} placeholder='e.g. 6&apos;1"' disabled={!!createdId} /></FieldRow>
+          <FieldRow label="Height"><input className="w-full input-field" value={form.height} onChange={e => setForm({...form, height: e.target.value})} placeholder="e.g. 6 ft 1 in" disabled={!!createdId} /></FieldRow>
           <FieldRow label="Weight"><input className="w-full input-field" value={form.weight} onChange={e => setForm({...form, weight: e.target.value})} placeholder="e.g. 218 lbs" disabled={!!createdId} /></FieldRow>
         </div>
         <div className="grid grid-cols-2 gap-3">
