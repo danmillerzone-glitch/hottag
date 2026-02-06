@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import ImageCropUploader from '@/components/ImageCropUploader'
+import { COUNTRIES, getFlag } from '@/lib/countries'
 import {
   checkIsAdmin, getAdminStats,
   getPendingPromotionClaims, getPendingWrestlerClaims,
@@ -1020,6 +1021,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
     tiktok_handle: wrestler.tiktok_handle || '', youtube_url: wrestler.youtube_url || '',
     website: wrestler.website || '', booking_email: wrestler.booking_email || '', merch_url: wrestler.merch_url || '',
   })
+  const [countriesWrestled, setCountriesWrestled] = useState<string[]>(wrestler.countries_wrestled || [])
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -1036,6 +1038,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
         twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
         tiktok_handle: form.tiktok_handle || null, youtube_url: form.youtube_url || null,
         website: form.website || null, booking_email: form.booking_email || null, merch_url: form.merch_url || null,
+        countries_wrestled: countriesWrestled.length > 0 ? countriesWrestled : null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1070,6 +1073,32 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
         <FieldRow label="Trainer"><input className="w-full input-field" value={form.trainer} onChange={e => setForm({...form, trainer: e.target.value})} placeholder="e.g. Booker T" /></FieldRow>
         <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} /></FieldRow>
         <FieldRow label="Bio"><textarea className="w-full input-field" rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></FieldRow>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Countries Wrestled</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {countriesWrestled.map(code => (
+              <button key={code} onClick={() => setCountriesWrestled(countriesWrestled.filter(c => c !== code))} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-background-tertiary hover:bg-red-500/20 text-sm transition-colors" title={`Remove ${code}`}>
+                {getFlag(code)} {code} <X className="w-3 h-3" />
+              </button>
+            ))}
+            {countriesWrestled.length === 0 && <span className="text-sm text-foreground-muted">None added</span>}
+          </div>
+          <select
+            className="input-field text-sm"
+            value=""
+            onChange={(e) => {
+              if (e.target.value && !countriesWrestled.includes(e.target.value)) {
+                setCountriesWrestled([...countriesWrestled, e.target.value])
+              }
+              e.target.value = ''
+            }}
+          >
+            <option value="">+ Add country...</option>
+            {COUNTRIES.filter(c => !countriesWrestled.includes(c.code)).map(c => (
+              <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+            ))}
+          </select>
+        </div>
         <div className="border-t border-border pt-3 mt-3">
           <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>
           <div className="grid grid-cols-2 gap-3">

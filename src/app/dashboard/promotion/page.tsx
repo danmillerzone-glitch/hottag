@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getPromoterPromotion, updatePromotion } from '@/lib/promoter'
 import { createClient } from '@/lib/supabase-browser'
+import ImageCropUploader from '@/components/ImageCropUploader'
 import {
   Loader2,
   ArrowLeft,
@@ -193,38 +194,25 @@ export default function EditPromotionPage() {
             <h2 className="text-lg font-display font-bold">Logo</h2>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-xl bg-background-tertiary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
-              {promotion.logo_url ? (
-                <Image
-                  src={promotion.logo_url}
-                  alt={promotion.name}
-                  width={96}
-                  height={96}
-                  className="object-contain p-2"
-                />
-              ) : (
-                <Building2 className="w-10 h-10 text-foreground-muted" />
-              )}
-            </div>
-            <div>
-              <label className="btn btn-secondary text-sm cursor-pointer">
-                {uploadingLogo ? (
-                  <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Uploading...</>
-                ) : (
-                  <><Upload className="w-4 h-4 mr-1.5" /> Upload Logo</>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                  disabled={uploadingLogo}
-                />
-              </label>
-              <p className="text-xs text-foreground-muted mt-2">Square image recommended · Max 2MB</p>
-            </div>
-          </div>
+          <ImageCropUploader
+            currentUrl={promotion.logo_url}
+            shape="square"
+            size={96}
+            onUpload={async (file) => {
+              const supabase = createClient()
+              const fileExt = file.name.split('.').pop()
+              const filePath = `promotion-logos/${promotion.id}.${fileExt}`
+              const { error: uploadError } = await supabase.storage.from('logos').upload(filePath, file, { upsert: true })
+              if (uploadError) throw uploadError
+              const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(filePath)
+              const urlWithBust = `${publicUrl}?v=${Date.now()}`
+              const updated = await updatePromotion(promotion.id, { logo_url: urlWithBust })
+              setPromotion(updated)
+              return urlWithBust
+            }}
+            label="Upload Logo"
+          />
+          <p className="text-xs text-foreground-muted mt-3">Square image recommended · Max 2MB</p>
         </section>
 
         {/* Description */}

@@ -64,6 +64,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                   width={64}
                   height={64}
                   className="object-cover w-full h-full"
+                  unoptimized
                 />
               ) : (
                 <User className="w-8 h-8 text-foreground-muted" />

@@ -16,6 +16,7 @@ import {
   Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X,
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
+import ImageCropUploader from '@/components/ImageCropUploader'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -332,34 +333,18 @@ export default function WrestlerDashboardPage() {
             <h2 className="text-lg font-display font-bold">Profile Photo</h2>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-background-tertiary border-2 border-border flex items-center justify-center overflow-hidden flex-shrink-0">
-              {wrestler.photo_url ? (
-                <Image src={wrestler.photo_url} alt={wrestler.name} width={96} height={96} className="object-cover w-full h-full" />
-              ) : (
-                <User className="w-10 h-10 text-foreground-muted" />
-              )}
-            </div>
-            <div>
-              <label className="btn btn-secondary text-sm cursor-pointer">
-                {uploadingPhoto ? (
-                  <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Uploading...</>
-                ) : (
-                  <><Upload className="w-4 h-4 mr-1.5" /> Upload Photo</>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  disabled={uploadingPhoto}
-                />
-              </label>
-              <p className="text-xs text-foreground-muted mt-2">
-                Square image recommended. Max 5MB.
-              </p>
-            </div>
-          </div>
+          <ImageCropUploader
+            currentUrl={wrestler.photo_url}
+            shape="circle"
+            size={96}
+            onUpload={async (file) => {
+              const updated = await uploadWrestlerPhoto(dashboardData!.wrestler.id, file)
+              setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, photo_url: updated.photo_url } })
+              return updated.photo_url
+            }}
+            label="Upload Photo"
+          />
+          <p className="text-xs text-foreground-muted mt-3">Square image recommended. Max 5MB.</p>
         </section>
 
         {/* Bio & Details */}
