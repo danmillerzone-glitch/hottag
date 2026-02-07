@@ -112,6 +112,7 @@ export default function HomePage() {
           .from('events_with_counts')
           .select(`*, promotions (id, name, slug, logo_url)`)
           .in('id', eventIds)
+          .then(r => r)
         secondWave.push(myEventsPromise)
       }
 
@@ -127,6 +128,7 @@ export default function HomePage() {
           .eq('status', 'upcoming')
           .order('event_date', { ascending: true })
           .limit(8)
+          .then(r => r)
         secondWave.push(promoEventsPromise)
       }
 
@@ -135,9 +137,9 @@ export default function HomePage() {
       if (followedWrestlers && followedWrestlers.length > 0) {
         const wrestlerIds = followedWrestlers.map((f: any) => f.wrestler_id)
         wrestlerLinksPromise = Promise.all([
-          supabase.from('event_wrestlers').select('event_id').in('wrestler_id', wrestlerIds),
-          supabase.from('match_participants').select('event_matches(event_id)').in('wrestler_id', wrestlerIds),
-          supabase.from('event_announced_talent').select('event_id').in('wrestler_id', wrestlerIds),
+          supabase.from('event_wrestlers').select('event_id').in('wrestler_id', wrestlerIds).then(r => r),
+          supabase.from('match_participants').select('event_matches(event_id)').in('wrestler_id', wrestlerIds).then(r => r),
+          supabase.from('event_announced_talent').select('event_id').in('wrestler_id', wrestlerIds).then(r => r),
         ])
         secondWave.push(wrestlerLinksPromise)
       }
