@@ -511,7 +511,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
       {showGroupSelect && (
         <div className="p-3 rounded-lg bg-background border border-border mb-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Select a Tag Team / Stable</span>
+            <span className="text-sm font-medium">Select a Tag Team / Faction</span>
             <button onClick={() => setShowGroupSelect(false)} className="p-1 rounded hover:bg-background-tertiary"><X className="w-4 h-4 text-foreground-muted" /></button>
           </div>
           <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -523,7 +523,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
                   <div className="font-medium">{g.name}</div>
                   <div className="text-xs text-foreground-muted">{g.promotion_group_members?.map((m: any) => m.wrestlers?.name).filter(Boolean).join(', ')}</div>
                 </div>
-                <span className="text-[10px] text-foreground-muted">{g.type === 'tag_team' ? 'Tag' : g.type === 'trio' ? 'Trio' : 'Stable'}</span>
+                <span className="text-[10px] text-foreground-muted">{g.type === 'tag_team' ? 'Tag' : g.type === 'trio' ? 'Trio' : 'Faction'}</span>
               </button>
             ))}
           </div>
@@ -578,7 +578,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
 }
 
 // ============================================
-// GROUPS SECTION (Tag Teams & Stables)
+// GROUPS SECTION (Tag Teams & Factions)
 // ============================================
 
 function GroupsSection({ promotionId, groups, onUpdate }: {
@@ -613,7 +613,7 @@ function GroupsSection({ promotionId, groups, onUpdate }: {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-purple-400" />
-          <h2 className="text-lg font-display font-bold">Tag Teams &amp; Stables</h2>
+          <h2 className="text-lg font-display font-bold">Tag Teams &amp; Factions</h2>
           <span className="text-sm text-foreground-muted">({groups.length})</span>
         </div>
         <button onClick={() => setShowAdd(true)} className="btn btn-primary text-sm">
@@ -632,7 +632,7 @@ function GroupsSection({ promotionId, groups, onUpdate }: {
       ) : !showAdd && (
         <div className="py-8 text-center">
           <Shield className="w-10 h-10 text-foreground-muted mx-auto mb-3" />
-          <p className="text-foreground-muted">No tag teams or stables yet.</p>
+          <p className="text-foreground-muted">No tag teams or factions yet.</p>
         </div>
       )}
 
@@ -649,7 +649,7 @@ function GroupsSection({ promotionId, groups, onUpdate }: {
               className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none transition-colors text-sm">
               <option value="tag_team">Tag Team (2)</option>
               <option value="trio">Trio (3)</option>
-              <option value="stable">Stable (3+)</option>
+              <option value="stable">Faction (3+)</option>
             </select>
           </div>
           <div className="flex justify-end gap-2">
@@ -681,7 +681,7 @@ function GroupItem({ group, promotionId, onUpdate, onDelete }: {
 
   const members = group.promotion_group_members || []
   const memberIds = new Set(members.map(m => m.wrestler_id))
-  const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+  const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
   const typeColor = group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'
 
   const handleSearch = useCallback(async (query: string) => {
@@ -734,7 +734,7 @@ function GroupItem({ group, promotionId, onUpdate, onDelete }: {
               className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none text-sm">
               <option value="tag_team">Tag Team</option>
               <option value="trio">Trio</option>
-              <option value="stable">Stable</option>
+              <option value="stable">Faction</option>
             </select>
             <div className="flex gap-2">
               <button onClick={handleSaveEdits} disabled={saving || !editName} className="btn btn-primary text-xs">

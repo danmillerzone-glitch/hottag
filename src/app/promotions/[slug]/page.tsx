@@ -469,17 +469,17 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
           </div>
         )}
 
-        {/* Tag Teams & Stables */}
+        {/* Tag Teams & Factions */}
         {groups.length > 0 && (
           <div className="mb-10">
             <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
               <Shield className="w-6 h-6 text-purple-400" />
-              Tag Teams &amp; Stables
+              Tag Teams &amp; Factions
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {groups.map((group: any) => {
                 const members = group.promotion_group_members || []
-                const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+                const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
                 const typeColor = group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'
                 return (
                   <div key={group.id} className="card p-5">

@@ -235,7 +235,7 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-3 mb-8">
+          <div className="flex flex-wrap items-center gap-3 mb-8">
             {event.ticket_url && !event.is_sold_out && (
               <a
                 href={event.ticket_url}
@@ -249,11 +249,13 @@ export default async function EventPage({ params }: EventPageProps) {
               </a>
             )}
             <StreamingLinks eventId={event.id} />
-            <ShareButton
-              title={event.name}
-              text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
-              url={`https://www.hottag.app/events/${event.id}`}
-            />
+            <div className="ml-auto">
+              <ShareButton
+                title={event.name}
+                text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
+                url={`https://www.hottag.app/events/${event.id}`}
+              />
+            </div>
           </div>
 
           {/* Attendance buttons */}

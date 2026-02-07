@@ -545,7 +545,7 @@ function PromotionsTab() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => openRoster(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Roster"><Users className="w-4 h-4" /></button>
-                <button onClick={() => openGroups(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Tag Teams & Stables"><Shield className="w-4 h-4" /></button>
+                <button onClick={() => openGroups(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Tag Teams & Factions"><Shield className="w-4 h-4" /></button>
                 <button onClick={() => openChampionships(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Championships"><Award className="w-4 h-4" /></button>
                 <button onClick={() => openEdit(promo.id)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-4 h-4" /></button>
                 <button onClick={() => handleVerify(promo.id, promo.verification_status === 'verified')} className={`p-2 rounded transition-colors ${promo.verification_status === 'verified' ? 'text-green-400 hover:bg-green-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={promo.verification_status === 'verified' ? 'Remove verification' : 'Verify'}>
@@ -1592,14 +1592,14 @@ function GroupsManagerModal({ promoId, promoName, groups, onUpdate, onClose }: {
     } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
-  const typeLabel = (t: string) => t === 'tag_team' ? 'Tag Team' : t === 'trio' ? 'Trio' : 'Stable'
+  const typeLabel = (t: string) => t === 'tag_team' ? 'Tag Team' : t === 'trio' ? 'Trio' : 'Faction'
   const typeColor = (t: string) => t === 'tag_team' ? 'text-blue-400' : t === 'trio' ? 'text-purple-400' : 'text-green-400'
 
   return (
     <Modal title={`Groups: ${promoName}`} onClose={onClose}>
       <div className="space-y-3 max-h-[70vh] overflow-y-auto">
         {groups.length === 0 && !creating && (
-          <p className="text-foreground-muted text-sm">No tag teams or stables yet.</p>
+          <p className="text-foreground-muted text-sm">No tag teams or factions yet.</p>
         )}
 
         {groups.map((group: any) => (
@@ -1622,7 +1622,7 @@ function GroupsManagerModal({ promoId, promoName, groups, onUpdate, onClose }: {
               <select className="w-full input-field" value={newType} onChange={e => setNewType(e.target.value)}>
                 <option value="tag_team">Tag Team (2)</option>
                 <option value="trio">Trio (3)</option>
-                <option value="stable">Stable (3+)</option>
+                <option value="stable">Faction (3+)</option>
               </select>
             </FieldRow>
             <div className="flex gap-2">
@@ -1634,7 +1634,7 @@ function GroupsManagerModal({ promoId, promoName, groups, onUpdate, onClose }: {
           </div>
         ) : (
           <button onClick={() => setCreating(true)} className="btn btn-secondary text-xs w-full">
-            <Plus className="w-3 h-3 mr-1" /> Add Tag Team / Stable
+            <Plus className="w-3 h-3 mr-1" /> Add Tag Team / Faction
           </button>
         )}
       </div>
@@ -1654,7 +1654,7 @@ function GroupItemAdmin({ group, onRename, onDelete, onAddMember, onRemoveMember
 
   const members = group.promotion_group_members || []
   const memberIds = new Set(members.map((m: any) => m.wrestler_id))
-  const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+  const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
   const typeColor = group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'
 
   async function handleMemberSearch(query: string) {

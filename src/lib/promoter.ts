@@ -181,17 +181,33 @@ export async function getPromoterPromotion() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
+  // First check if user is the owner
   const { data, error } = await supabase
     .from('promotions')
     .select('*')
     .eq('claimed_by', user.id)
     .single()
 
-  if (error) {
-    console.error('Error fetching promoter promotion:', error)
-    return null
+  if (!error && data) return data
+
+  // Then check if user is a promotion admin
+  const { data: adminLink } = await supabase
+    .from('promotion_admins')
+    .select('promotion_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+
+  if (adminLink) {
+    const { data: promo } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('id', adminLink.promotion_id)
+      .single()
+    if (promo) return promo
   }
-  return data
+
+  return null
 }
 
 export async function getPromoterDashboardData(): Promise<PromoterDashboardData | null> {

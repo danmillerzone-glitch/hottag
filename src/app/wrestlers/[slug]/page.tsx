@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield } from 'lucide-react'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -142,9 +142,42 @@ async function getWrestlerChampionships(wrestlerId: string) {
   if (err1) console.error('Error fetching championships (champ1):', err1)
   if (err2) console.error('Error fetching championships (champ2):', err2)
 
+  // Championships held via a group this wrestler belongs to
+  const { data: groupMemberships } = await supabase
+    .from('promotion_group_members')
+    .select('group_id')
+    .eq('wrestler_id', wrestlerId)
+
+  let groupChampionships: any[] = []
+  if (groupMemberships && groupMemberships.length > 0) {
+    const groupIds = groupMemberships.map((m: any) => m.group_id)
+    const { data: groupChamps } = await supabase
+      .from('promotion_championships')
+      .select(`
+        id, name, short_name, won_date, is_active,
+        champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (
+          id, name, type,
+          promotion_group_members (id, wrestler_id, wrestlers (id, name, slug))
+        ),
+        promotions (id, name, slug, logo_url)
+      `)
+      .in('champion_group_id', groupIds)
+      .eq('is_active', true)
+
+    groupChampionships = (groupChamps || []).map((c: any) => ({
+      ...c,
+      isGroupChampionship: true,
+      groupName: c.champion_group?.name,
+      partners: (c.champion_group?.promotion_group_members || [])
+        .filter((m: any) => m.wrestler_id !== wrestlerId)
+        .map((m: any) => m.wrestlers),
+    }))
+  }
+
   const championships = [
     ...(asChamp1 || []).map((c: any) => ({ ...c, partner: c.current_champion_2 })),
     ...(asChamp2 || []).map((c: any) => ({ ...c, partner: c.current_champion })),
+    ...groupChampionships,
   ]
 
   return championships
@@ -399,6 +432,21 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   ))}
                 </div>
               )}
+
+              {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-foreground-muted mb-2">
+                    <Zap className="w-3.5 h-3.5" /> Signature Moves
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {wrestler.signature_moves.map((move: string, i: number) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium border border-accent/20">
+                        {move}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -422,6 +470,10 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   <div className="text-xs text-foreground-muted">
                     {champ.promotions?.name}
                     {champ.partner && <> &middot; w/ {champ.partner.name}</>}
+                    {champ.isGroupChampionship && champ.groupName && <> &middot; {champ.groupName}</>}
+                    {champ.partners && champ.partners.length > 0 && !champ.partner && (
+                      <> &middot; w/ {champ.partners.map((p: any) => p.name).join(' & ')}</>
+                    )}
                     {champ.won_date && (
                       <> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>
                     )}
@@ -433,13 +485,13 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         </div>
       )}
 
-      {/* Tag Teams & Stables */}
+      {/* Tag Teams & Factions */}
       {groups.length > 0 && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="flex flex-wrap gap-3">
             {groups.map((group: any) => {
               const members = (group.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestler.id)
-              const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+              const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
               const typeColor = group.type === 'tag_team' ? 'border-blue-500/30 hover:border-blue-500/50' : group.type === 'trio' ? 'border-purple-500/30 hover:border-purple-500/50' : 'border-green-500/30 hover:border-green-500/50'
               const iconColor = group.type === 'tag_team' ? 'text-blue-400' : group.type === 'trio' ? 'text-purple-400' : 'text-green-400'
               return (

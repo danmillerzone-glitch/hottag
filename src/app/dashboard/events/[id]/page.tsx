@@ -38,7 +38,18 @@ export default function ManageEventPage() {
     try {
       const data = await getEventForEditing(eventId)
       if (!data) { router.push('/dashboard'); return }
-      if (data.promotions?.claimed_by !== user?.id) { setAuthorized(false); setLoading(false); return }
+      if (data.promotions?.claimed_by !== user?.id) {
+        // Check if user is a promotion admin
+        const { createClient: createBrowserClient } = await import('@/lib/supabase-browser')
+        const supabase = createBrowserClient()
+        const { data: adminCheck } = await supabase
+          .from('promotion_admins')
+          .select('id')
+          .eq('promotion_id', data.promotions?.id)
+          .eq('user_id', user?.id)
+          .maybeSingle()
+        if (!adminCheck) { setAuthorized(false); setLoading(false); return }
+      }
       setEvent(data)
       setAuthorized(true)
       const [eventMatches, links, talent] = await Promise.all([

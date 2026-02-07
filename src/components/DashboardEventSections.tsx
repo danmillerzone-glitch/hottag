@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import {
-  updateEvent, getEventMatches, createMatch, deleteMatch, addMatchParticipant, removeMatchParticipant,
+  updateEvent, getEventMatches, createMatch, deleteMatch, updateMatch, addMatchParticipant, removeMatchParticipant,
   searchWrestlers, uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
   getAnnouncedTalent, addAnnouncedTalent, removeAnnouncedTalent, updateAnnouncedTalent,
   type EventMatch, type StreamingLink, type AnnouncedTalent,
 } from '@/lib/promoter'
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
-  ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone,
+  ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
 } from 'lucide-react'
 
 // ============================================
@@ -198,13 +198,25 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
   const [description, setDescription] = useState(event.description || '')
   const [eventTime, setEventTime] = useState(event.event_time || '')
   const [doorsTime, setDoorsTime] = useState(event.doors_time || '')
+  const [venueName, setVenueName] = useState(event.venue_name || '')
+  const [venueAddress, setVenueAddress] = useState(event.venue_address || '')
+  const [city, setCity] = useState(event.city || '')
+  const [state, setState] = useState(event.state || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     setSaving(true); setSaved(false)
     try {
-      const updated = await updateEvent(event.id, { description: description || null, event_time: eventTime || null, doors_time: doorsTime || null })
+      const updated = await updateEvent(event.id, {
+        description: description || null,
+        event_time: eventTime || null,
+        doors_time: doorsTime || null,
+        venue_name: venueName || null,
+        venue_address: venueAddress || null,
+        city: city || null,
+        state: state || null,
+      })
       onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
     } catch (err) { console.error('Error saving:', err) }
     setSaving(false)
@@ -227,6 +239,30 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
             <label className="block text-sm font-medium mb-1.5">Bell Time</label>
             <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Venue Name</label>
+            <input type="text" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Venue name..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Venue Address</label>
+            <input type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="123 Main St..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1.5">City</label>
+            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">State</label>
+            <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="TX..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
           </div>
         </div>
         <div>
@@ -537,7 +573,30 @@ export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: stri
 function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; index: number; onDelete: () => void; onReload: () => void }) {
   const [showAddWrestler, setShowAddWrestler] = useState(false)
   const [teamNumber, setTeamNumber] = useState(1)
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(match.match_title || '')
+  const [editType, setEditType] = useState(match.match_type || '')
+  const [editStipulation, setEditStipulation] = useState(match.match_stipulation || '')
+  const [editTitleMatch, setEditTitleMatch] = useState(match.is_title_match || false)
+  const [editChampName, setEditChampName] = useState(match.championship_name || '')
+  const [saving, setSaving] = useState(false)
   const participants = match.match_participants || []
+
+  const handleSaveEdit = async () => {
+    setSaving(true)
+    try {
+      await updateMatch(match.id, {
+        match_title: editTitle || null,
+        match_type: editType || null,
+        match_stipulation: editStipulation || null,
+        is_title_match: editTitleMatch,
+        championship_name: editTitleMatch ? editChampName || null : null,
+      } as any)
+      onReload()
+      setEditing(false)
+    } catch (err) { console.error('Error updating match:', err) }
+    setSaving(false)
+  }
 
   const handleAddWrestler = async (wrestlerId: string) => {
     try {
@@ -574,20 +633,68 @@ function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; in
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-foreground-muted bg-background px-2 py-1 rounded">#{index + 1}</span>
-          <div>
-            <div className="font-semibold text-sm">{match.match_title || `Match ${index + 1}`}</div>
-            <div className="text-xs text-foreground-muted flex items-center gap-2">
-              {match.match_type && <span>{match.match_type}</span>}
-              {match.match_stipulation && <><span>·</span><span>{match.match_stipulation}</span></>}
-              {match.is_title_match && (
-                <><span>·</span><span className="text-interested flex items-center gap-0.5"><Trophy className="w-3 h-3" />{match.championship_name || 'Title Match'}</span></>
-              )}
+          {editing ? (
+            <div className="space-y-2 flex-1">
+              <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Match title..."
+                className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-sm focus:border-accent outline-none" />
+              <div className="flex gap-2">
+                <select value={editType} onChange={(e) => setEditType(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-sm focus:border-accent outline-none">
+                  <option value="">Type...</option>
+                  <option value="Singles">Singles</option>
+                  <option value="Tag Team">Tag Team</option>
+                  <option value="Triple Threat">Triple Threat</option>
+                  <option value="Fatal 4-Way">Fatal 4-Way</option>
+                  <option value="Battle Royal">Battle Royal</option>
+                  <option value="Scramble">Scramble</option>
+                  <option value="6-Man Tag">6-Man Tag</option>
+                  <option value="8-Man Tag">8-Man Tag</option>
+                  <option value="Handicap">Handicap</option>
+                  <option value="Other">Other</option>
+                </select>
+                <input type="text" value={editStipulation} onChange={(e) => setEditStipulation(e.target.value)} placeholder="Stipulation..."
+                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-sm focus:border-accent outline-none" />
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={editTitleMatch} onChange={(e) => setEditTitleMatch(e.target.checked)} className="w-4 h-4 rounded" />
+                  <span className="text-xs">Title match</span>
+                </label>
+                {editTitleMatch && (
+                  <input type="text" value={editChampName} onChange={(e) => setEditChampName(e.target.value)} placeholder="Championship name"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-sm focus:border-accent outline-none" />
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleSaveEdit} disabled={saving} className="btn btn-primary text-xs">
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3 mr-1" /> Save</>}
+                </button>
+                <button onClick={() => setEditing(false)} className="btn btn-ghost text-xs">Cancel</button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div className="font-semibold text-sm">{match.match_title || `Match ${index + 1}`}</div>
+              <div className="text-xs text-foreground-muted flex items-center gap-2">
+                {match.match_type && <span>{match.match_type}</span>}
+                {match.match_stipulation && <><span>·</span><span>{match.match_stipulation}</span></>}
+                {match.is_title_match && (
+                  <><span>·</span><span className="text-interested flex items-center gap-0.5"><Trophy className="w-3 h-3" />{match.championship_name || 'Title Match'}</span></>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors" title="Delete match">
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {!editing && (
+          <div className="flex items-center gap-1">
+            <button onClick={() => setEditing(true)} className="p-1.5 rounded hover:bg-background text-foreground-muted hover:text-foreground transition-colors" title="Edit match">
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors" title="Delete match">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">

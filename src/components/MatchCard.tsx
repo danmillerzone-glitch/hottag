@@ -30,7 +30,7 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
   return (
     <Link
       href={`/wrestlers/${wrestler.slug}`}
-      className="flex flex-col items-center gap-2 group"
+      className="flex flex-col items-center gap-2 group w-[100px]"
     >
       <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 ${championTitle ? 'border-yellow-500' : 'border-border'} group-hover:border-accent transition-colors`}>
         {wrestler.photo_url ? (
@@ -45,7 +45,7 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
           <User className="w-8 h-8 text-foreground-muted" />
         )}
       </div>
-      <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2 max-w-[100px]">
+      <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
         {wrestler.name}
       </span>
       {championTitle && (
@@ -130,14 +130,14 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
               {/* Participants with large images */}
               {hasTeams ? (
                 /* Team vs Team layout */
-                <div className="flex items-center justify-center gap-6 sm:gap-10">
+                <div className="flex items-start justify-center gap-6 sm:gap-10">
                   <div className="flex flex-wrap justify-end gap-4">
                     {team1.map((p) => (
                       <WrestlerCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                     ))}
                   </div>
                   
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 pt-6 sm:pt-8">
                     <span className="text-lg font-bold text-accent">VS</span>
                   </div>
                   
@@ -149,12 +149,12 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
                 </div>
               ) : (
                 /* Multi-way / singles layout */
-                <div className="flex flex-wrap items-center justify-center gap-4">
+                <div className="flex flex-wrap items-start justify-center gap-4">
                   {participants.map((p, i) => (
-                    <div key={p.id} className="flex items-center gap-4">
+                    <div key={p.id} className="flex items-start gap-4">
                       <WrestlerCard wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                       {i < participants.length - 1 && (
-                        <span className="text-sm font-bold text-accent">vs</span>
+                        <span className="text-sm font-bold text-accent pt-6 sm:pt-8">vs</span>
                       )}
                     </div>
                   ))}
