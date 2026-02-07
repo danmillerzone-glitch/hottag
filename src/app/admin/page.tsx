@@ -25,13 +25,14 @@ import {
   createWrestlerAdmin, createPromotionAdmin,
   uploadWrestlerPhotoAdmin, uploadPromotionLogoAdmin,
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
+  createChampionshipAdmin, updateChampionshipAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
   Building2, Calendar, Search, Trash2, ExternalLink,
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
-  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw,
+  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown,
 } from 'lucide-react'
 
 type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import'
@@ -479,29 +480,13 @@ function PromotionsTab() {
 
       {/* Championships Modal */}
       {viewingChamps && (
-        <Modal title={`Championships: ${viewingChamps.promoName}`} onClose={() => setViewingChamps(null)}>
-          {viewingChamps.championships.length === 0 ? (
-            <p className="text-foreground-muted text-sm">No championships found for this promotion.</p>
-          ) : (
-            <div className="space-y-2">
-              {viewingChamps.championships.map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between p-3 bg-background-tertiary rounded-lg">
-                  <div>
-                    <p className="font-semibold text-sm">{c.name}</p>
-                    <p className="text-xs text-foreground-muted">
-                      {c.is_tag_team ? 'Tag Team' : 'Singles'}
-                      {c.current_champion && ` • Champion: ${c.current_champion.name}`}
-                      {c.current_champion_2 && ` & ${c.current_champion_2.name}`}
-                    </p>
-                  </div>
-                  <button onClick={() => handleDeleteChampionship(c.id, c.name)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Modal>
+        <ChampionshipsManagerModal
+          promoId={viewingChamps.promoId}
+          promoName={viewingChamps.promoName}
+          championships={viewingChamps.championships}
+          onUpdate={(champs) => setViewingChamps({ ...viewingChamps, championships: champs })}
+          onClose={() => setViewingChamps(null)}
+        />
       )}
 
       {results.length > 0 && (
@@ -1512,6 +1497,240 @@ function FieldRow({ label, children }: { label: string, children: React.ReactNod
     <div>
       <label className="block text-sm font-medium text-foreground-muted mb-1">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function ChampionshipsManagerModal({ promoId, promoName, championships, onUpdate, onClose }: {
+  promoId: string, promoName: string, championships: any[], onUpdate: (c: any[]) => void, onClose: () => void
+}) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newIsTag, setNewIsTag] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  async function handleCreate() {
+    if (!newName.trim()) return
+    setSaving(true)
+    try {
+      const champ = await createChampionshipAdmin({
+        promotion_id: promoId,
+        name: newName.trim(),
+        is_tag_team: newIsTag,
+        sort_order: championships.length,
+      })
+      onUpdate([...championships, champ])
+      setNewName('')
+      setNewIsTag(false)
+      setCreating(false)
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  async function handleDelete(champId: string, champName: string) {
+    if (!confirm(`Delete "${champName}"? This cannot be undone.`)) return
+    try {
+      await deleteChampionshipAdmin(champId)
+      onUpdate(championships.filter(c => c.id !== champId))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <Modal title={`Championships: ${promoName}`} onClose={onClose}>
+      <div className="space-y-3">
+        {championships.length === 0 && !creating && (
+          <p className="text-foreground-muted text-sm">No championships yet.</p>
+        )}
+
+        {championships.map((c: any) => (
+          <div key={c.id}>
+            {editingId === c.id ? (
+              <EditChampionshipInline
+                championship={c}
+                onSaved={(updated) => {
+                  onUpdate(championships.map(ch => ch.id === updated.id ? updated : ch))
+                  setEditingId(null)
+                }}
+                onCancel={() => setEditingId(null)}
+              />
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-background-tertiary rounded-lg">
+                <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{c.name}</p>
+                  <p className="text-xs text-foreground-muted">
+                    {c.is_tag_team ? 'Tag Team' : 'Singles'}
+                    {c.current_champion ? ` • ${c.current_champion.name}` : ' • Vacant'}
+                    {c.current_champion_2 && ` & ${c.current_champion_2.name}`}
+                    {c.won_date && ` (since ${c.won_date})`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => setEditingId(c.id)} className="p-1.5 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => handleDelete(c.id, c.name)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {creating ? (
+          <div className="p-3 border border-border rounded-lg space-y-3">
+            <FieldRow label="Championship Name">
+              <input className="w-full input-field" value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. World Heavyweight Championship" />
+            </FieldRow>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={newIsTag} onChange={e => setNewIsTag(e.target.checked)} className="rounded" />
+              Tag Team Championship
+            </label>
+            <div className="flex gap-2">
+              <button onClick={handleCreate} disabled={saving || !newName.trim()} className="btn btn-primary text-xs">
+                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3 mr-1" /> Create</>}
+              </button>
+              <button onClick={() => { setCreating(false); setNewName(''); setNewIsTag(false) }} className="btn btn-ghost text-xs">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setCreating(true)} className="btn btn-secondary text-xs w-full">
+            <Plus className="w-3 h-3 mr-1" /> Add Championship
+          </button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+function EditChampionshipInline({ championship, onSaved, onCancel }: { championship: any, onSaved: (c: any) => void, onCancel: () => void }) {
+  const [name, setName] = useState(championship.name || '')
+  const [isTag, setIsTag] = useState(championship.is_tag_team || false)
+  const [wonDate, setWonDate] = useState(championship.won_date || '')
+  const [saving, setSaving] = useState(false)
+
+  // Champion search
+  const [champSearch, setChampSearch] = useState('')
+  const [champResults, setChampResults] = useState<any[]>([])
+  const [champSearching, setChampSearching] = useState(false)
+  const [selectedChamp, setSelectedChamp] = useState<any>(championship.current_champion || null)
+  const [selectedChamp2, setSelectedChamp2] = useState<any>(championship.current_champion_2 || null)
+
+  // Partner search (for tag teams)
+  const [partnerSearch, setPartnerSearch] = useState('')
+  const [partnerResults, setPartnerResults] = useState<any[]>([])
+  const [partnerSearching, setPartnerSearching] = useState(false)
+
+  async function searchChamp(query: string) {
+    if (!query.trim()) { setChampResults([]); return }
+    setChampSearching(true)
+    const data = await searchWrestlersAdmin(query, 5)
+    setChampResults(data)
+    setChampSearching(false)
+  }
+
+  async function searchPartner(query: string) {
+    if (!query.trim()) { setPartnerResults([]); return }
+    setPartnerSearching(true)
+    const data = await searchWrestlersAdmin(query, 5)
+    setPartnerResults(data)
+    setPartnerSearching(false)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const updated = await updateChampionshipAdmin(championship.id, {
+        name, is_tag_team: isTag,
+        current_champion_id: selectedChamp?.id || null,
+        current_champion_2_id: isTag ? (selectedChamp2?.id || null) : null,
+        won_date: wonDate || null,
+      })
+      onSaved(updated)
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <div className="p-3 border border-accent/30 rounded-lg space-y-3 bg-background-tertiary/50">
+      <FieldRow label="Championship Name">
+        <input className="w-full input-field text-sm" value={name} onChange={e => setName(e.target.value)} />
+      </FieldRow>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={isTag} onChange={e => setIsTag(e.target.checked)} className="rounded" />
+        Tag Team Championship
+      </label>
+
+      {/* Champion 1 */}
+      <div>
+        <label className="block text-sm font-medium text-foreground-muted mb-1">
+          {isTag ? 'Champion 1' : 'Current Champion'}
+        </label>
+        {selectedChamp ? (
+          <div className="flex items-center gap-2 p-2 bg-background-tertiary rounded-lg">
+            <span className="text-sm font-medium flex-1">{selectedChamp.name}</span>
+            <button onClick={() => setSelectedChamp(null)} className="text-foreground-muted hover:text-red-400"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        ) : (
+          <div className="relative">
+            <input
+              className="w-full input-field text-sm"
+              value={champSearch}
+              onChange={e => { setChampSearch(e.target.value); searchChamp(e.target.value) }}
+              placeholder="Search wrestler..."
+            />
+            {champResults.length > 0 && (
+              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-background-secondary border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto">
+                {champResults.map(w => (
+                  <button key={w.id} onClick={() => { setSelectedChamp(w); setChampSearch(''); setChampResults([]) }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-background-tertiary transition-colors">{w.name}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Champion 2 (tag teams) */}
+      {isTag && (
+        <div>
+          <label className="block text-sm font-medium text-foreground-muted mb-1">Champion 2</label>
+          {selectedChamp2 ? (
+            <div className="flex items-center gap-2 p-2 bg-background-tertiary rounded-lg">
+              <span className="text-sm font-medium flex-1">{selectedChamp2.name}</span>
+              <button onClick={() => setSelectedChamp2(null)} className="text-foreground-muted hover:text-red-400"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                className="w-full input-field text-sm"
+                value={partnerSearch}
+                onChange={e => { setPartnerSearch(e.target.value); searchPartner(e.target.value) }}
+                placeholder="Search wrestler..."
+              />
+              {partnerResults.length > 0 && (
+                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-background-secondary border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto">
+                  {partnerResults.map(w => (
+                    <button key={w.id} onClick={() => { setSelectedChamp2(w); setPartnerSearch(''); setPartnerResults([]) }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-background-tertiary transition-colors">{w.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <FieldRow label="Won Date">
+        <input type="date" className="w-full input-field text-sm" value={wonDate} onChange={e => setWonDate(e.target.value)} />
+      </FieldRow>
+
+      <div className="flex gap-2">
+        <button onClick={handleSave} disabled={saving || !name.trim()} className="btn btn-primary text-xs">
+          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Save className="w-3 h-3 mr-1" /> Save</>}
+        </button>
+        <button onClick={onCancel} className="btn btn-ghost text-xs">Cancel</button>
+        <button onClick={() => { setSelectedChamp(null); setSelectedChamp2(null) }} className="btn btn-ghost text-xs text-yellow-500">Vacate</button>
+      </div>
     </div>
   )
 }

@@ -257,6 +257,52 @@ export async function deleteChampionshipAdmin(championshipId: string) {
   if (error) throw error
 }
 
+export async function createChampionshipAdmin(data: {
+  promotion_id: string
+  name: string
+  short_name?: string
+  is_tag_team?: boolean
+  sort_order?: number
+}) {
+  const supabase = createClient()
+  const { data: championship, error } = await supabase
+    .from('promotion_championships')
+    .insert(data)
+    .select(`
+      *,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+    `)
+    .single()
+  if (error) throw error
+  return championship
+}
+
+export async function updateChampionshipAdmin(championshipId: string, updates: {
+  name?: string
+  short_name?: string | null
+  current_champion_id?: string | null
+  current_champion_2_id?: string | null
+  is_tag_team?: boolean
+  is_active?: boolean
+  sort_order?: number
+  won_date?: string | null
+}) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .update(updates)
+    .eq('id', championshipId)
+    .select(`
+      *,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+    `)
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function updateEventStatus(eventId: string, status: string) {
   const supabase = createClient()
   const { error } = await supabase.from('events').update({ status }).eq('id', eventId)
