@@ -2128,7 +2128,7 @@ function PageRequestsTab() {
 
   async function loadRequests() {
     setLoading(true)
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     let query = supabase
       .from('page_requests')
       .select('*')
@@ -2145,7 +2145,7 @@ function PageRequestsTab() {
   }
 
   async function handleUpdateStatus(id: string, status: string) {
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     const { error } = await supabase.from('page_requests').update({ status }).eq('id', id)
     if (error) { alert(`Error: ${error.message}`); return }
     setRequests(requests.map(r => r.id === id ? { ...r, status } : r))
@@ -2153,7 +2153,7 @@ function PageRequestsTab() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this request?')) return
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     const { error } = await supabase.from('page_requests').delete().eq('id', id)
     if (error) { alert(`Error: ${error.message}`); return }
     setRequests(requests.filter(r => r.id !== id))
