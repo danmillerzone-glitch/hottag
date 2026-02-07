@@ -26,6 +26,7 @@ import {
   uploadWrestlerPhotoAdmin, uploadPromotionLogoAdmin,
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
   createChampionshipAdmin, updateChampionshipAdmin,
+  getPromotionRosterAdmin, addToRosterAdmin, removeFromRosterAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -420,6 +421,7 @@ function PromotionsTab() {
   const [editing, setEditing] = useState<any>(null)
   const [creating, setCreating] = useState(false)
   const [viewingChamps, setViewingChamps] = useState<{ promoId: string, promoName: string, championships: any[] } | null>(null)
+  const [viewingRoster, setViewingRoster] = useState<{ promoId: string, promoName: string, roster: any[] } | null>(null)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -452,6 +454,13 @@ function PromotionsTab() {
     try {
       const champs = await getPromotionChampionshipsAdmin(promoId)
       setViewingChamps({ promoId, promoName, championships: champs })
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function openRoster(promoId: string, promoName: string) {
+    try {
+      const roster = await getPromotionRosterAdmin(promoId)
+      setViewingRoster({ promoId, promoName, roster })
     } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
@@ -489,6 +498,17 @@ function PromotionsTab() {
         />
       )}
 
+      {/* Roster Modal */}
+      {viewingRoster && (
+        <RosterManagerModal
+          promoId={viewingRoster.promoId}
+          promoName={viewingRoster.promoName}
+          roster={viewingRoster.roster}
+          onUpdate={(roster) => setViewingRoster({ ...viewingRoster, roster })}
+          onClose={() => setViewingRoster(null)}
+        />
+      )}
+
       {results.length > 0 && (
         <div className="space-y-2">
           {results.map((promo) => (
@@ -501,6 +521,7 @@ function PromotionsTab() {
                 <p className="text-sm text-foreground-muted">{promo.city && promo.state ? `${promo.city}, ${promo.state}` : 'No location'} • {promo.claimed_by ? 'Claimed' : 'Unclaimed'}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => openRoster(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Roster"><Users className="w-4 h-4" /></button>
                 <button onClick={() => openChampionships(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Championships"><Award className="w-4 h-4" /></button>
                 <button onClick={() => openEdit(promo.id)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-4 h-4" /></button>
                 <button onClick={() => handleVerify(promo.id, promo.verification_status === 'verified')} className={`p-2 rounded transition-colors ${promo.verification_status === 'verified' ? 'text-green-400 hover:bg-green-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={promo.verification_status === 'verified' ? 'Remove verification' : 'Verify'}>
@@ -1498,6 +1519,92 @@ function FieldRow({ label, children }: { label: string, children: React.ReactNod
       <label className="block text-sm font-medium text-foreground-muted mb-1">{label}</label>
       {children}
     </div>
+  )
+}
+
+function RosterManagerModal({ promoId, promoName, roster, onUpdate, onClose }: {
+  promoId: string, promoName: string, roster: any[], onUpdate: (r: any[]) => void, onClose: () => void
+}) {
+  const [addSearch, setAddSearch] = useState('')
+  const [addResults, setAddResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const [adding, setAdding] = useState(false)
+
+  async function handleSearch(query: string) {
+    setAddSearch(query)
+    if (!query.trim()) { setAddResults([]); return }
+    setSearching(true)
+    const data = await searchWrestlersAdmin(query, 8)
+    // Filter out wrestlers already on roster
+    const rosterIds = new Set(roster.map(r => r.wrestlers?.id || r.wrestler_id))
+    setAddResults(data.filter((w: any) => !rosterIds.has(w.id)))
+    setSearching(false)
+  }
+
+  async function handleAdd(wrestler: any) {
+    setAdding(true)
+    try {
+      const member = await addToRosterAdmin(promoId, wrestler.id)
+      onUpdate([...roster, member])
+      setAddSearch('')
+      setAddResults([])
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setAdding(false)
+  }
+
+  async function handleRemove(memberId: string, name: string) {
+    if (!confirm(`Remove ${name} from the roster?`)) return
+    try {
+      await removeFromRosterAdmin(memberId)
+      onUpdate(roster.filter(r => r.id !== memberId))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <Modal title={`Roster: ${promoName} (${roster.length})`} onClose={onClose}>
+      <div className="space-y-3">
+        {/* Add wrestler search */}
+        <div className="relative">
+          <input
+            className="w-full input-field text-sm"
+            value={addSearch}
+            onChange={e => handleSearch(e.target.value)}
+            placeholder="Search wrestler to add..."
+          />
+          {addResults.length > 0 && (
+            <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-background-secondary border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
+              {addResults.map((w: any) => (
+                <button key={w.id} onClick={() => handleAdd(w)} disabled={adding}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-background-tertiary transition-colors flex items-center gap-2">
+                  <Plus className="w-3 h-3 text-attending" />
+                  {w.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Roster list */}
+        {roster.length === 0 ? (
+          <p className="text-foreground-muted text-sm">No wrestlers on roster.</p>
+        ) : (
+          <div className="space-y-1 max-h-80 overflow-y-auto">
+            {roster.map((member: any) => (
+              <div key={member.id} className="flex items-center justify-between p-2 bg-background-tertiary rounded-lg">
+                <div className="flex items-center gap-2 min-w-0">
+                  <User className="w-4 h-4 text-foreground-muted flex-shrink-0" />
+                  <span className="text-sm font-medium truncate">{member.wrestlers?.name || 'Unknown'}</span>
+                </div>
+                <button onClick={() => handleRemove(member.id, member.wrestlers?.name || 'wrestler')}
+                  className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors flex-shrink-0" title="Remove">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
   )
 }
 

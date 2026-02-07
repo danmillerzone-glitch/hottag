@@ -265,15 +265,38 @@ export async function createChampionshipAdmin(data: {
   sort_order?: number
 }) {
   const supabase = createClient()
-  const { data: championship, error } = await supabase
+  // Try with is_tag_team first, fall back without it if column doesn't exist
+  const insertData: any = { promotion_id: data.promotion_id, name: data.name }
+  if (data.short_name) insertData.short_name = data.short_name
+  if (data.sort_order !== undefined) insertData.sort_order = data.sort_order
+  if (data.is_tag_team !== undefined) insertData.is_tag_team = data.is_tag_team
+
+  let { data: championship, error } = await supabase
     .from('promotion_championships')
-    .insert(data)
+    .insert(insertData)
     .select(`
       *,
       current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
       current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
     `)
     .single()
+
+  // If is_tag_team column doesn't exist, retry without it
+  if (error && error.message?.includes('is_tag_team')) {
+    delete insertData.is_tag_team
+    const retry = await supabase
+      .from('promotion_championships')
+      .insert(insertData)
+      .select(`
+        *,
+        current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+        current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+      `)
+      .single()
+    if (retry.error) throw retry.error
+    return retry.data
+  }
+
   if (error) throw error
   return championship
 }
@@ -289,9 +312,11 @@ export async function updateChampionshipAdmin(championshipId: string, updates: {
   won_date?: string | null
 }) {
   const supabase = createClient()
-  const { data, error } = await supabase
+  const cleanUpdates = { ...updates }
+
+  let { data, error } = await supabase
     .from('promotion_championships')
-    .update(updates)
+    .update(cleanUpdates)
     .eq('id', championshipId)
     .select(`
       *,
@@ -299,8 +324,85 @@ export async function updateChampionshipAdmin(championshipId: string, updates: {
       current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
     `)
     .single()
+
+  // If is_tag_team column doesn't exist, retry without it
+  if (error && error.message?.includes('is_tag_team')) {
+    delete cleanUpdates.is_tag_team
+    const retry = await supabase
+      .from('promotion_championships')
+      .update(cleanUpdates)
+      .eq('id', championshipId)
+      .select(`
+        *,
+        current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+        current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+      `)
+      .single()
+    if (retry.error) throw retry.error
+    return retry.data
+  }
+
   if (error) throw error
   return data
+}
+
+// ============================================
+// ROSTER MANAGEMENT (ADMIN)
+// ============================================
+
+export async function getPromotionRosterAdmin(promotionId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('wrestler_promotions')
+    .select(`
+      *,
+      wrestlers (id, name, slug, photo_url, hometown)
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true })
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function addToRosterAdmin(promotionId: string, wrestlerId: string) {
+  const supabase = createClient()
+
+  // Check if inactive record exists
+  const { data: existing } = await supabase
+    .from('wrestler_promotions')
+    .select('id')
+    .eq('promotion_id', promotionId)
+    .eq('wrestler_id', wrestlerId)
+    .maybeSingle()
+
+  if (existing) {
+    const { data: member, error } = await supabase
+      .from('wrestler_promotions')
+      .update({ is_active: true })
+      .eq('id', existing.id)
+      .select(`*, wrestlers (id, name, slug, photo_url, hometown)`)
+      .single()
+    if (error) throw error
+    return member
+  }
+
+  const { data: member, error } = await supabase
+    .from('wrestler_promotions')
+    .insert({ promotion_id: promotionId, wrestler_id: wrestlerId, is_active: true })
+    .select(`*, wrestlers (id, name, slug, photo_url, hometown)`)
+    .single()
+  if (error) throw error
+  return member
+}
+
+export async function removeFromRosterAdmin(memberId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('wrestler_promotions')
+    .update({ is_active: false })
+    .eq('id', memberId)
+  if (error) throw error
 }
 
 export async function updateEventStatus(eventId: string, status: string) {
