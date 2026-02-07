@@ -730,7 +730,7 @@ function GroupItem({ group, promotionId, onUpdate, onDelete }: {
           <div className="flex-1 space-y-2 mr-2">
             <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none text-sm" />
-            <select value={editType} onChange={(e) => setEditType(e.target.value)}
+            <select value={editType} onChange={(e) => setEditType(e.target.value as 'tag_team' | 'trio' | 'stable')}
               className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-foreground focus:border-accent outline-none text-sm">
               <option value="tag_team">Tag Team</option>
               <option value="trio">Trio</option>
