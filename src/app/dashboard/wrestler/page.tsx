@@ -13,7 +13,7 @@ import {
 import {
   Loader2, ArrowLeft, Save, User, Globe, Instagram, Youtube,
   Upload, Check, ExternalLink, ImageIcon, Mail, ShoppingBag,
-  Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X,
+  Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X, Plus,
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import ImageCropUploader from '@/components/ImageCropUploader'
@@ -68,6 +68,8 @@ export default function WrestlerDashboardPage() {
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
+  const [signatureMoves, setSignatureMoves] = useState<string[]>([])
+  const [newMove, setNewMove] = useState('')
   const [countrySearch, setCountrySearch] = useState('')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const dataLoaded = useRef(false)
@@ -109,6 +111,7 @@ export default function WrestlerDashboardPage() {
       setBookingEmail(data.wrestler.booking_email || '')
       setMerchUrl(data.wrestler.merch_url || '')
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
+      setSignatureMoves(data.wrestler.signature_moves || [])
     } else {
       const userClaims = await getUserWrestlerClaims()
       setClaims(userClaims)
@@ -140,6 +143,7 @@ export default function WrestlerDashboardPage() {
         booking_email: bookingEmail || null,
         merch_url: merchUrl || null,
         countries_wrestled: countriesWrestled,
+        signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
       setDashboardData({ ...dashboardData, wrestler: updated })
       setSaved(true)
@@ -454,6 +458,49 @@ export default function WrestlerDashboardPage() {
                 placeholder="e.g. Tom Prichard"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Signature Moves</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {signatureMoves.map((move, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm border border-accent/20">
+                    {move}
+                    <button onClick={() => setSignatureMoves(signatureMoves.filter((_, j) => j !== i))} className="hover:text-red-400 transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                {signatureMoves.length === 0 && <span className="text-sm text-foreground-muted">None added</span>}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMove}
+                  onChange={(e) => setNewMove(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newMove.trim()) {
+                      e.preventDefault()
+                      setSignatureMoves([...signatureMoves, newMove.trim()])
+                      setNewMove('')
+                    }
+                  }}
+                  placeholder="e.g. Superkick, Piledriver..."
+                  className="flex-1 px-3 py-2 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newMove.trim()) {
+                      setSignatureMoves([...signatureMoves, newMove.trim()])
+                      setNewMove('')
+                    }
+                  }}
+                  className="btn btn-secondary text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </button>
+              </div>
             </div>
           </div>
         </section>

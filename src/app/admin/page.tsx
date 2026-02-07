@@ -1106,6 +1106,8 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
     website: wrestler.website || '', booking_email: wrestler.booking_email || '', merch_url: wrestler.merch_url || '',
   })
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>(wrestler.countries_wrestled || [])
+  const [signatureMoves, setSignatureMoves] = useState<string[]>(wrestler.signature_moves || [])
+  const [newMove, setNewMove] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -1123,6 +1125,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
         tiktok_handle: form.tiktok_handle || null, youtube_url: form.youtube_url || null,
         website: form.website || null, booking_email: form.booking_email || null, merch_url: form.merch_url || null,
         countries_wrestled: countriesWrestled.length > 0 ? countriesWrestled : null,
+        signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1182,6 +1185,23 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
               <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
             ))}
           </select>
+        </div>
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-sm font-medium text-foreground-muted mb-3">Signature Moves</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {signatureMoves.map((move, i) => (
+              <button key={i} onClick={() => setSignatureMoves(signatureMoves.filter((_, j) => j !== i))} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-accent/10 text-accent hover:bg-red-500/20 hover:text-red-400 text-sm transition-colors">
+                {move} <X className="w-3 h-3" />
+              </button>
+            ))}
+            {signatureMoves.length === 0 && <span className="text-sm text-foreground-muted">None added</span>}
+          </div>
+          <div className="flex gap-2">
+            <input className="flex-1 input-field text-sm" value={newMove} onChange={e => setNewMove(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && newMove.trim()) { e.preventDefault(); setSignatureMoves([...signatureMoves, newMove.trim()]); setNewMove('') } }}
+              placeholder="e.g. Superkick, Piledriver..." />
+            <button type="button" onClick={() => { if (newMove.trim()) { setSignatureMoves([...signatureMoves, newMove.trim()]); setNewMove('') } }} className="btn btn-secondary text-xs">+ Add</button>
+          </div>
         </div>
         <div className="border-t border-border pt-3 mt-3">
           <p className="text-sm font-medium text-foreground-muted mb-3">Social Links</p>

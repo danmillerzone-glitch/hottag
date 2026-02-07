@@ -74,6 +74,7 @@ async function PromotionsList() {
                         width={64}
                         height={64}
                         className="object-contain"
+                        unoptimized
                       />
                     ) : (
                       <Building2 className="w-8 h-8 text-foreground-muted" />

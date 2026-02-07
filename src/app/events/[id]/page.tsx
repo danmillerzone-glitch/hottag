@@ -278,7 +278,7 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
 
           {/* Match Card (from promoter-managed matches) */}
-          <MatchCard eventId={event.id} championMap={championMap} />
+          <MatchCard eventId={event.id} />
 
           {/* Announced Talent */}
           <AnnouncedTalentList eventId={event.id} championMap={championMap} />
