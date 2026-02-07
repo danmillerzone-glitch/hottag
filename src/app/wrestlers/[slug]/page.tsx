@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap } from 'lucide-react'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -150,6 +150,33 @@ async function getWrestlerChampionships(wrestlerId: string) {
   return championships
 }
 
+async function getWrestlerGroups(wrestlerId: string) {
+  const { data, error } = await supabase
+    .from('promotion_group_members')
+    .select(`
+      id,
+      promotion_groups (
+        id, name, type, is_active,
+        promotions (id, name, slug, logo_url),
+        promotion_group_members (
+          id, wrestler_id,
+          wrestlers (id, name, slug, photo_url)
+        )
+      )
+    `)
+    .eq('wrestler_id', wrestlerId)
+
+  if (error) {
+    console.error('Error fetching wrestler groups:', error)
+    return []
+  }
+
+  // Filter to active groups and extract
+  return (data || [])
+    .map((d: any) => d.promotion_groups)
+    .filter((g: any) => g && g.is_active)
+}
+
 export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   
@@ -173,6 +200,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const events = await getWrestlerEvents(wrestler.id)
   const followerCount = await getFollowerCount(wrestler.id)
   const championships = await getWrestlerChampionships(wrestler.id)
+  const groups = await getWrestlerGroups(wrestler.id)
   
   // Split events into upcoming and past (compare dates only, not time)
   const today = new Date().toISOString().split('T')[0]
@@ -401,6 +429,53 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tag Teams & Stables */}
+      {groups.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="flex flex-wrap gap-3">
+            {groups.map((group: any) => {
+              const members = (group.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestler.id)
+              const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+              const typeColor = group.type === 'tag_team' ? 'border-blue-500/30 hover:border-blue-500/50' : group.type === 'trio' ? 'border-purple-500/30 hover:border-purple-500/50' : 'border-green-500/30 hover:border-green-500/50'
+              const iconColor = group.type === 'tag_team' ? 'text-blue-400' : group.type === 'trio' ? 'text-purple-400' : 'text-green-400'
+              return (
+                <div key={group.id} className={`flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border ${typeColor} transition-colors`}>
+                  <Shield className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{group.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'}`}>{typeLabel}</span>
+                    </div>
+                    <div className="text-xs text-foreground-muted">
+                      {group.promotions?.name && <>{group.promotions.name} &middot; </>}
+                      w/ {members.map((m: any, i: number) => (
+                        <span key={m.id}>
+                          {i > 0 && (i === members.length - 1 ? ' & ' : ', ')}
+                          <Link href={`/wrestlers/${m.wrestlers?.slug}`} className="hover:text-accent transition-colors">{m.wrestlers?.name}</Link>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex -space-x-2 ml-auto">
+                    {members.slice(0, 4).map((m: any) => (
+                      <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
+                        <div className="w-8 h-8 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-background-secondary hover:border-accent transition-colors">
+                          {m.wrestlers?.photo_url ? (
+                            <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
+                          ) : (
+                            <User className="w-4 h-4 text-foreground-muted" />
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { getWrestlers } from '@/lib/supabase'
 import { User, MapPin, Calendar, Users } from 'lucide-react'
 import { formatNumber } from '@/lib/utils'
+import RequestPageButton from '@/components/RequestPageButton'
 
 export const revalidate = 300
 
@@ -112,11 +113,14 @@ export default function WrestlersPage() {
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold mb-2">Wrestlers</h1>
-          <p className="text-foreground-muted">
-            Follow your favorite indie wrestlers and track their upcoming appearances
-          </p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">Wrestlers</h1>
+            <p className="text-foreground-muted">
+              Follow your favorite indie wrestlers and track their upcoming appearances
+            </p>
+          </div>
+          <RequestPageButton />
         </div>
 
         {/* Search/Filter - placeholder for now */}

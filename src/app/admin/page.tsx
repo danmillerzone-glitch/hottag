@@ -35,10 +35,10 @@ import {
   Building2, Calendar, Search, Trash2, ExternalLink,
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
-  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown,
+  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import'
+type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import' | 'requests'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -78,6 +78,7 @@ export default function AdminPage() {
     { id: 'users', label: 'Users & Bans', icon: Ban },
     { id: 'merge', label: 'Merge', icon: GitMerge },
     { id: 'import', label: 'Bulk Import', icon: Upload },
+    { id: 'requests', label: 'Page Requests', icon: Inbox },
   ]
 
   return (
@@ -126,6 +127,7 @@ export default function AdminPage() {
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'merge' && <MergeTab />}
         {activeTab === 'import' && <ImportTab />}
+        {activeTab === 'requests' && <PageRequestsTab />}
       </div>
     </div>
   )
@@ -2107,6 +2109,123 @@ function ClaimCodeSection({ type, id, currentCode, claimedBy }: { type: 'wrestle
         </button>
       )}
       <p className="text-xs text-foreground-muted mt-1">DM this code to the {type === 'wrestlers' ? 'wrestler' : 'promoter'} for instant profile claiming.</p>
+    </div>
+  )
+}
+
+// ============================================
+// PAGE REQUESTS TAB
+// ============================================
+
+function PageRequestsTab() {
+  const [requests, setRequests] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending')
+
+  useEffect(() => {
+    loadRequests()
+  }, [filter])
+
+  async function loadRequests() {
+    setLoading(true)
+    const supabase = createClient()
+    let query = supabase
+      .from('page_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (filter === 'pending') {
+      query = query.eq('status', 'pending')
+    }
+
+    const { data, error } = await query
+    if (error) console.error('Error loading requests:', error)
+    setRequests(data || [])
+    setLoading(false)
+  }
+
+  async function handleUpdateStatus(id: string, status: string) {
+    const supabase = createClient()
+    const { error } = await supabase.from('page_requests').update({ status }).eq('id', id)
+    if (error) { alert(`Error: ${error.message}`); return }
+    setRequests(requests.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this request?')) return
+    const supabase = createClient()
+    const { error } = await supabase.from('page_requests').delete().eq('id', id)
+    if (error) { alert(`Error: ${error.message}`); return }
+    setRequests(requests.filter(r => r.id !== id))
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Inbox className="w-5 h-5" /> Page Requests ({requests.length})
+        </h2>
+        <div className="flex gap-2">
+          <button onClick={() => setFilter('pending')} className={`text-sm px-3 py-1.5 rounded-lg ${filter === 'pending' ? 'bg-accent text-white' : 'bg-background-tertiary text-foreground-muted'}`}>Pending</button>
+          <button onClick={() => setFilter('all')} className={`text-sm px-3 py-1.5 rounded-lg ${filter === 'all' ? 'bg-accent text-white' : 'bg-background-tertiary text-foreground-muted'}`}>All</button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-foreground-muted" /></div>
+      ) : requests.length === 0 ? (
+        <div className="text-center py-12 text-foreground-muted">
+          <Inbox className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p>No {filter === 'pending' ? 'pending ' : ''}page requests.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {requests.map((req) => (
+            <div key={req.id} className="card p-4">
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  req.type === 'wrestler' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
+                }`}>
+                  {req.type === 'wrestler' ? <User className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">{req.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      req.type === 'wrestler' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
+                    }`}>{req.type}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      req.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400'
+                        : req.status === 'approved' ? 'bg-green-500/10 text-green-400'
+                        : 'bg-red-500/10 text-red-400'
+                    }`}>{req.status}</span>
+                  </div>
+                  {req.details && <p className="text-sm text-foreground-muted mt-1">{req.details}</p>}
+                  {req.social_links && <p className="text-xs text-accent mt-1">{req.social_links}</p>}
+                  <p className="text-xs text-foreground-muted mt-1">
+                    By {req.requested_by_email || 'Unknown'} &middot; {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {req.status === 'pending' && (
+                    <>
+                      <button onClick={() => handleUpdateStatus(req.id, 'approved')} className="p-2 rounded text-green-400 hover:bg-green-500/10 transition-colors" title="Approve">
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleUpdateStatus(req.id, 'rejected')} className="p-2 rounded text-red-400 hover:bg-red-500/10 transition-colors" title="Reject">
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => handleDelete(req.id)} className="p-2 rounded text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

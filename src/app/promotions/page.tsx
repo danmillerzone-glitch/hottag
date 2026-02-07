@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { getPromotions } from '@/lib/supabase'
 import { Building2, MapPin, ExternalLink } from 'lucide-react'
 import { getTwitterUrl } from '@/lib/utils'
+import RequestPageButton from '@/components/RequestPageButton'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -139,11 +140,14 @@ export default function PromotionsPage() {
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold mb-2">Promotions</h1>
-          <p className="text-foreground-muted">
-            Independent wrestling promotions across the United States
-          </p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">Promotions</h1>
+            <p className="text-foreground-muted">
+              Independent wrestling promotions across the United States
+            </p>
+          </div>
+          <RequestPageButton />
         </div>
 
         {/* List */}
