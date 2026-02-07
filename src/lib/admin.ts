@@ -230,6 +230,33 @@ export async function deleteWrestler(wrestlerId: string) {
   if (error) throw error
 }
 
+export async function deletePromotion(promotionId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotions').delete().eq('id', promotionId)
+  if (error) throw error
+}
+
+export async function getPromotionChampionshipsAdmin(promotionId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .select(`
+      *,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+    `)
+    .eq('promotion_id', promotionId)
+    .order('name')
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function deleteChampionshipAdmin(championshipId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_championships').delete().eq('id', championshipId)
+  if (error) throw error
+}
+
 export async function updateEventStatus(eventId: string, status: string) {
   const supabase = createClient()
   const { error } = await supabase.from('events').update({ status }).eq('id', eventId)

@@ -14,7 +14,7 @@ import {
   approvePromotionClaim, rejectPromotionClaim,
   approveWrestlerClaim, rejectWrestlerClaim,
   searchEvents, searchPromotions, searchWrestlersAdmin,
-  deleteEvent, deleteWrestler, updateEventStatus,
+  deleteEvent, deleteWrestler, deletePromotion, updateEventStatus,
   getAnnouncements, createAnnouncement, toggleAnnouncement, deleteAnnouncement,
   banUser, unbanUser, getBannedUsers,
   updateWrestlerAdmin, updatePromotionAdmin, updateEventAdmin,
@@ -24,6 +24,7 @@ import {
   bulkImportEvents, getAllPromotionsList,
   createWrestlerAdmin, createPromotionAdmin,
   uploadWrestlerPhotoAdmin, uploadPromotionLogoAdmin,
+  getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -417,6 +418,7 @@ function PromotionsTab() {
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [creating, setCreating] = useState(false)
+  const [viewingChamps, setViewingChamps] = useState<{ promoId: string, promoName: string, championships: any[] } | null>(null)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -434,9 +436,32 @@ function PromotionsTab() {
     } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This will also delete all associated events, championships, and claims. This cannot be undone.`)) return
+    try { await deletePromotion(id); setResults(results.filter(p => p.id !== id)) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
   async function openEdit(id: string) {
     try { const data = await getPromotionFull(id); setEditing(data) }
     catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function openChampionships(promoId: string, promoName: string) {
+    try {
+      const champs = await getPromotionChampionshipsAdmin(promoId)
+      setViewingChamps({ promoId, promoName, championships: champs })
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleDeleteChampionship(champId: string, champName: string) {
+    if (!confirm(`Delete championship "${champName}"? This cannot be undone.`)) return
+    try {
+      await deleteChampionshipAdmin(champId)
+      if (viewingChamps) {
+        setViewingChamps({ ...viewingChamps, championships: viewingChamps.championships.filter(c => c.id !== champId) })
+      }
+    } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
   return (
@@ -452,6 +477,33 @@ function PromotionsTab() {
       {creating && <CreatePromotionModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); if (query) handleSearch() }} />}
       {editing && <EditPromotionModal promo={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); handleSearch() }} />}
 
+      {/* Championships Modal */}
+      {viewingChamps && (
+        <Modal title={`Championships: ${viewingChamps.promoName}`} onClose={() => setViewingChamps(null)}>
+          {viewingChamps.championships.length === 0 ? (
+            <p className="text-foreground-muted text-sm">No championships found for this promotion.</p>
+          ) : (
+            <div className="space-y-2">
+              {viewingChamps.championships.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-3 bg-background-tertiary rounded-lg">
+                  <div>
+                    <p className="font-semibold text-sm">{c.name}</p>
+                    <p className="text-xs text-foreground-muted">
+                      {c.is_tag_team ? 'Tag Team' : 'Singles'}
+                      {c.current_champion && ` • Champion: ${c.current_champion.name}`}
+                      {c.current_champion_2 && ` & ${c.current_champion_2.name}`}
+                    </p>
+                  </div>
+                  <button onClick={() => handleDeleteChampionship(c.id, c.name)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
+      )}
+
       {results.length > 0 && (
         <div className="space-y-2">
           {results.map((promo) => (
@@ -464,10 +516,12 @@ function PromotionsTab() {
                 <p className="text-sm text-foreground-muted">{promo.city && promo.state ? `${promo.city}, ${promo.state}` : 'No location'} • {promo.claimed_by ? 'Claimed' : 'Unclaimed'}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => openChampionships(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Championships"><Award className="w-4 h-4" /></button>
                 <button onClick={() => openEdit(promo.id)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-4 h-4" /></button>
                 <button onClick={() => handleVerify(promo.id, promo.verification_status === 'verified')} className={`p-2 rounded transition-colors ${promo.verification_status === 'verified' ? 'text-green-400 hover:bg-green-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={promo.verification_status === 'verified' ? 'Remove verification' : 'Verify'}>
                   <BadgeCheck className="w-4 h-4" />
                 </button>
+                <button onClick={() => handleDelete(promo.id, promo.name)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}
