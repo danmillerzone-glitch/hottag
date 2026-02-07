@@ -28,6 +28,7 @@ import {
 } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import AttendanceButtons from '@/components/AttendanceButtons'
+import ShareButton from '@/components/ShareButton'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
@@ -248,6 +249,11 @@ export default async function EventPage({ params }: EventPageProps) {
               </a>
             )}
             <StreamingLinks eventId={event.id} />
+            <ShareButton
+              title={event.name}
+              text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
+              url={`https://www.hottag.app/events/${event.id}`}
+            />
           </div>
 
           {/* Attendance buttons */}
