@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { createClient } from '@/lib/supabase-client'
+import { createClient } from '@/lib/supabase-browser'
 import { Plus, X, Loader2, Check, User, Building2 } from 'lucide-react'
 
 export default function RequestPageButton() {
