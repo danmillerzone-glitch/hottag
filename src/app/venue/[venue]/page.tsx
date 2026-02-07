@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: VenuePageProps) {
   const location = venueInfo ? `${venueInfo.city}, ${venueInfo.state}` : ''
   
   return {
-    title: `${venueName} - Wrestling Events | HotTag`,
+    title: `${venueName} - Wrestling Events | Hot Tag`,
     description: `Find wrestling events at ${venueName}${location ? ` in ${location}` : ''}. ${events.length} events listed.`,
   }
 }

@@ -15,7 +15,9 @@ import {
   Loader2,
   LogOut,
   Heart,
-  Check
+  Check,
+  Shield,
+  ChevronRight
 } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -26,6 +28,9 @@ export default function ProfilePage() {
   const [attendingEvents, setAttendingEvents] = useState<any[]>([])
   const [followedWrestlers, setFollowedWrestlers] = useState<any[]>([])
   const [followedPromotions, setFollowedPromotions] = useState<any[]>([])
+  const [hasPromotion, setHasPromotion] = useState(false)
+  const [hasWrestler, setHasWrestler] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,6 +43,14 @@ export default function ProfilePage() {
 
     const fetchData = async () => {
       setLoading(true)
+
+      // Check claimed promotion/wrestler/admin
+      supabase.from('promotions').select('id').eq('claimed_by', user.id).limit(1)
+        .then(({ data }) => setHasPromotion(!!(data && data.length > 0)))
+      supabase.from('wrestlers').select('id').eq('claimed_by', user.id).limit(1)
+        .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
+      supabase.from('admin_users').select('user_id').eq('user_id', user.id).limit(1)
+        .then(({ data }) => setIsAdmin(!!(data && data.length > 0)))
 
       // Fetch attending events
       const { data: eventsData } = await supabase
@@ -185,6 +198,36 @@ export default function ProfilePage() {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Dashboard Links */}
+        {(hasPromotion || hasWrestler || isAdmin) && (
+          <section className="mb-8">
+            <h2 className="text-xl font-display font-bold mb-4">Dashboards</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {hasPromotion && (
+                <Link href="/dashboard" className="card p-4 flex items-center gap-3 hover:bg-background-tertiary transition-colors">
+                  <Building2 className="w-5 h-5 text-accent flex-shrink-0" />
+                  <span className="font-medium text-accent">Promoter Dashboard</span>
+                  <ChevronRight className="w-4 h-4 text-foreground-muted ml-auto" />
+                </Link>
+              )}
+              {hasWrestler && (
+                <Link href="/dashboard/wrestler" className="card p-4 flex items-center gap-3 hover:bg-background-tertiary transition-colors">
+                  <Users className="w-5 h-5 text-accent flex-shrink-0" />
+                  <span className="font-medium text-accent">Wrestler Dashboard</span>
+                  <ChevronRight className="w-4 h-4 text-foreground-muted ml-auto" />
+                </Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin" className="card p-4 flex items-center gap-3 hover:bg-background-tertiary transition-colors">
+                  <Shield className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <span className="font-medium text-yellow-400">Admin Panel</span>
+                  <ChevronRight className="w-4 h-4 text-foreground-muted ml-auto" />
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Events I'm Going To */}
         <section className="mb-12">
           <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">

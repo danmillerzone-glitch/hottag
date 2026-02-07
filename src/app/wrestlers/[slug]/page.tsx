@@ -154,12 +154,12 @@ export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   
   if (!wrestler) {
-    return { title: 'Wrestler Not Found | HotTag' }
+    return { title: 'Wrestler Not Found | Hot Tag' }
   }
 
   return {
-    title: `${wrestler.name} | HotTag`,
-    description: `Follow ${wrestler.name} on HotTag to see their upcoming events.`,
+    title: `${wrestler.name} | Hot Tag`,
+    description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
   }
 }
 

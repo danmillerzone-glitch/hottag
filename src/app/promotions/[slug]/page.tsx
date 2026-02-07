@@ -112,12 +112,12 @@ export async function generateMetadata({ params }: PromotionPageProps) {
   const promotion = await getPromotion(params.slug)
   
   if (!promotion) {
-    return { title: 'Promotion Not Found | HotTag' }
+    return { title: 'Promotion Not Found | Hot Tag' }
   }
 
   return {
-    title: `${promotion.name} | HotTag`,
-    description: `Follow ${promotion.name} on HotTag to see their upcoming events.`,
+    title: `${promotion.name} | Hot Tag`,
+    description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
   }
 }
 

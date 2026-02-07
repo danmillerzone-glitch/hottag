@@ -451,7 +451,7 @@ export default function WrestlerDashboardPage() {
                 type="text"
                 value={trainer}
                 onChange={(e) => setTrainer(e.target.value)}
-                placeholder="e.g. Booker T"
+                placeholder="e.g. Tom Prichard"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>

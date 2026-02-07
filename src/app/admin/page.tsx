@@ -83,7 +83,7 @@ export default function AdminPage() {
             <Shield className="w-8 h-8 text-accent" />
             <div>
               <h1 className="text-2xl font-display font-bold">Admin Panel</h1>
-              <p className="text-sm text-foreground-muted">Manage HotTag platform</p>
+              <p className="text-sm text-foreground-muted">Manage Hot Tag platform</p>
             </div>
           </div>
         </div>
@@ -1070,7 +1070,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
           <FieldRow label="Birthday"><input className="w-full input-field" type="date" value={form.birthday} onChange={e => setForm({...form, birthday: e.target.value})} /></FieldRow>
           <FieldRow label="Debut Year"><input className="w-full input-field" type="number" value={form.debut_year} onChange={e => setForm({...form, debut_year: e.target.value})} placeholder="e.g. 2015" /></FieldRow>
         </div>
-        <FieldRow label="Trainer"><input className="w-full input-field" value={form.trainer} onChange={e => setForm({...form, trainer: e.target.value})} placeholder="e.g. Booker T" /></FieldRow>
+        <FieldRow label="Trainer"><input className="w-full input-field" value={form.trainer} onChange={e => setForm({...form, trainer: e.target.value})} placeholder="e.g. Tom Prichard" /></FieldRow>
         <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} /></FieldRow>
         <FieldRow label="Bio"><textarea className="w-full input-field" rows={3} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} /></FieldRow>
         <div className="border-t border-border pt-3 mt-3">
@@ -1295,7 +1295,7 @@ function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCr
           <FieldRow label="Birthday"><input className="w-full input-field" type="date" value={form.birthday} onChange={e => setForm({...form, birthday: e.target.value})} disabled={!!createdId} /></FieldRow>
           <FieldRow label="Debut Year"><input className="w-full input-field" type="number" value={form.debut_year} onChange={e => setForm({...form, debut_year: e.target.value})} placeholder="e.g. 2015" disabled={!!createdId} /></FieldRow>
         </div>
-        <FieldRow label="Trainer"><input className="w-full input-field" value={form.trainer} onChange={e => setForm({...form, trainer: e.target.value})} placeholder="e.g. Booker T" disabled={!!createdId} /></FieldRow>
+        <FieldRow label="Trainer"><input className="w-full input-field" value={form.trainer} onChange={e => setForm({...form, trainer: e.target.value})} placeholder="e.g. Tom Prichard" disabled={!!createdId} /></FieldRow>
         <FieldRow label="PWI Ranking"><input className="w-full input-field" type="number" value={form.pwi_ranking} onChange={e => setForm({...form, pwi_ranking: e.target.value})} placeholder="Optional" disabled={!!createdId} /></FieldRow>
         <FieldRow label="Bio"><textarea className="w-full input-field" rows={2} value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} placeholder="Optional bio..." disabled={!!createdId} /></FieldRow>
         <div className="border-t border-border pt-3 mt-3">

@@ -20,7 +20,7 @@ const config: Config = {
           muted: '#99aabb',
           subtle: '#678',
         },
-        // HotTag accent colors - wrestling gold & fire
+        // Hot Tag accent colors - wrestling gold & fire
         accent: {
           DEFAULT: '#ff6b35',
           hover: '#ff8c5a',

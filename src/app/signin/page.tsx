@@ -38,7 +38,7 @@ export default function SignInPage() {
             Welcome back
           </h1>
           <p className="text-foreground-muted text-center mb-8">
-            Sign in to your HotTag account
+            Sign in to your Hot Tag account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

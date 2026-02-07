@@ -324,7 +324,7 @@ function SearchContent() {
         {!loading && query.length < 2 && (
           <div className="text-center py-12">
             <SearchIcon className="w-16 h-16 text-foreground-muted mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold mb-2">Search HotTag</h2>
+            <h2 className="text-2xl font-display font-bold mb-2">Search Hot Tag</h2>
             <p className="text-foreground-muted">
               Find events, wrestlers, and promotions
             </p>

@@ -73,7 +73,7 @@ export default function SignUpPage() {
             Create an account
           </h1>
           <p className="text-foreground-muted text-center mb-8">
-            Join HotTag to track wrestling events
+            Join Hot Tag to track wrestling events
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

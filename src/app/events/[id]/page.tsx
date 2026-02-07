@@ -62,11 +62,11 @@ export async function generateMetadata({ params }: EventPageProps) {
   const event = await getEvent(params.id)
   
   if (!event) {
-    return { title: 'Event Not Found | HotTag' }
+    return { title: 'Event Not Found | Hot Tag' }
   }
 
   return {
-    title: `${event.name} | HotTag`,
+    title: `${event.name} | Hot Tag`,
     description: `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state)}`,
     openGraph: {
       title: event.name,

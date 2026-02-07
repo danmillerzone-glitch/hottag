@@ -32,7 +32,7 @@ export function Navigation() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <Flame className="w-8 h-8 text-accent" />
-              <span className="text-xl font-display font-bold">HotTag</span>
+              <span className="text-xl font-display font-bold">Hot Tag</span>
             </Link>
 
             {/* Nav Links */}
@@ -112,7 +112,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/" className="flex items-center gap-2">
             <Flame className="w-6 h-6 text-accent" />
-            <span className="text-lg font-display font-bold">HotTag</span>
+            <span className="text-lg font-display font-bold">Hot Tag</span>
           </Link>
           <button className="p-2 rounded-lg text-foreground-muted hover:text-foreground">
             <Search className="w-5 h-5" />

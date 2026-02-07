@@ -5,19 +5,19 @@ import Navigation from '@/components/NavigationAuth'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
 
 export const metadata: Metadata = {
-  title: 'HotTag - Indie Wrestling Event Tracker',
+  title: 'Hot Tag - Indie Wrestling Event Tracker',
   description: 'Never miss another indie show. Discover wrestling events, follow your favorite wrestlers, and connect with the indie wrestling community.',
   keywords: ['wrestling', 'indie wrestling', 'GCW', 'PWG', 'wrestling events', 'independent wrestling'],
   openGraph: {
-    title: 'HotTag - Indie Wrestling Event Tracker',
+    title: 'Hot Tag - Indie Wrestling Event Tracker',
     description: 'Never miss another indie show.',
     url: 'https://hottag.app',
-    siteName: 'HotTag',
+    siteName: 'Hot Tag',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HotTag - Indie Wrestling Event Tracker',
+    title: 'Hot Tag - Indie Wrestling Event Tracker',
     description: 'Never miss another indie show.',
     creator: '@HotTagApp',
   },

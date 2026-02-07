@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: LocationPageProps) {
   const { locationName, events } = await getEventsByLocation(params.location)
   
   return {
-    title: `Wrestling Events in ${locationName} | HotTag`,
+    title: `Wrestling Events in ${locationName} | Hot Tag`,
     description: `Find ${events.length} upcoming indie wrestling events in ${locationName}.`,
   }
 }
