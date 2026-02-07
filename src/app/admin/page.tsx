@@ -30,7 +30,7 @@ import {
   Building2, Calendar, Search, Trash2, ExternalLink,
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
-  Plus, Save, X, BadgeCheck,
+  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw,
 } from 'lucide-react'
 
 type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import'
@@ -1113,6 +1113,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
             <FieldRow label="Merch URL"><input className="w-full input-field" value={form.merch_url} onChange={e => setForm({...form, merch_url: e.target.value})} placeholder="https://..." /></FieldRow>
           </div>
         </div>
+        <ClaimCodeSection type="wrestlers" id={wrestler.id} currentCode={wrestler.claim_code} claimedBy={wrestler.claimed_by} />
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
@@ -1173,6 +1174,7 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
             <FieldRow label="YouTube"><input className="w-full input-field" value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})} placeholder="https://youtube.com/..." /></FieldRow>
           </div>
         </div>
+        <ClaimCodeSection type="promotions" id={promo.id} currentCode={promo.claim_code} claimedBy={promo.claimed_by} />
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
@@ -1456,6 +1458,85 @@ function FieldRow({ label, children }: { label: string, children: React.ReactNod
     <div>
       <label className="block text-sm font-medium text-foreground-muted mb-1">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function ClaimCodeSection({ type, id, currentCode, claimedBy }: { type: 'wrestlers' | 'promotions', id: string, currentCode?: string, claimedBy?: string }) {
+  const [code, setCode] = useState(currentCode || '')
+  const [generating, setGenerating] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let result = ''
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) result += '-'
+      result += chars[Math.floor(Math.random() * chars.length)]
+    }
+    return result
+  }
+
+  async function handleGenerate() {
+    setGenerating(true)
+    const newCode = generateCode()
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const { error } = await supabase.from(type).update({ claim_code: newCode }).eq('id', id)
+      if (error) throw error
+      setCode(newCode)
+    } catch (err: any) {
+      alert(`Error: ${err.message}`)
+    }
+    setGenerating(false)
+  }
+
+  async function handleRevoke() {
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const { error } = await supabase.from(type).update({ claim_code: null }).eq('id', id)
+      if (error) throw error
+      setCode('')
+    } catch (err: any) {
+      alert(`Error: ${err.message}`)
+    }
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (claimedBy) {
+    return (
+      <div className="border-t border-border pt-3 mt-3">
+        <p className="text-sm font-medium text-foreground-muted mb-2 flex items-center gap-2"><Key className="w-4 h-4" /> Claim Code</p>
+        <p className="text-xs text-attending">Already claimed — no code needed.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-t border-border pt-3 mt-3">
+      <p className="text-sm font-medium text-foreground-muted mb-2 flex items-center gap-2"><Key className="w-4 h-4" /> Claim Code</p>
+      {code ? (
+        <div className="flex items-center gap-2">
+          <code className="flex-1 px-3 py-2 bg-background-tertiary rounded-lg font-mono text-sm tracking-wider text-accent">{code}</code>
+          <button onClick={handleCopy} className="btn btn-ghost text-xs p-2" title="Copy">
+            {copied ? <CheckCircle className="w-4 h-4 text-attending" /> : <Copy className="w-4 h-4" />}
+          </button>
+          <button onClick={handleRevoke} className="btn btn-ghost text-xs p-2 text-red-400" title="Revoke">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <button onClick={handleGenerate} disabled={generating} className="btn btn-secondary text-xs">
+          {generating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+          Generate Claim Code
+        </button>
+      )}
+      <p className="text-xs text-foreground-muted mt-1">DM this code to the {type === 'wrestlers' ? 'wrestler' : 'promoter'} for instant profile claiming.</p>
     </div>
   )
 }

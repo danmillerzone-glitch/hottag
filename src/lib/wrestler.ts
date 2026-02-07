@@ -269,3 +269,10 @@ export async function uploadWrestlerPhoto(wrestlerId: string, file: File) {
   const updated = await updateWrestlerProfile(wrestlerId, { photo_url: urlWithBust })
   return updated
 }
+
+export async function redeemWrestlerClaimCode(code: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('redeem_wrestler_claim_code', { code })
+  if (error) throw error
+  return data as { success: boolean; error?: string; wrestler_id?: string; wrestler_name?: string }
+}

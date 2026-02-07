@@ -196,7 +196,7 @@ export async function searchPromotions(query: string, limit = 20) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('promotions')
-    .select('id, name, slug, city, state, claimed_by, verification_status')
+    .select('id, name, slug, city, state, claimed_by, verification_status, claim_code')
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(limit)
@@ -209,7 +209,7 @@ export async function searchWrestlersAdmin(query: string, limit = 20) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('wrestlers')
-    .select('id, name, slug, photo_url, claimed_by, verification_status, pwi_ranking')
+    .select('id, name, slug, photo_url, claimed_by, verification_status, pwi_ranking, claim_code')
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(limit)

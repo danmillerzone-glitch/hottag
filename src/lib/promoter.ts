@@ -869,3 +869,10 @@ export async function removeFromRoster(memberId: string) {
 
   if (error) throw error
 }
+
+export async function redeemPromotionClaimCode(code: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('redeem_promotion_claim_code', { code })
+  if (error) throw error
+  return data as { success: boolean; error?: string; promotion_id?: string; promotion_name?: string }
+}
