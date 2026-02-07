@@ -678,6 +678,7 @@ export interface Championship {
   short_name: string | null
   current_champion_id: string | null
   current_champion_2_id: string | null
+  champion_group_id: string | null
   is_active: boolean
   sort_order: number
   image_url: string | null
@@ -696,6 +697,16 @@ export interface Championship {
     slug: string
     photo_url: string | null
   } | null
+  champion_group?: {
+    id: string
+    name: string
+    type: string
+    promotion_group_members: {
+      id: string
+      wrestler_id: string
+      wrestlers: { id: string; name: string; slug: string; photo_url: string | null }
+    }[]
+  } | null
 }
 
 export async function getPromotionChampionships(promotionId: string) {
@@ -706,7 +717,11 @@ export async function getPromotionChampionships(promotionId: string) {
     .select(`
       *,
       current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
-      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url),
+      champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (
+        id, name, type,
+        promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url))
+      )
     `)
     .eq('promotion_id', promotionId)
     .eq('is_active', true)
@@ -742,6 +757,7 @@ export async function updateChampionship(championshipId: string, updates: {
   short_name?: string | null
   current_champion_id?: string | null
   current_champion_2_id?: string | null
+  champion_group_id?: string | null
   is_active?: boolean
   sort_order?: number
   image_url?: string | null
@@ -875,4 +891,89 @@ export async function redeemPromotionClaimCode(code: string) {
   const { data, error } = await supabase.rpc('redeem_promotion_claim_code', { code })
   if (error) throw error
   return data as { success: boolean; error?: string; promotion_id?: string; promotion_name?: string }
+}
+
+// ============================================
+// PROMOTION GROUPS (Tag Teams, Trios, Stables)
+// ============================================
+
+export interface PromotionGroup {
+  id: string
+  promotion_id: string
+  name: string
+  type: 'tag_team' | 'trio' | 'stable'
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  promotion_group_members: GroupMember[]
+}
+
+export interface GroupMember {
+  id: string
+  wrestler_id: string
+  sort_order: number
+  wrestlers: {
+    id: string
+    name: string
+    slug: string
+    photo_url: string | null
+  }
+}
+
+export async function getPromotionGroups(promotionId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_groups')
+    .select(`
+      *,
+      promotion_group_members (
+        id, wrestler_id, sort_order,
+        wrestlers (id, name, slug, photo_url)
+      )
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  if (error) { console.error(error); return [] }
+  return data as PromotionGroup[]
+}
+
+export async function createGroup(data: { promotion_id: string; name: string; type: string }) {
+  const supabase = createClient()
+  const { data: group, error } = await supabase
+    .from('promotion_groups')
+    .insert(data)
+    .select(`*, promotion_group_members (id, wrestler_id, sort_order, wrestlers (id, name, slug, photo_url))`)
+    .single()
+  if (error) throw error
+  return group as PromotionGroup
+}
+
+export async function updateGroup(groupId: string, updates: { name?: string; type?: string; is_active?: boolean }) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_groups').update(updates).eq('id', groupId)
+  if (error) throw error
+}
+
+export async function deleteGroup(groupId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_groups').delete().eq('id', groupId)
+  if (error) throw error
+}
+
+export async function addGroupMember(groupId: string, wrestlerId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_group_members')
+    .insert({ group_id: groupId, wrestler_id: wrestlerId })
+    .select(`*, wrestlers (id, name, slug, photo_url)`)
+    .single()
+  if (error) throw error
+  return data as GroupMember
+}
+
+export async function removeGroupMember(memberId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_group_members').delete().eq('id', memberId)
+  if (error) throw error
 }

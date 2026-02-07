@@ -27,6 +27,8 @@ import {
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
   createChampionshipAdmin, updateChampionshipAdmin,
   getPromotionRosterAdmin, addToRosterAdmin, removeFromRosterAdmin,
+  getPromotionGroupsAdmin, createGroupAdmin, updateGroupAdmin, deleteGroupAdmin,
+  addGroupMemberAdmin, removeGroupMemberAdmin,
 } from '@/lib/admin'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -422,6 +424,7 @@ function PromotionsTab() {
   const [creating, setCreating] = useState(false)
   const [viewingChamps, setViewingChamps] = useState<{ promoId: string, promoName: string, championships: any[] } | null>(null)
   const [viewingRoster, setViewingRoster] = useState<{ promoId: string, promoName: string, roster: any[] } | null>(null)
+  const [viewingGroups, setViewingGroups] = useState<{ promoId: string, promoName: string, groups: any[] } | null>(null)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -461,6 +464,13 @@ function PromotionsTab() {
     try {
       const roster = await getPromotionRosterAdmin(promoId)
       setViewingRoster({ promoId, promoName, roster })
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function openGroups(promoId: string, promoName: string) {
+    try {
+      const groups = await getPromotionGroupsAdmin(promoId)
+      setViewingGroups({ promoId, promoName, groups })
     } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
@@ -509,6 +519,17 @@ function PromotionsTab() {
         />
       )}
 
+      {/* Groups Modal */}
+      {viewingGroups && (
+        <GroupsManagerModal
+          promoId={viewingGroups.promoId}
+          promoName={viewingGroups.promoName}
+          groups={viewingGroups.groups}
+          onUpdate={(groups) => setViewingGroups({ ...viewingGroups, groups })}
+          onClose={() => setViewingGroups(null)}
+        />
+      )}
+
       {results.length > 0 && (
         <div className="space-y-2">
           {results.map((promo) => (
@@ -522,6 +543,7 @@ function PromotionsTab() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => openRoster(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Roster"><Users className="w-4 h-4" /></button>
+                <button onClick={() => openGroups(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Tag Teams & Stables"><Shield className="w-4 h-4" /></button>
                 <button onClick={() => openChampionships(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Championships"><Award className="w-4 h-4" /></button>
                 <button onClick={() => openEdit(promo.id)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-4 h-4" /></button>
                 <button onClick={() => handleVerify(promo.id, promo.verification_status === 'verified')} className={`p-2 rounded transition-colors ${promo.verification_status === 'verified' ? 'text-green-400 hover:bg-green-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={promo.verification_status === 'verified' ? 'Remove verification' : 'Verify'}>
@@ -1518,6 +1540,174 @@ function FieldRow({ label, children }: { label: string, children: React.ReactNod
     <div>
       <label className="block text-sm font-medium text-foreground-muted mb-1">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function GroupsManagerModal({ promoId, promoName, groups, onUpdate, onClose }: {
+  promoId: string, promoName: string, groups: any[], onUpdate: (g: any[]) => void, onClose: () => void
+}) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newType, setNewType] = useState('tag_team')
+  const [saving, setSaving] = useState(false)
+
+  async function handleCreate() {
+    if (!newName.trim()) return
+    setSaving(true)
+    try {
+      const group = await createGroupAdmin({ promotion_id: promoId, name: newName.trim(), type: newType })
+      onUpdate([...groups, group])
+      setNewName(''); setNewType('tag_team'); setCreating(false)
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  async function handleDelete(groupId: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    try { await deleteGroupAdmin(groupId); onUpdate(groups.filter(g => g.id !== groupId)) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleRename(groupId: string, newName: string) {
+    try {
+      await updateGroupAdmin(groupId, { name: newName })
+      onUpdate(groups.map(g => g.id === groupId ? { ...g, name: newName } : g))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleAddMember(groupId: string, wrestler: any) {
+    try {
+      const member = await addGroupMemberAdmin(groupId, wrestler.id)
+      onUpdate(groups.map(g => g.id === groupId ? { ...g, promotion_group_members: [...(g.promotion_group_members || []), member] } : g))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleRemoveMember(groupId: string, memberId: string) {
+    try {
+      await removeGroupMemberAdmin(memberId)
+      onUpdate(groups.map(g => g.id === groupId ? { ...g, promotion_group_members: g.promotion_group_members.filter((m: any) => m.id !== memberId) } : g))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  const typeLabel = (t: string) => t === 'tag_team' ? 'Tag Team' : t === 'trio' ? 'Trio' : 'Stable'
+  const typeColor = (t: string) => t === 'tag_team' ? 'text-blue-400' : t === 'trio' ? 'text-purple-400' : 'text-green-400'
+
+  return (
+    <Modal title={`Groups: ${promoName}`} onClose={onClose}>
+      <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+        {groups.length === 0 && !creating && (
+          <p className="text-foreground-muted text-sm">No tag teams or stables yet.</p>
+        )}
+
+        {groups.map((group: any) => (
+          <GroupItemAdmin
+            key={group.id}
+            group={group}
+            onRename={(name) => handleRename(group.id, name)}
+            onDelete={() => handleDelete(group.id, group.name)}
+            onAddMember={(w) => handleAddMember(group.id, w)}
+            onRemoveMember={(memberId) => handleRemoveMember(group.id, memberId)}
+          />
+        ))}
+
+        {creating ? (
+          <div className="p-3 border border-border rounded-lg space-y-3">
+            <FieldRow label="Group Name">
+              <input className="w-full input-field" value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. The Dynasty" />
+            </FieldRow>
+            <FieldRow label="Type">
+              <select className="w-full input-field" value={newType} onChange={e => setNewType(e.target.value)}>
+                <option value="tag_team">Tag Team (2)</option>
+                <option value="trio">Trio (3)</option>
+                <option value="stable">Stable (3+)</option>
+              </select>
+            </FieldRow>
+            <div className="flex gap-2">
+              <button onClick={handleCreate} disabled={saving || !newName.trim()} className="btn btn-primary text-xs">
+                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3 mr-1" /> Create</>}
+              </button>
+              <button onClick={() => { setCreating(false); setNewName('') }} className="btn btn-ghost text-xs">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setCreating(true)} className="btn btn-secondary text-xs w-full">
+            <Plus className="w-3 h-3 mr-1" /> Add Tag Team / Stable
+          </button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+function GroupItemAdmin({ group, onRename, onDelete, onAddMember, onRemoveMember }: {
+  group: any, onRename: (name: string) => void, onDelete: () => void,
+  onAddMember: (w: any) => void, onRemoveMember: (memberId: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(group.name)
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberResults, setMemberResults] = useState<any[]>([])
+  const [showSearch, setShowSearch] = useState(false)
+
+  const members = group.promotion_group_members || []
+  const memberIds = new Set(members.map((m: any) => m.wrestler_id))
+  const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+  const typeColor = group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'
+
+  async function handleMemberSearch(query: string) {
+    setMemberSearch(query)
+    if (!query.trim()) { setMemberResults([]); return }
+    const data = await searchWrestlersAdmin(query, 5)
+    setMemberResults(data.filter((w: any) => !memberIds.has(w.id)))
+  }
+
+  return (
+    <div className="p-3 bg-background-tertiary rounded-lg space-y-2">
+      <div className="flex items-center gap-2">
+        {editing ? (
+          <div className="flex-1 flex gap-2">
+            <input className="flex-1 input-field text-sm" value={editName} onChange={e => setEditName(e.target.value)} />
+            <button onClick={() => { onRename(editName); setEditing(false) }} className="btn btn-primary text-xs p-1.5"><Save className="w-3 h-3" /></button>
+            <button onClick={() => { setEditing(false); setEditName(group.name) }} className="btn btn-ghost text-xs p-1.5"><X className="w-3 h-3" /></button>
+          </div>
+        ) : (
+          <>
+            <span className="font-semibold text-sm flex-1">{group.name}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${typeColor}`}>{typeLabel}</span>
+            <button onClick={() => setEditing(true)} className="p-1 text-foreground-muted hover:text-accent rounded"><Edit3 className="w-3 h-3" /></button>
+            <button onClick={onDelete} className="p-1 text-red-400 hover:bg-red-500/20 rounded"><Trash2 className="w-3 h-3" /></button>
+          </>
+        )}
+      </div>
+
+      {/* Members list */}
+      <div className="flex flex-wrap gap-1.5">
+        {members.map((m: any) => (
+          <div key={m.id} className="flex items-center gap-1 px-2 py-1 bg-background rounded text-xs">
+            <span>{m.wrestlers?.name || 'Unknown'}</span>
+            <button onClick={() => onRemoveMember(m.id)} className="text-red-400 hover:text-red-300 ml-1"><X className="w-3 h-3" /></button>
+          </div>
+        ))}
+        <button onClick={() => setShowSearch(!showSearch)} className="flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent rounded text-xs hover:bg-accent/20">
+          <Plus className="w-3 h-3" /> Add
+        </button>
+      </div>
+
+      {/* Member search */}
+      {showSearch && (
+        <div className="relative">
+          <input className="w-full input-field text-sm" value={memberSearch} onChange={e => handleMemberSearch(e.target.value)} placeholder="Search wrestler to add..." autoFocus />
+          {memberResults.length > 0 && (
+            <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-background-secondary border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto">
+              {memberResults.map((w: any) => (
+                <button key={w.id} onClick={() => { onAddMember(w); setMemberSearch(''); setMemberResults([]); setShowSearch(false) }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-background-tertiary">{w.name}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

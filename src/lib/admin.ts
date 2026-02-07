@@ -738,3 +738,74 @@ export async function uploadPromotionLogoAdmin(promotionId: string, file: File) 
   await updatePromotionAdmin(promotionId, { logo_url: urlWithBust })
   return urlWithBust
 }
+
+// ============================================
+// PROMOTION GROUPS (Tag Teams, Trios, Stables)
+// ============================================
+
+export async function getPromotionGroupsAdmin(promotionId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_groups')
+    .select(`
+      *,
+      promotion_group_members (
+        id, wrestler_id, sort_order,
+        wrestlers (id, name, slug, photo_url)
+      )
+    `)
+    .eq('promotion_id', promotionId)
+    .order('sort_order', { ascending: true })
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function createGroupAdmin(data: {
+  promotion_id: string
+  name: string
+  type: string
+}) {
+  const supabase = createClient()
+  const { data: group, error } = await supabase
+    .from('promotion_groups')
+    .insert(data)
+    .select(`
+      *,
+      promotion_group_members (
+        id, wrestler_id, sort_order,
+        wrestlers (id, name, slug, photo_url)
+      )
+    `)
+    .single()
+  if (error) throw error
+  return group
+}
+
+export async function updateGroupAdmin(groupId: string, updates: { name?: string; type?: string; is_active?: boolean }) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_groups').update(updates).eq('id', groupId)
+  if (error) throw error
+}
+
+export async function deleteGroupAdmin(groupId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_groups').delete().eq('id', groupId)
+  if (error) throw error
+}
+
+export async function addGroupMemberAdmin(groupId: string, wrestlerId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_group_members')
+    .insert({ group_id: groupId, wrestler_id: wrestlerId })
+    .select(`*, wrestlers (id, name, slug, photo_url)`)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function removeGroupMemberAdmin(memberId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('promotion_group_members').delete().eq('id', memberId)
+  if (error) throw error
+}

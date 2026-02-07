@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown } from 'lucide-react'
+import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 
@@ -77,7 +77,11 @@ async function getChampionships(promotionId: string) {
     .select(`
       *,
       current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
-      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url)
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url),
+      champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (
+        id, name, type,
+        promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url))
+      )
     `)
     .eq('promotion_id', promotionId)
     .eq('is_active', true)
@@ -108,6 +112,27 @@ async function getRoster(promotionId: string) {
   return data
 }
 
+async function getGroups(promotionId: string) {
+  const { data, error } = await supabase
+    .from('promotion_groups')
+    .select(`
+      *,
+      promotion_group_members (
+        id, wrestler_id, sort_order,
+        wrestlers (id, name, slug, photo_url)
+      )
+    `)
+    .eq('promotion_id', promotionId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching groups:', error)
+    return []
+  }
+  return data
+}
+
 export async function generateMetadata({ params }: PromotionPageProps) {
   const promotion = await getPromotion(params.slug)
   
@@ -132,6 +157,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   const followerCount = await getFollowerCount(promotion.id)
   const championships = await getChampionships(promotion.id)
   const roster = await getRoster(promotion.id)
+  const groups = await getGroups(promotion.id)
   
   // Split events into upcoming and past (compare dates only, not time)
   const today = new Date().toISOString().split('T')[0]
@@ -304,6 +330,8 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
               {championships.map((champ: any) => {
                 const champion = champ.current_champion
                 const champion2 = champ.current_champion_2
+                const champGroup = champ.champion_group
+                const groupMembers = champGroup?.promotion_group_members || []
                 return (
                   <div key={champ.id} className="card p-5 relative overflow-hidden">
                     {/* Gold accent top border */}
@@ -314,7 +342,40 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                       {champ.name}
                     </div>
 
-                    {champion ? (
+                    {champGroup ? (
+                      /* Group champion display */
+                      <div className="flex items-center gap-4">
+                        <div className="flex -space-x-3 flex-shrink-0">
+                          {groupMembers.map((m: any) => (
+                            <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
+                              <div className="w-14 h-14 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
+                                {m.wrestlers?.photo_url ? (
+                                  <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
+                                ) : (
+                                  <User className="w-7 h-7 text-foreground-muted" />
+                                )}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg">{champGroup.name}</div>
+                          <div className="text-sm text-foreground-muted">
+                            {groupMembers.map((m: any, i: number) => (
+                              <span key={m.id}>
+                                {i > 0 && (i === groupMembers.length - 1 ? ' & ' : ', ')}
+                                <Link href={`/wrestlers/${m.wrestlers?.slug}`} className="hover:text-accent transition-colors">{m.wrestlers?.name}</Link>
+                              </span>
+                            ))}
+                          </div>
+                          {champ.won_date && (
+                            <div className="text-xs text-foreground-muted mt-0.5">
+                              Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : champion ? (
                       <div className="flex items-center gap-4">
                         <div className="flex -space-x-3 flex-shrink-0">
                           <Link href={`/wrestlers/${champion.slug}`}>
@@ -362,6 +423,45 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                         <span className="text-sm italic">Vacant</span>
                       </div>
                     )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tag Teams & Stables */}
+        {groups.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
+              <Shield className="w-6 h-6 text-purple-400" />
+              Tag Teams &amp; Stables
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {groups.map((group: any) => {
+                const members = group.promotion_group_members || []
+                const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Stable'
+                const typeColor = group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'
+                return (
+                  <div key={group.id} className="card p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-semibold text-lg">{group.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${typeColor}`}>{typeLabel}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {members.map((m: any) => (
+                        <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`} className="flex flex-col items-center group">
+                          <div className="w-14 h-14 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-accent transition-colors">
+                            {m.wrestlers?.photo_url ? (
+                              <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
+                            ) : (
+                              <User className="w-7 h-7 text-foreground-muted" />
+                            )}
+                          </div>
+                          <span className="text-xs mt-1 text-center group-hover:text-accent transition-colors max-w-[70px] truncate">{m.wrestlers?.name}</span>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )
               })}
