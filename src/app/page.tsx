@@ -108,11 +108,10 @@ export default function HomePage() {
       let myEventsPromise: Promise<any> | null = null
       if (attending && attending.length > 0) {
         const eventIds = attending.map((a: any) => a.event_id)
-        myEventsPromise = supabase
+        myEventsPromise = Promise.resolve(supabase
           .from('events_with_counts')
           .select(`*, promotions (id, name, slug, logo_url)`)
-          .in('id', eventIds)
-          .then(r => r)
+          .in('id', eventIds))
         secondWave.push(myEventsPromise)
       }
 
@@ -120,15 +119,14 @@ export default function HomePage() {
       let promoEventsPromise: Promise<any> | null = null
       if (followedPromos && followedPromos.length > 0) {
         const promoIds = followedPromos.map((f: any) => f.promotion_id)
-        promoEventsPromise = supabase
+        promoEventsPromise = Promise.resolve(supabase
           .from('events_with_counts')
           .select(`*, promotions (id, name, slug, logo_url)`)
           .in('promotion_id', promoIds)
           .gte('event_date', today)
           .eq('status', 'upcoming')
           .order('event_date', { ascending: true })
-          .limit(8)
-          .then(r => r)
+          .limit(8))
         secondWave.push(promoEventsPromise)
       }
 
@@ -137,9 +135,9 @@ export default function HomePage() {
       if (followedWrestlers && followedWrestlers.length > 0) {
         const wrestlerIds = followedWrestlers.map((f: any) => f.wrestler_id)
         wrestlerLinksPromise = Promise.all([
-          supabase.from('event_wrestlers').select('event_id').in('wrestler_id', wrestlerIds).then(r => r),
-          supabase.from('match_participants').select('event_matches(event_id)').in('wrestler_id', wrestlerIds).then(r => r),
-          supabase.from('event_announced_talent').select('event_id').in('wrestler_id', wrestlerIds).then(r => r),
+          Promise.resolve(supabase.from('event_wrestlers').select('event_id').in('wrestler_id', wrestlerIds)),
+          Promise.resolve(supabase.from('match_participants').select('event_matches(event_id)').in('wrestler_id', wrestlerIds)),
+          Promise.resolve(supabase.from('event_announced_talent').select('event_id').in('wrestler_id', wrestlerIds)),
         ])
         secondWave.push(wrestlerLinksPromise)
       }
