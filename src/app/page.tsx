@@ -40,18 +40,45 @@ export default function HomePage() {
     setLoading(true)
     const today = new Date().toISOString().split('T')[0]
 
-    // Fetch upcoming events (for everyone)
-    const { data: upcoming } = await supabase
+    // Fire independent queries in parallel
+    const upcomingPromise = supabase
       .from('events_with_counts')
-      .select(`
-        *,
-        promotions (id, name, slug, logo_url)
-      `)
+      .select(`*, promotions (id, name, slug, logo_url)`)
       .gte('event_date', today)
       .eq('status', 'upcoming')
       .order('event_date', { ascending: true })
       .limit(20)
 
+    const promosPromise = supabase
+      .from('promotions')
+      .select('id, name, slug')
+      .order('name')
+      .limit(12)
+
+    // User-specific queries (fire all at once if logged in)
+    const attendingPromise = user
+      ? supabase.from('user_event_attendance').select('status, event_id').eq('user_id', user.id).order('created_at', { ascending: false })
+      : null
+
+    const followedWrestlersPromise = user
+      ? supabase.from('user_follows_wrestler').select('wrestler_id').eq('user_id', user.id)
+      : null
+
+    const followedPromosPromise = user
+      ? supabase.from('user_follows_promotion').select('promotion_id').eq('user_id', user.id)
+      : null
+
+    // Await all initial queries together
+    const [upcomingRes, promosRes, attendingRes, fwRes, fpRes] = await Promise.all([
+      upcomingPromise,
+      promosPromise,
+      attendingPromise,
+      followedWrestlersPromise,
+      followedPromosPromise,
+    ])
+
+    // Process upcoming events
+    const upcoming = upcomingRes.data
     if (upcoming) {
       const mapped = upcoming.map((e: any) => ({
         ...e,
@@ -60,51 +87,68 @@ export default function HomePage() {
       }))
       setUpcomingEvents(mapped)
       
-      // Hot events = sorted by attendance
       const hot = [...mapped].sort((a, b) => 
         (b.attending_count + b.interested_count) - (a.attending_count + a.interested_count)
       ).filter(e => e.attending_count + e.interested_count > 0).slice(0, 4)
       setHotEvents(hot)
     }
 
-    // Fetch promotions
-    const { data: promos } = await supabase
-      .from('promotions')
-      .select('id, name, slug')
-      .order('name')
-      .limit(12)
-    
-    if (promos) setPromotions(promos)
+    if (promosRes.data) setPromotions(promosRes.data)
 
-    // Personalized data for logged-in users
+    // Process personalized data
     if (user) {
-      // Events I'm attending
-      const { data: attending } = await supabase
-        .from('user_event_attendance')
-        .select(`
-          status,
-          event_id
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      const attending = attendingRes?.data
+      const followedWrestlers = fwRes?.data
+      const followedPromos = fpRes?.data
 
+      // Second wave of parallel queries based on first results
+      const secondWave: Promise<any>[] = []
+
+      // My events
+      let myEventsPromise: Promise<any> | null = null
       if (attending && attending.length > 0) {
-        // Get the event IDs
         const eventIds = attending.map((a: any) => a.event_id)
-        
-        // Fetch full event data with real counts
-        const { data: eventData } = await supabase
+        myEventsPromise = supabase
           .from('events_with_counts')
-          .select(`
-            *,
-            promotions (id, name, slug, logo_url)
-          `)
+          .select(`*, promotions (id, name, slug, logo_url)`)
           .in('id', eventIds)
-        
+        secondWave.push(myEventsPromise)
+      }
+
+      // Followed promo events
+      let promoEventsPromise: Promise<any> | null = null
+      if (followedPromos && followedPromos.length > 0) {
+        const promoIds = followedPromos.map((f: any) => f.promotion_id)
+        promoEventsPromise = supabase
+          .from('events_with_counts')
+          .select(`*, promotions (id, name, slug, logo_url)`)
+          .in('promotion_id', promoIds)
+          .gte('event_date', today)
+          .eq('status', 'upcoming')
+          .order('event_date', { ascending: true })
+          .limit(8)
+        secondWave.push(promoEventsPromise)
+      }
+
+      // Followed wrestler event links (3 tables in parallel)
+      let wrestlerLinksPromise: Promise<[any, any, any]> | null = null
+      if (followedWrestlers && followedWrestlers.length > 0) {
+        const wrestlerIds = followedWrestlers.map((f: any) => f.wrestler_id)
+        wrestlerLinksPromise = Promise.all([
+          supabase.from('event_wrestlers').select('event_id').in('wrestler_id', wrestlerIds),
+          supabase.from('match_participants').select('event_matches(event_id)').in('wrestler_id', wrestlerIds),
+          supabase.from('event_announced_talent').select('event_id').in('wrestler_id', wrestlerIds),
+        ])
+        secondWave.push(wrestlerLinksPromise)
+      }
+
+      await Promise.all(secondWave)
+
+      // Process my events
+      if (myEventsPromise && attending) {
+        const { data: eventData } = await myEventsPromise
         if (eventData) {
-          // Create a map of attendance status by event ID
           const statusMap = new Map(attending.map((a: any) => [a.event_id, a.status]))
-          
           const myEventsList = eventData
             .filter((e: any) => new Date(e.event_date) >= new Date())
             .map((e: any) => ({
@@ -114,89 +158,39 @@ export default function HomePage() {
               interested_count: e.real_interested_count || 0
             }))
             .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
-          
           setMyEvents(myEventsList)
         }
       }
 
-      // Events from followed wrestlers/promotions
-      const { data: followedWrestlers } = await supabase
-        .from('user_follows_wrestler')
-        .select('wrestler_id')
-        .eq('user_id', user.id)
-
-      const { data: followedPromos } = await supabase
-        .from('user_follows_promotion')
-        .select('promotion_id')
-        .eq('user_id', user.id)
-
+      // Process followed events
       let allFollowedEvents: any[] = []
 
-      if (followedPromos && followedPromos.length > 0) {
-        const promoIds = followedPromos.map((f: any) => f.promotion_id)
-        
-        const { data: promoEvents } = await supabase
-          .from('events_with_counts')
-          .select(`
-            *,
-            promotions (id, name, slug, logo_url)
-          `)
-          .in('promotion_id', promoIds)
-          .gte('event_date', today)
-          .eq('status', 'upcoming')
-          .order('event_date', { ascending: true })
-          .limit(8)
-
+      if (promoEventsPromise) {
+        const { data: promoEvents } = await promoEventsPromise
         if (promoEvents) {
-          const mapped = promoEvents.map((e: any) => ({
+          allFollowedEvents = promoEvents.map((e: any) => ({
             ...e,
             attending_count: e.real_attending_count || 0,
             interested_count: e.real_interested_count || 0
           }))
-          allFollowedEvents = mapped
         }
       }
 
-      if (followedWrestlers && followedWrestlers.length > 0) {
-        const wrestlerIds = followedWrestlers.map((f: any) => f.wrestler_id)
-        
-        // Check event_wrestlers
-        const { data: ewLinks } = await supabase
-          .from('event_wrestlers')
-          .select('event_id')
-          .in('wrestler_id', wrestlerIds)
-
-        // Check match_participants
-        const { data: mpLinks } = await supabase
-          .from('match_participants')
-          .select('event_matches(event_id)')
-          .in('wrestler_id', wrestlerIds)
-
-        // Check event_announced_talent
-        const { data: atLinks } = await supabase
-          .from('event_announced_talent')
-          .select('event_id')
-          .in('wrestler_id', wrestlerIds)
-
-        // Collect all event IDs
+      if (wrestlerLinksPromise) {
+        const [ewRes, mpRes, atRes] = await wrestlerLinksPromise
         const eventIdSet = new Set<string>()
-        for (const l of (ewLinks || [])) eventIdSet.add(l.event_id)
-        for (const l of (mpLinks || [])) {
+        for (const l of (ewRes.data || [])) eventIdSet.add(l.event_id)
+        for (const l of (mpRes.data || [])) {
           const eventId = (l as any).event_matches?.event_id
           if (eventId) eventIdSet.add(eventId)
         }
-        for (const l of (atLinks || [])) eventIdSet.add((l as any).event_id)
+        for (const l of (atRes.data || [])) eventIdSet.add((l as any).event_id)
 
         const eventIds = Array.from(eventIdSet)
-
         if (eventIds.length > 0) {
-          
           const { data: wrestlerEvents } = await supabase
             .from('events_with_counts')
-            .select(`
-              *,
-              promotions (id, name, slug, logo_url)
-            `)
+            .select(`*, promotions (id, name, slug, logo_url)`)
             .in('id', eventIds)
             .gte('event_date', today)
             .eq('status', 'upcoming')
@@ -204,25 +198,20 @@ export default function HomePage() {
             .limit(8)
 
           if (wrestlerEvents) {
-            const mapped = wrestlerEvents.map((e: any) => ({
-              ...e,
-              attending_count: e.real_attending_count || 0,
-              interested_count: e.real_interested_count || 0
-            }))
-            // Merge with followed promo events, dedupe
-            const existingIds = new Set<string>()
-            allFollowedEvents.forEach(e => existingIds.add(e.id))
-            mapped.forEach((e: any) => {
+            const existingIds = new Set(allFollowedEvents.map(e => e.id))
+            for (const e of wrestlerEvents) {
               if (!existingIds.has(e.id)) {
-                allFollowedEvents.push(e)
-                existingIds.add(e.id)
+                allFollowedEvents.push({
+                  ...e,
+                  attending_count: (e as any).real_attending_count || 0,
+                  interested_count: (e as any).real_interested_count || 0
+                })
               }
-            })
+            }
           }
         }
       }
 
-      // Sort by date and limit
       allFollowedEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
       setFollowedEvents(allFollowedEvents.slice(0, 8))
     }

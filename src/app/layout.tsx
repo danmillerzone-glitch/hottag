@@ -1,8 +1,15 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 import Navigation from '@/components/NavigationAuth'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#0a0a0a',
+}
 
 export const metadata: Metadata = {
   title: 'Hot Tag - Indie Wrestling Event Tracker',
