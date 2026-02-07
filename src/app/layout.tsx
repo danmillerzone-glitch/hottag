@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: 'Hot Tag - Indie Wrestling Event Tracker',
   description: 'Never miss another indie show. Discover wrestling events, follow your favorite wrestlers, and connect with the indie wrestling community.',
   keywords: ['wrestling', 'indie wrestling', 'GCW', 'PWG', 'wrestling events', 'independent wrestling'],
+  robots: {
+    index: false,
+    follow: false,
+  },
   openGraph: {
     title: 'Hot Tag - Indie Wrestling Event Tracker',
     description: 'Never miss another indie show.',
