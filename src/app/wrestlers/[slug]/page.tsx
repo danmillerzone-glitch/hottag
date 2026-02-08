@@ -7,6 +7,7 @@ import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
+import ShareButton from '@/components/ShareButton'
 
 function XIcon({ className }: { className?: string }) {
   return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>)
@@ -158,7 +159,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         }} />
 
         {/* Bottom fade gradient — overlays render image to mask cutoff */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background-secondary via-background-secondary/60 to-transparent z-[3] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-48 z-[3] pointer-events-none" style={{
+          background: 'linear-gradient(to top, var(--color-background-secondary) 0%, var(--color-background-secondary) 15%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+        }} />
 
         {/* ===== DESKTOP HERO ===== */}
         <div className="hidden md:block relative">
@@ -185,6 +188,11 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Follow + Social row */}
                 <div className="flex items-center gap-3 mb-5">
                   <FollowWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} initialFollowerCount={followerCount} />
+                  <ShareButton
+                    title={`${wrestler.name} | Hot Tag`}
+                    text={`Check out ${wrestler.name} on Hot Tag`}
+                    url={`https://hottag.app/wrestlers/${wrestler.slug}`}
+                  />
                   {socialIcons.length > 0 && (
                     <div className="flex items-center gap-1">
                       {socialIcons.map((link, i) => (
@@ -244,7 +252,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         </div>
 
         {/* ===== MOBILE HERO — Trading Card ===== */}
-        <div className="md:hidden relative px-4 pt-6 pb-8 z-[2]">
+        <div className="md:hidden relative px-4 pt-6 pb-8 z-[5]">
           <div className="relative mx-auto max-w-sm">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-background-tertiary to-background-secondary border border-border/50">
               {/* Image */}
@@ -279,7 +287,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Follow + Social — ABOVE stats on mobile */}
                 <div className="flex items-center gap-2 mb-3 border-t border-border/50 pt-3">
                   <FollowWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} initialFollowerCount={followerCount} />
-                  {socialIcons.slice(0, 5).map((link, i) => (
+                  <ShareButton
+                    title={`${wrestler.name} | Hot Tag`}
+                    text={`Check out ${wrestler.name} on Hot Tag`}
+                    url={`https://hottag.app/wrestlers/${wrestler.slug}`}
+                  />
+                  {socialIcons.slice(0, 4).map((link, i) => (
                     <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                       className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
                       <link.icon className="w-4 h-4" />

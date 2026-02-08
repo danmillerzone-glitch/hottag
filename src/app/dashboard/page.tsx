@@ -105,7 +105,7 @@ export default function DashboardPage() {
               {claims.map((claim) => (
                 <div key={claim.id} className="card p-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden">
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
                       {claim.promotions?.logo_url ? (
                         <Image
                           src={claim.promotions.logo_url}
@@ -115,7 +115,9 @@ export default function DashboardPage() {
                           className="object-contain"
                         />
                       ) : (
-                        <Building2 className="w-6 h-6 text-foreground-muted" />
+                        <div className="w-full h-full bg-background-tertiary rounded-lg flex items-center justify-center">
+                          <Building2 className="w-6 h-6 text-foreground-muted" />
+                        </div>
                       )}
                     </div>
                     <div className="flex-1">
@@ -186,7 +188,7 @@ export default function DashboardPage() {
       <div className="bg-background-secondary border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
               {promotion.logo_url ? (
                 <Image
                   src={promotion.logo_url}
@@ -196,7 +198,9 @@ export default function DashboardPage() {
                   className="object-contain p-1"
                 />
               ) : (
-                <Building2 className="w-7 h-7 text-foreground-muted" />
+                <div className="w-full h-full bg-background-tertiary rounded-xl flex items-center justify-center">
+                  <Building2 className="w-7 h-7 text-foreground-muted" />
+                </div>
               )}
             </div>
             <div className="flex-1">
