@@ -201,10 +201,8 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 <div className="w-full h-full bg-background-tertiary rounded-lg flex items-center justify-center">
                   <Building2 className="w-16 h-16 text-foreground-muted" />
                 </div>
-              )}}
+              )}
             </div>
-
-            {/* Info */}
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
                 {promotion.name}
