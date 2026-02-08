@@ -160,7 +160,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
         {/* Bottom fade gradient — overlays render image to mask cutoff */}
         <div className="absolute bottom-0 left-0 right-0 h-48 z-[3] pointer-events-none" style={{
-          background: 'linear-gradient(to top, var(--color-background-secondary) 0%, var(--color-background-secondary) 15%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+          background: 'linear-gradient(to top, #1c2228 0%, #1c2228 10%, #1c222890 50%, transparent 100%)',
         }} />
 
         {/* ===== DESKTOP HERO ===== */}
@@ -268,7 +268,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               </div>
 
               {/* Card content */}
-              <div className="relative z-[2] -mt-12 px-5 pb-5">
+              <div className="relative z-[2] -mt-16 px-5 pb-5">
                 {/* PWI Badge */}
                 {wrestler.pwi_ranking && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold mb-2">
