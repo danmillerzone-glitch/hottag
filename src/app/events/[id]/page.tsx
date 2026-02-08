@@ -205,7 +205,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 {/* Google Maps link */}
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    [event.venue_name, (event as any).venue_address, event.city, event.state].filter(Boolean).join(', ')
+                    [event.venue_name, event.venue_address, event.city, event.state].filter(Boolean).join(', ')
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

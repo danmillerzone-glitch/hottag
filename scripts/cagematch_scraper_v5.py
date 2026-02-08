@@ -1,6 +1,7 @@
 """
 HotTag - Cagematch International Event Scraper v5
-Scrapes upcoming events worldwide, EXCLUDING WWE, AEW, TNA/IMPACT
+Scrapes upcoming events worldwide, EXCLUDING USA and WWE/AEW/TNA/IMPACT
+Use v4 for USA events, v5 for international only.
 
 Usage:
     python cagematch_scraper_v5.py --days 120
@@ -100,6 +101,16 @@ def parse_location(location_str):
     if 'USA' in location_str:
         is_usa = True
         country = 'USA'
+    else:
+        # Check for US state abbreviations in location
+        for part in parts:
+            for word in part.strip().split():
+                if word.upper() in US_STATES:
+                    is_usa = True
+                    country = 'USA'
+                    break
+            if is_usa:
+                break
 
     if is_usa and len(parts) >= 2:
         # Try to extract state from second part
@@ -212,6 +223,10 @@ def scrape_all_upcoming_events(max_days=120):
 
                 location_str = cells[3].get_text(strip=True)
                 location = parse_location(location_str)
+
+                # EXCLUDE USA events — use v4 for those
+                if location.get('country') == 'USA':
+                    continue
 
                 cagematch_id = extract_id(event_url)
                 if cagematch_id:

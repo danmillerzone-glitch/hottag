@@ -32,9 +32,10 @@ def get_events_to_update():
 
 
 def scrape_event_details(source_url):
-    """Scrape venue and ticket info from Cagematch event page"""
+    """Scrape venue, address, and ticket info from Cagematch event page"""
     details = {
         'venue_name': None,
+        'venue_address': None,
         'ticket_url': None,
         'event_time': None,
         'doors_time': None,
@@ -73,6 +74,10 @@ def scrape_event_details(source_url):
                         details['venue_name'] = link.get_text(strip=True)
                     else:
                         details['venue_name'] = content_text
+                
+                # Location / Address
+                if 'location' in title_text or 'address' in title_text:
+                    details['venue_address'] = content_text
                 
                 # Bell time / Start time
                 if 'bell' in title_text or 'start' in title_text:
@@ -114,6 +119,8 @@ def update_event(event_id, details):
     
     if details['venue_name']:
         update_data['venue_name'] = details['venue_name']
+    if details.get('venue_address'):
+        update_data['venue_address'] = details['venue_address']
     if details['ticket_url']:
         update_data['ticket_url'] = details['ticket_url']
     if details['event_time']:
@@ -146,7 +153,7 @@ def main():
         
         if any(details.values()):
             if update_event(event['id'], details):
-                logger.info(f"  Updated with: venue={details['venue_name']}, ticket={details['ticket_url']}")
+                logger.info(f"  Updated: venue={details['venue_name']}, addr={details.get('venue_address')}, ticket={details['ticket_url']}")
                 updated += 1
             else:
                 skipped += 1

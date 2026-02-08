@@ -34,16 +34,51 @@ def get_existing_events():
     return set()
 
 
-def create_promotion(name):
+COUNTRY_TO_REGION = {
+    'USA': None,  # US promotions get region from state
+    'Canada': 'Canada',
+    'Mexico': 'Mexico',
+    'Japan': 'Japan',
+    'UK': 'United Kingdom', 'England': 'United Kingdom', 'Scotland': 'United Kingdom', 'Wales': 'United Kingdom', 'Northern Ireland': 'United Kingdom',
+    'Germany': 'Europe', 'Deutschland': 'Europe', 'France': 'Europe', 'Italy': 'Europe', 'Spain': 'Europe',
+    'Austria': 'Europe', 'Switzerland': 'Europe', 'Netherlands': 'Europe', 'Belgium': 'Europe',
+    'Poland': 'Europe', 'Czech Republic': 'Europe', 'Sweden': 'Europe', 'Norway': 'Europe',
+    'Finland': 'Europe', 'Denmark': 'Europe', 'Ireland': 'Europe', 'Portugal': 'Europe',
+    'Romania': 'Europe', 'Hungary': 'Europe', 'Bulgaria': 'Europe', 'Croatia': 'Europe',
+    'Serbia': 'Europe', 'Greece': 'Europe', 'Turkey': 'Europe',
+    'Australia': 'Australia & New Zealand', 'New Zealand': 'Australia & New Zealand',
+    'Brazil': 'Latin America', 'Argentina': 'Latin America', 'Chile': 'Latin America', 'Colombia': 'Latin America', 'Peru': 'Latin America',
+    'India': 'Asia', 'China': 'Asia', 'South Korea': 'Asia', 'Korea': 'Asia',
+    'Philippines': 'Asia', 'Singapore': 'Asia', 'Malaysia': 'Asia', 'Thailand': 'Asia',
+    'Indonesia': 'Asia', 'Vietnam': 'Asia', 'Taiwan': 'Asia', 'Hong Kong': 'Asia',
+    'South Africa': 'Africa', 'Nigeria': 'Africa', 'Kenya': 'Africa',
+    'Saudi Arabia': 'Middle East', 'Saudi-Arabia': 'Middle East', 'UAE': 'Middle East', 'Israel': 'Middle East',
+    'Puerto Rico': 'Puerto Rico',
+}
+
+
+def get_region_for_country(country):
+    """Map country to a region"""
+    if not country:
+        return None
+    return COUNTRY_TO_REGION.get(country, 'International')
+
+
+def create_promotion(name, country=None):
     """Create a new promotion and return its ID"""
     slug = name.lower().replace(' ', '-').replace(':', '').replace("'", '')
     slug = ''.join(c for c in slug if c.isalnum() or c == '-')
     
+    promo_country = country or 'USA'
+    region = get_region_for_country(promo_country)
+    
     data = {
         "name": name,
         "slug": slug,
-        "country": "USA"
+        "country": promo_country,
     }
+    if region:
+        data["region"] = region
     
     url = f"{SUPABASE_URL}/rest/v1/promotions"
     headers = {**HEADERS, "Prefer": "return=representation"}
@@ -137,8 +172,9 @@ def main():
                 
                 if not found:
                     # Create new promotion
-                    print(f"  Creating new promotion: {promo_name}")
-                    new_promo = create_promotion(promo_name)
+                    event_country = event.get('country', 'USA')
+                    print(f"  Creating new promotion: {promo_name} ({event_country})")
+                    new_promo = create_promotion(promo_name, country=event_country)
                     if new_promo:
                         promotions[promo_key] = new_promo
                         promotion_id = new_promo['id']
@@ -160,6 +196,17 @@ def main():
     print(f"Events skipped (duplicates): {skipped}")
     print(f"Errors: {errors}")
     print(f"New promotions created: {new_promotions}")
+    
+    # Country breakdown of created events
+    if created > 0:
+        countries = {}
+        for event in events:
+            c = event.get('country', 'USA')
+            if c:
+                countries[c] = countries.get(c, 0) + 1
+        print(f"\nEvents by country:")
+        for c, count in sorted(countries.items(), key=lambda x: -x[1])[:15]:
+            print(f"  {c}: {count}")
 
 
 if __name__ == '__main__':

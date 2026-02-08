@@ -76,6 +76,7 @@ export interface Event {
   promotion_id: string | null
   venue_id: string | null
   venue_name: string | null
+  venue_address: string | null
   city: string | null
   state: string | null
   country: string
