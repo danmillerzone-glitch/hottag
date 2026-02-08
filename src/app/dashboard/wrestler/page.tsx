@@ -67,6 +67,8 @@ export default function WrestlerDashboardPage() {
   const [website, setWebsite] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
+  const [blueskyHandle, setBlueskyHandle] = useState('')
+  const [patreonUrl, setPatreonUrl] = useState('')
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
   const [signatureMoves, setSignatureMoves] = useState<string[]>([])
   const [newMove, setNewMove] = useState('')
@@ -110,6 +112,8 @@ export default function WrestlerDashboardPage() {
       setWebsite(data.wrestler.website || '')
       setBookingEmail(data.wrestler.booking_email || '')
       setMerchUrl(data.wrestler.merch_url || '')
+      setBlueskyHandle(data.wrestler.bluesky_handle || '')
+      setPatreonUrl(data.wrestler.patreon_url || '')
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
     } else {
@@ -142,6 +146,8 @@ export default function WrestlerDashboardPage() {
         website: website || null,
         booking_email: bookingEmail || null,
         merch_url: merchUrl || null,
+        bluesky_handle: blueskyHandle || null,
+        patreon_url: patreonUrl || null,
         countries_wrestled: countriesWrestled,
         signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
@@ -628,6 +634,29 @@ export default function WrestlerDashboardPage() {
                 placeholder="https://prowrestlingtees.com/yourstore"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Bluesky</label>
+                <input
+                  type="text"
+                  value={blueskyHandle}
+                  onChange={(e) => setBlueskyHandle(e.target.value)}
+                  placeholder="yourname.bsky.social"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Patreon</label>
+                <input
+                  type="url"
+                  value={patreonUrl}
+                  onChange={(e) => setPatreonUrl(e.target.value)}
+                  placeholder="https://patreon.com/yourpage"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
             </div>
           </div>
         </section>

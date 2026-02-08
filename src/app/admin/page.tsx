@@ -1104,6 +1104,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
     twitter_handle: wrestler.twitter_handle || '', instagram_handle: wrestler.instagram_handle || '',
     tiktok_handle: wrestler.tiktok_handle || '', youtube_url: wrestler.youtube_url || '',
     website: wrestler.website || '', booking_email: wrestler.booking_email || '', merch_url: wrestler.merch_url || '',
+    bluesky_handle: wrestler.bluesky_handle || '', patreon_url: wrestler.patreon_url || '',
   })
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>(wrestler.countries_wrestled || [])
   const [signatureMoves, setSignatureMoves] = useState<string[]>(wrestler.signature_moves || [])
@@ -1124,6 +1125,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
         twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
         tiktok_handle: form.tiktok_handle || null, youtube_url: form.youtube_url || null,
         website: form.website || null, booking_email: form.booking_email || null, merch_url: form.merch_url || null,
+        bluesky_handle: form.bluesky_handle || null, patreon_url: form.patreon_url || null,
         countries_wrestled: countriesWrestled.length > 0 ? countriesWrestled : null,
         signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
@@ -1215,6 +1217,10 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
           </div>
           <div className="mt-3">
             <FieldRow label="Merch URL"><input className="w-full input-field" value={form.merch_url} onChange={e => setForm({...form, merch_url: e.target.value})} placeholder="https://..." /></FieldRow>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <FieldRow label="Bluesky"><input className="w-full input-field" value={form.bluesky_handle} onChange={e => setForm({...form, bluesky_handle: e.target.value})} placeholder="handle.bsky.social" /></FieldRow>
+            <FieldRow label="Patreon"><input className="w-full input-field" value={form.patreon_url} onChange={e => setForm({...form, patreon_url: e.target.value})} placeholder="https://patreon.com/..." /></FieldRow>
           </div>
         </div>
         <ClaimCodeSection type="wrestlers" id={wrestler.id} currentCode={wrestler.claim_code} claimedBy={wrestler.claimed_by} />

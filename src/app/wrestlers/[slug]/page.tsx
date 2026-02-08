@@ -26,6 +26,22 @@ function TikTokIcon({ className }: { className?: string }) {
   )
 }
 
+function BlueskyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.6 3.476 6.178 3.238-4.596.55-8.626 2.04-3.39 7.205 5.42 4.244 7.108-1.012 8.588-4.65.134-.33.221-.547.288-.547.066 0 .154.218.288.547 1.48 3.638 3.168 8.894 8.588 4.65 5.236-5.165 1.206-6.655-3.39-7.205 2.578.238 5.393-.611 6.178-3.238.246-.828.624-5.789.624-6.479 0-.688-.139-1.86-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z" />
+    </svg>
+  )
+}
+
+function PatreonIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M14.82 2.41c3.96 0 7.18 3.24 7.18 7.21 0 3.96-3.22 7.18-7.18 7.18-3.97 0-7.21-3.22-7.21-7.18 0-3.97 3.24-7.21 7.21-7.21M2 21.6h3.5V2.41H2V21.6z" />
+    </svg>
+  )
+}
+
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -411,6 +427,30 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     Merch
                   </a>
                 )}
+
+                {wrestler.bluesky_handle && (
+                  <a
+                    href={`https://bsky.app/profile/${wrestler.bluesky_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <BlueskyIcon className="w-4 h-4 mr-2" />
+                    Bluesky
+                  </a>
+                )}
+
+                {wrestler.patreon_url && (
+                  <a
+                    href={wrestler.patreon_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <PatreonIcon className="w-4 h-4 mr-2" />
+                    Patreon
+                  </a>
+                )}
               </div>
 
               {wrestler.bio && (
@@ -462,7 +502,6 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 href={`/promotions/${champ.promotions?.slug}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border border-yellow-600/30 hover:border-yellow-500/50 transition-colors group"
               >
-                <Crown className="w-5 h-5 text-yellow-500 flex-shrink-0" />
                 <div>
                   <div className="font-semibold text-sm group-hover:text-accent transition-colors">
                     {champ.name}
@@ -486,51 +525,70 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
       )}
 
       {/* Tag Teams & Factions */}
-      {groups.length > 0 && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="flex flex-wrap gap-3">
-            {groups.map((group: any) => {
-              const members = (group.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestler.id)
-              const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
-              const typeColor = group.type === 'tag_team' ? 'border-blue-500/30 hover:border-blue-500/50' : group.type === 'trio' ? 'border-purple-500/30 hover:border-purple-500/50' : 'border-green-500/30 hover:border-green-500/50'
-              const iconColor = group.type === 'tag_team' ? 'text-blue-400' : group.type === 'trio' ? 'text-purple-400' : 'text-green-400'
-              return (
-                <div key={group.id} className={`flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border ${typeColor} transition-colors`}>
-                  <Shield className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{group.name}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'}`}>{typeLabel}</span>
+      {groups.length > 0 && (() => {
+        // Deduplicate groups by name — merge promotions for same-named groups
+        const uniqueGroups = new Map<string, { group: any; promotions: string[]; members: any[] }>()
+        groups.forEach((group: any) => {
+          const key = group.name.toLowerCase()
+          const members = (group.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestler.id)
+          if (uniqueGroups.has(key)) {
+            const existing = uniqueGroups.get(key)!
+            if (group.promotions?.name && !existing.promotions.includes(group.promotions.name)) {
+              existing.promotions.push(group.promotions.name)
+            }
+          } else {
+            uniqueGroups.set(key, {
+              group,
+              promotions: group.promotions?.name ? [group.promotions.name] : [],
+              members,
+            })
+          }
+        })
+        return (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+            <div className="flex flex-wrap gap-3">
+              {Array.from(uniqueGroups.values()).map(({ group, promotions, members }) => {
+                const typeLabel = group.type === 'tag_team' ? 'Tag Team' : group.type === 'trio' ? 'Trio' : 'Faction'
+                const typeColor = group.type === 'tag_team' ? 'border-blue-500/30 hover:border-blue-500/50' : group.type === 'trio' ? 'border-purple-500/30 hover:border-purple-500/50' : 'border-green-500/30 hover:border-green-500/50'
+                const iconColor = group.type === 'tag_team' ? 'text-blue-400' : group.type === 'trio' ? 'text-purple-400' : 'text-green-400'
+                return (
+                  <div key={group.id} className={`flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border ${typeColor} transition-colors`}>
+                    <Shield className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">{group.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${group.type === 'tag_team' ? 'text-blue-400 bg-blue-500/10' : group.type === 'trio' ? 'text-purple-400 bg-purple-500/10' : 'text-green-400 bg-green-500/10'}`}>{typeLabel}</span>
+                      </div>
+                      <div className="text-xs text-foreground-muted">
+                        {promotions.length > 0 && <>{promotions.join(', ')} &middot; </>}
+                        w/ {members.map((m: any, i: number) => (
+                          <span key={m.id}>
+                            {i > 0 && (i === members.length - 1 ? ' & ' : ', ')}
+                            <Link href={`/wrestlers/${m.wrestlers?.slug}`} className="hover:text-accent transition-colors">{m.wrestlers?.name}</Link>
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="text-xs text-foreground-muted">
-                      {group.promotions?.name && <>{group.promotions.name} &middot; </>}
-                      w/ {members.map((m: any, i: number) => (
-                        <span key={m.id}>
-                          {i > 0 && (i === members.length - 1 ? ' & ' : ', ')}
-                          <Link href={`/wrestlers/${m.wrestlers?.slug}`} className="hover:text-accent transition-colors">{m.wrestlers?.name}</Link>
-                        </span>
+                    <div className="flex -space-x-2 ml-auto">
+                      {members.slice(0, 4).map((m: any) => (
+                        <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
+                          <div className="w-8 h-8 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-background-secondary hover:border-accent transition-colors">
+                            {m.wrestlers?.photo_url ? (
+                              <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
+                            ) : (
+                              <User className="w-4 h-4 text-foreground-muted" />
+                            )}
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
-                  <div className="flex -space-x-2 ml-auto">
-                    {members.slice(0, 4).map((m: any) => (
-                      <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
-                        <div className="w-8 h-8 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-background-secondary hover:border-accent transition-colors">
-                          {m.wrestlers?.photo_url ? (
-                            <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
-                          ) : (
-                            <User className="w-4 h-4 text-foreground-muted" />
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Events */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

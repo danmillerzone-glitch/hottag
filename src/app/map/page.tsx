@@ -10,20 +10,21 @@ import Link from 'next/link'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
+const DEFAULT_CENTER: [number, number] = [-95.7129, 37.0902]
+const DEFAULT_ZOOM = 4
+const USER_ZOOM = 9
+
 export default function MapPage() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
+  const markersAdded = useRef(false)
   const [events, setEvents] = useState<EventWithPromotion[]>([])
-  const [selectedEvent, setSelectedEvent] = useState<EventWithPromotion | null>(null)
   const [loading, setLoading] = useState(true)
   const [showList, setShowList] = useState(false)
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
 
-  // Fetch events
   useEffect(() => {
     async function fetchEvents() {
       const data = await getUpcomingEvents(200)
-      // Filter to events with coordinates
       const eventsWithCoords = data.filter(e => e.latitude && e.longitude)
       setEvents(eventsWithCoords)
       setLoading(false)
@@ -31,146 +32,95 @@ export default function MapPage() {
     fetchEvents()
   }, [])
 
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
-        },
-        () => {
-          // Default to Houston if location denied
-          setUserLocation({ lat: 29.7604, lng: -95.3698 })
-        }
-      )
-    } else {
-      setUserLocation({ lat: 29.7604, lng: -95.3698 })
-    }
-  }, [])
-
-  // Initialize map
+  // Initialize map immediately without waiting for location
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      center: userLocation ? [userLocation.lng, userLocation.lat] : [-95.7129, 37.0902],
-      zoom: userLocation ? 8 : 4,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
     })
 
-    // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-
-    // Add geolocate control
     map.current.addControl(
       new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true,
-        },
+        positionOptions: { enableHighAccuracy: true },
         trackUserLocation: true,
         showUserHeading: true,
       }),
       'top-right'
     )
 
-    return () => {
-      if (map.current) {
-        map.current.remove()
-        map.current = null
+    // Fly to user location AFTER map loads — no blocking
+    map.current.on('load', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (map.current) {
+              map.current.flyTo({
+                center: [position.coords.longitude, position.coords.latitude],
+                zoom: USER_ZOOM,
+                speed: 1.5,
+              })
+            }
+          },
+          () => { /* denied or error — stay at default */ },
+          { timeout: 8000 }
+        )
       }
+    })
+
+    return () => {
+      if (map.current) { map.current.remove(); map.current = null }
     }
-  }, [userLocation])
+  }, [])
 
-  // Add markers for events
+  // Add markers when events load
   useEffect(() => {
-    if (!map.current || events.length === 0) return
+    if (!map.current || events.length === 0 || markersAdded.current) return
+    markersAdded.current = true
 
-    // Clear existing markers
-    const markers = document.querySelectorAll('.mapboxgl-marker')
-    markers.forEach(m => m.remove())
-
-    // Group events by location
     const locationGroups = new Map<string, EventWithPromotion[]>()
     events.forEach(event => {
       const key = `${event.latitude},${event.longitude}`
-      if (!locationGroups.has(key)) {
-        locationGroups.set(key, [])
-      }
+      if (!locationGroups.has(key)) locationGroups.set(key, [])
       locationGroups.get(key)!.push(event)
     })
 
-    // Add markers
     locationGroups.forEach((locationEvents, key) => {
       const [lat, lng] = key.split(',').map(Number)
       const event = locationEvents[0]
-      
-      // Create custom marker element
+
       const el = document.createElement('div')
       el.className = 'event-marker'
-      el.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm shadow-lg cursor-pointer hover:scale-110 transition-transform">
-          ${locationEvents.length > 1 ? locationEvents.length : ''}
-        </div>
-      `
+      el.innerHTML = `<div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm shadow-lg cursor-pointer hover:scale-110 transition-transform">${locationEvents.length > 1 ? locationEvents.length : ''}</div>`
 
-      // Create popup content
       const popupContent = locationEvents.length > 1
-        ? `
-          <div class="p-4 max-w-xs">
+        ? `<div class="p-4 max-w-xs">
             <h3 class="font-bold text-foreground mb-2">${locationEvents.length} Events</h3>
             <p class="text-foreground-muted text-sm mb-3">${formatLocation(event.city, event.state)}</p>
             <div class="space-y-2 max-h-48 overflow-y-auto">
-              ${locationEvents.map(e => `
-                <a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors">
-                  <div class="font-medium text-sm text-foreground">${e.name}</div>
-                  <div class="text-xs text-accent">${formatEventDate(e.event_date)}</div>
-                </a>
-              `).join('')}
-            </div>
-          </div>
-        `
-        : `
-          <div class="p-4 max-w-xs">
+              ${locationEvents.map(e => `<a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors"><div class="font-medium text-sm text-foreground">${e.name}</div><div class="text-xs text-accent">${formatEventDate(e.event_date)}</div></a>`).join('')}
+            </div></div>`
+        : `<div class="p-4 max-w-xs">
             ${event.promotions ? `<div class="text-accent text-xs font-medium mb-1">${event.promotions.name}</div>` : ''}
             <h3 class="font-bold text-foreground mb-1">${event.name}</h3>
             <p class="text-foreground-muted text-sm mb-2">${formatEventDate(event.event_date)}</p>
             <p class="text-foreground-muted text-sm mb-3">${event.venue_name || formatLocation(event.city, event.state)}</p>
-            <a href="/events/${event.id}" class="inline-block px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">
-              View Event
-            </a>
-          </div>
-        `
-
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(popupContent)
+            <a href="/events/${event.id}" class="inline-block px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">View Event</a></div>`
 
       new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
-        .setPopup(popup)
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
         .addTo(map.current!)
     })
-
-    // Fit bounds to markers if we have multiple
-    if (locationGroups.size > 1) {
-      const bounds = new mapboxgl.LngLatBounds()
-      locationGroups.forEach((_, key) => {
-        const [lat, lng] = key.split(',').map(Number)
-        bounds.extend([lng, lat])
-      })
-      map.current.fitBounds(bounds, { padding: 50 })
-    }
   }, [events])
 
   return (
     <div className="relative h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)]">
-      {/* Map */}
       <div ref={mapContainer} className="w-full h-full" />
-
-      {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
           <div className="text-center">
@@ -179,88 +129,41 @@ export default function MapPage() {
           </div>
         </div>
       )}
-
-      {/* Controls */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={() => setShowList(!showList)}
-          className="flex items-center gap-2 px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm font-medium hover:bg-background-tertiary transition-colors"
-        >
-          <List className="w-4 h-4" />
-          {showList ? 'Hide List' : 'Show List'}
+        <button onClick={() => setShowList(!showList)} className="flex items-center gap-2 px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm font-medium hover:bg-background-tertiary transition-colors">
+          <List className="w-4 h-4" /> {showList ? 'Hide List' : 'Show List'}
         </button>
       </div>
-
-      {/* Event count */}
       <div className="absolute bottom-4 left-4 z-10">
         <div className="px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm">
           <span className="text-accent font-bold">{events.length}</span>{' '}
           <span className="text-foreground-muted">events on map</span>
         </div>
       </div>
-
-      {/* Side panel list */}
       {showList && (
         <div className="absolute top-0 right-0 bottom-0 w-full md:w-96 bg-background-secondary/95 backdrop-blur z-20 overflow-hidden flex flex-col">
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h2 className="font-bold">Upcoming Events</h2>
-            <button
-              onClick={() => setShowList(false)}
-              className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <button onClick={() => setShowList(false)} className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"><X className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {events.map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="block p-4 rounded-lg bg-background hover:bg-background-tertiary transition-colors"
-              >
-                {event.promotions && (
-                  <div className="text-accent text-xs font-medium mb-1">
-                    {event.promotions.name}
-                  </div>
-                )}
+              <Link key={event.id} href={`/events/${event.id}`} className="block p-4 rounded-lg bg-background hover:bg-background-tertiary transition-colors">
+                {event.promotions && <div className="text-accent text-xs font-medium mb-1">{event.promotions.name}</div>}
                 <h3 className="font-semibold text-foreground mb-1">{event.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                  <Calendar className="w-3 h-3" />
-                  {formatEventDate(event.event_date)}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1">
-                  <MapPin className="w-3 h-3" />
-                  {formatLocation(event.city, event.state)}
-                </div>
+                <div className="flex items-center gap-2 text-sm text-foreground-muted"><Calendar className="w-3 h-3" />{formatEventDate(event.event_date)}</div>
+                <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1"><MapPin className="w-3 h-3" />{formatLocation(event.city, event.state)}</div>
               </Link>
             ))}
           </div>
         </div>
       )}
-
-      {/* Custom marker styles */}
       <style jsx global>{`
-        .event-marker {
-          cursor: pointer;
-        }
-        .mapboxgl-popup-content {
-          background: #1c2228 !important;
-          border-radius: 12px !important;
-          padding: 0 !important;
-          color: #fff !important;
-        }
-        .mapboxgl-popup-tip {
-          border-top-color: #1c2228 !important;
-        }
-        .mapboxgl-popup-close-button {
-          color: #99aabb !important;
-          font-size: 20px !important;
-          padding: 8px 12px !important;
-        }
-        .mapboxgl-popup-close-button:hover {
-          background: transparent !important;
-          color: #fff !important;
-        }
+        .event-marker { cursor: pointer; }
+        .mapboxgl-popup-content { background: #1c2228 !important; border-radius: 12px !important; padding: 0 !important; color: #fff !important; }
+        .mapboxgl-popup-tip { border-top-color: #1c2228 !important; }
+        .mapboxgl-popup-close-button { color: #99aabb !important; font-size: 20px !important; padding: 8px 12px !important; }
+        .mapboxgl-popup-close-button:hover { background: transparent !important; color: #fff !important; }
       `}</style>
     </div>
   )
