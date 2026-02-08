@@ -23,7 +23,7 @@ import {
   mergeWrestlers,
   bulkImportEvents, getAllPromotionsList,
   createWrestlerAdmin, createPromotionAdmin,
-  uploadWrestlerPhotoAdmin, uploadPromotionLogoAdmin,
+  uploadWrestlerPhotoAdmin, uploadWrestlerRenderAdmin, uploadPromotionLogoAdmin,
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
   createChampionshipAdmin, updateChampionshipAdmin,
   getPromotionRosterAdmin, addToRosterAdmin, removeFromRosterAdmin,
@@ -1139,11 +1139,27 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
       <div className="space-y-3">
         <ImageCropUploader
           currentUrl={wrestler.photo_url}
-          shape="circle"
+          shape="square"
           size={80}
           onUpload={(file) => uploadWrestlerPhotoAdmin(wrestler.id, file)}
           label="Upload Photo"
         />
+        <div className="mt-3">
+          <label className="text-sm font-medium mb-1 block">Hero Image (transparent PNG)</label>
+          {wrestler.render_url && (
+            <div className="mb-2 p-2 rounded bg-background-tertiary inline-block">
+              <img src={wrestler.render_url} alt="Render" className="h-20 object-contain" />
+            </div>
+          )}
+          <label className="btn btn-secondary text-xs cursor-pointer inline-flex">
+            Upload Hero Image
+            <input type="file" accept="image/png" className="hidden" onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              try { await uploadWrestlerRenderAdmin(wrestler.id, file); onClose() } catch { alert('Upload failed') }
+            }} />
+          </label>
+        </div>
         <FieldRow label="Name"><input className="w-full input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></FieldRow>
         <FieldRow label="Moniker"><input className="w-full input-field" value={form.moniker} onChange={e => setForm({...form, moniker: e.target.value})} placeholder='e.g. "The Phenomenal One"' /></FieldRow>
         <FieldRow label="Slug"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} /></FieldRow>

@@ -8,77 +8,37 @@ import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 
-// Social Icons
 function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  )
+  return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>)
 }
-
 function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.65a8.35 8.35 0 0 0 4.76 1.49V6.69h-1z" />
-    </svg>
-  )
+  return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.65a8.35 8.35 0 0 0 4.76 1.49V6.69h-1z" /></svg>)
 }
-
 function BlueskyIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.6 3.476 6.178 3.238-4.596.55-8.626 2.04-3.39 7.205 5.42 4.244 7.108-1.012 8.588-4.65.134-.33.221-.547.288-.547.066 0 .154.218.288.547 1.48 3.638 3.168 8.894 8.588 4.65 5.236-5.165 1.206-6.655-3.39-7.205 2.578.238 5.393-.611 6.178-3.238.246-.828.624-5.789.624-6.479 0-.688-.139-1.86-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z" />
-    </svg>
-  )
+  return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.6 3.476 6.178 3.238-4.596.55-8.626 2.04-3.39 7.205 5.42 4.244 7.108-1.012 8.588-4.65.134-.33.221-.547.288-.547.066 0 .154.218.288.547 1.48 3.638 3.168 8.894 8.588 4.65 5.236-5.165 1.206-6.655-3.39-7.205 2.578.238 5.393-.611 6.178-3.238.246-.828.624-5.789.624-6.479 0-.688-.139-1.86-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z" /></svg>)
 }
-
 function PatreonIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M14.82 2.41c3.96 0 7.18 3.24 7.18 7.21 0 3.96-3.22 7.18-7.18 7.18-3.97 0-7.21-3.22-7.21-7.18 0-3.97 3.24-7.21 7.21-7.21M2 21.6h3.5V2.41H2V21.6z" />
-    </svg>
-  )
+  return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M14.82 2.41c3.96 0 7.18 3.24 7.18 7.21 0 3.96-3.22 7.18-7.18 7.18-3.97 0-7.21-3.22-7.21-7.18 0-3.97 3.24-7.21 7.21-7.21M2 21.6h3.5V2.41H2V21.6z" /></svg>)
 }
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-interface WrestlerPageProps {
-  params: { slug: string }
-}
+interface WrestlerPageProps { params: { slug: string } }
 
 async function getWrestler(slug: string) {
-  const { data, error } = await supabase
-    .from('wrestlers')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-  if (error) return null
+  const { data } = await supabase.from('wrestlers').select('*').eq('slug', slug).single()
   return data
 }
 
 async function getWrestlerEvents(wrestlerId: string) {
-  const { data: ewData } = await supabase
-    .from('event_wrestlers')
-    .select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`)
-    .eq('wrestler_id', wrestlerId)
-
-  const { data: mpData } = await supabase
-    .from('match_participants')
-    .select(`event_matches (events (id, name, slug, event_date, city, state, country, promotions ( name, slug )))`)
-    .eq('wrestler_id', wrestlerId)
-
-  const { data: atData } = await supabase
-    .from('event_announced_talent')
-    .select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`)
-    .eq('wrestler_id', wrestlerId)
-
+  const { data: ewData } = await supabase.from('event_wrestlers').select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`).eq('wrestler_id', wrestlerId)
+  const { data: mpData } = await supabase.from('match_participants').select(`event_matches (events (id, name, slug, event_date, city, state, country, promotions ( name, slug )))`).eq('wrestler_id', wrestlerId)
+  const { data: atData } = await supabase.from('event_announced_talent').select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`).eq('wrestler_id', wrestlerId)
   const eventMap = new Map<string, any>()
   for (const d of (ewData || [])) { const evt = (d as any).events; if (evt) eventMap.set(evt.id, evt) }
   for (const d of (mpData || [])) { const evt = (d as any).event_matches?.events; if (evt) eventMap.set(evt.id, evt) }
   for (const d of (atData || [])) { const evt = (d as any).events; if (evt) eventMap.set(evt.id, evt) }
-
   return Array.from(eventMap.values()).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
 }
 
@@ -88,28 +48,14 @@ async function getFollowerCount(wrestlerId: string) {
 }
 
 async function getWrestlerChampionships(wrestlerId: string) {
-  const { data: asChamp1 } = await supabase
-    .from('promotion_championships')
-    .select(`id, name, short_name, won_date, is_active, current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug), promotions (id, name, slug, logo_url)`)
-    .eq('current_champion_id', wrestlerId).eq('is_active', true)
-
-  const { data: asChamp2 } = await supabase
-    .from('promotion_championships')
-    .select(`id, name, short_name, won_date, is_active, current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug), promotions (id, name, slug, logo_url)`)
-    .eq('current_champion_2_id', wrestlerId).eq('is_active', true)
-
+  const { data: asChamp1 } = await supabase.from('promotion_championships').select(`id, name, short_name, won_date, is_active, current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug), promotions (id, name, slug, logo_url)`).eq('current_champion_id', wrestlerId).eq('is_active', true)
+  const { data: asChamp2 } = await supabase.from('promotion_championships').select(`id, name, short_name, won_date, is_active, current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug), promotions (id, name, slug, logo_url)`).eq('current_champion_2_id', wrestlerId).eq('is_active', true)
   const { data: groupMemberships } = await supabase.from('promotion_group_members').select('group_id').eq('wrestler_id', wrestlerId)
   let groupChampionships: any[] = []
   if (groupMemberships && groupMemberships.length > 0) {
     const groupIds = groupMemberships.map((m: any) => m.group_id)
-    const { data: groupChamps } = await supabase
-      .from('promotion_championships')
-      .select(`id, name, short_name, won_date, is_active, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (id, name, type, promotion_group_members (id, wrestler_id, wrestlers (id, name, slug))), promotions (id, name, slug, logo_url)`)
-      .in('champion_group_id', groupIds).eq('is_active', true)
-    groupChampionships = (groupChamps || []).map((c: any) => ({
-      ...c, isGroupChampionship: true, groupName: c.champion_group?.name,
-      partners: (c.champion_group?.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestlerId).map((m: any) => m.wrestlers),
-    }))
+    const { data: groupChamps } = await supabase.from('promotion_championships').select(`id, name, short_name, won_date, is_active, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (id, name, type, promotion_group_members (id, wrestler_id, wrestlers (id, name, slug))), promotions (id, name, slug, logo_url)`).in('champion_group_id', groupIds).eq('is_active', true)
+    groupChampionships = (groupChamps || []).map((c: any) => ({ ...c, isGroupChampionship: true, groupName: c.champion_group?.name, partners: (c.champion_group?.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestlerId).map((m: any) => m.wrestlers) }))
   }
   return [
     ...(asChamp1 || []).map((c: any) => ({ ...c, partner: c.current_champion_2 })),
@@ -119,11 +65,31 @@ async function getWrestlerChampionships(wrestlerId: string) {
 }
 
 async function getWrestlerGroups(wrestlerId: string) {
-  const { data } = await supabase
-    .from('promotion_group_members')
-    .select(`id, promotion_groups (id, name, type, is_active, promotions (id, name, slug, logo_url), promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url)))`)
-    .eq('wrestler_id', wrestlerId)
+  const { data } = await supabase.from('promotion_group_members').select(`id, promotion_groups (id, name, type, is_active, promotions (id, name, slug, logo_url), promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url)))`).eq('wrestler_id', wrestlerId)
   return (data || []).map((d: any) => d.promotion_groups).filter((g: any) => g && g.is_active)
+}
+
+async function getWrestlerPromotions(wrestlerId: string) {
+  // Get unique promotions this wrestler has appeared in (from events)
+  const { data } = await supabase
+    .from('event_wrestlers')
+    .select('events ( promotion_id, promotions ( id, name, slug, logo_url ) )')
+    .eq('wrestler_id', wrestlerId)
+  const promoMap = new Map<string, any>()
+  for (const d of (data || [])) {
+    const p = (d as any).events?.promotions
+    if (p?.id && p?.logo_url) promoMap.set(p.id, p)
+  }
+  // Also from announced talent
+  const { data: atData } = await supabase
+    .from('event_announced_talent')
+    .select('events ( promotion_id, promotions ( id, name, slug, logo_url ) )')
+    .eq('wrestler_id', wrestlerId)
+  for (const d of (atData || [])) {
+    const p = (d as any).events?.promotions
+    if (p?.id && p?.logo_url) promoMap.set(p.id, p)
+  }
+  return Array.from(promoMap.values())
 }
 
 export async function generateMetadata({ params }: WrestlerPageProps) {
@@ -132,10 +98,7 @@ export async function generateMetadata({ params }: WrestlerPageProps) {
   return {
     title: `${wrestler.name} | Hot Tag`,
     description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
-    openGraph: {
-      title: `${wrestler.name} | Hot Tag`,
-      images: wrestler.render_url || wrestler.photo_url ? [wrestler.render_url || wrestler.photo_url] : undefined,
-    },
+    openGraph: { title: `${wrestler.name} | Hot Tag`, images: wrestler.render_url || wrestler.photo_url ? [wrestler.render_url || wrestler.photo_url] : undefined },
   }
 }
 
@@ -147,6 +110,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const followerCount = await getFollowerCount(wrestler.id)
   const championships = await getWrestlerChampionships(wrestler.id)
   const groups = await getWrestlerGroups(wrestler.id)
+  const wrestlerPromotions = await getWrestlerPromotions(wrestler.id)
 
   const today = new Date().toISOString().split('T')[0]
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
@@ -155,52 +119,48 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const hasRender = !!wrestler.render_url
   const hasPhoto = !!wrestler.photo_url
 
-  // Social links array for cleaner rendering
-  const socialLinks = [
-    wrestler.twitter_handle && { href: `https://x.com/${wrestler.twitter_handle}`, icon: XIcon, label: '' },
-    wrestler.instagram_handle && { href: `https://instagram.com/${wrestler.instagram_handle}`, icon: Instagram, label: '' },
-    wrestler.tiktok_handle && { href: `https://tiktok.com/@${wrestler.tiktok_handle}`, icon: TikTokIcon, label: '' },
-    wrestler.youtube_url && { href: wrestler.youtube_url, icon: Youtube, label: '' },
-    wrestler.bluesky_handle && { href: `https://bsky.app/profile/${wrestler.bluesky_handle}`, icon: BlueskyIcon, label: '' },
-    wrestler.website && { href: wrestler.website, icon: Globe, label: '' },
-    wrestler.booking_email && { href: `mailto:${wrestler.booking_email}`, icon: Mail, label: '' },
-    wrestler.merch_url && { href: wrestler.merch_url, icon: ShoppingBag, label: '' },
-    wrestler.patreon_url && { href: wrestler.patreon_url, icon: PatreonIcon, label: '' },
-  ].filter(Boolean) as { href: string; icon: any; label: string }[]
+  // Social link icons for hero
+  const socialIcons = [
+    wrestler.twitter_handle && { href: `https://x.com/${wrestler.twitter_handle}`, icon: XIcon },
+    wrestler.instagram_handle && { href: `https://instagram.com/${wrestler.instagram_handle}`, icon: Instagram },
+    wrestler.tiktok_handle && { href: `https://tiktok.com/@${wrestler.tiktok_handle}`, icon: TikTokIcon },
+    wrestler.youtube_url && { href: wrestler.youtube_url, icon: Youtube },
+    wrestler.bluesky_handle && { href: `https://bsky.app/profile/${wrestler.bluesky_handle}`, icon: BlueskyIcon },
+    wrestler.website && { href: wrestler.website, icon: Globe },
+    wrestler.booking_email && { href: `mailto:${wrestler.booking_email}`, icon: Mail },
+    wrestler.merch_url && { href: wrestler.merch_url, icon: ShoppingBag },
+    wrestler.patreon_url && { href: wrestler.patreon_url, icon: PatreonIcon },
+  ].filter(Boolean) as { href: string; icon: any }[]
 
   return (
     <div className="min-h-screen">
       {/* ======================================== */}
-      {/* HERO — Desktop: cinematic wide layout */}
-      {/* Mobile: trading card layout */}
+      {/* HERO */}
       {/* ======================================== */}
       <div className="relative overflow-hidden bg-background-secondary">
-        {/* Diagonal texture background */}
+        {/* Diagonal texture */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
         }} />
 
-        {/* Desktop Hero */}
+        {/* Bottom fade gradient — sits above bg but below all content */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background-secondary to-transparent z-[1]" />
+
+        {/* ===== DESKTOP HERO ===== */}
         <div className="hidden md:block relative">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
             <div className="relative flex items-end min-h-[420px] lg:min-h-[480px] py-8">
               {/* Left: Text content */}
               <div className="flex-1 z-10 pb-4">
-                {/* Promotion badge */}
-                {championships.length > 0 && championships[0].promotions && (
-                  <Link
-                    href={`/promotions/${championships[0].promotions.slug}`}
-                    className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-accent transition-colors uppercase tracking-widest font-medium mb-3"
-                  >
-                    {championships[0].promotions.logo_url && (
-                      <Image src={championships[0].promotions.logo_url} alt="" width={28} height={28} className="object-contain" unoptimized />
-                    )}
-                    {championships[0].promotions.name}
-                  </Link>
+                {/* PWI Badge */}
+                {wrestler.pwi_ranking && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold mb-3">
+                    PWI #{wrestler.pwi_ranking}
+                  </span>
                 )}
 
-                {/* Name — large display */}
-                <h1 className="text-5xl lg:text-7xl font-display font-black uppercase leading-[0.9] tracking-tight mb-4">
+                {/* Name */}
+                <h1 className="text-5xl lg:text-7xl font-display font-black uppercase leading-[0.9] tracking-tight mb-3">
                   {wrestler.name}
                 </h1>
 
@@ -209,16 +169,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 )}
 
                 {/* Follow + Social row */}
-                <div className="flex items-center gap-3 mb-6">
-                  <FollowWrestlerButton
-                    wrestlerId={wrestler.id}
-                    wrestlerName={wrestler.name}
-                    initialFollowerCount={followerCount}
-                  />
-                  {socialLinks.length > 0 && (
+                <div className="flex items-center gap-3 mb-5">
+                  <FollowWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} initialFollowerCount={followerCount} />
+                  {socialIcons.length > 0 && (
                     <div className="flex items-center gap-1">
-                      {socialLinks.map((link, i) => (
-                        <a key={i} href={link.href} target="_blank" rel="noopener noreferrer"
+                      {socialIcons.map((link, i) => (
+                        <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                           className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors">
                           <link.icon className="w-5 h-5" />
                         </a>
@@ -226,30 +182,41 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Signature Moves */}
+                {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {wrestler.signature_moves.map((move: string, i: number) => (
+                      <span key={i} className="px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+                        {move}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Countries Wrestled (no label) */}
+                {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {wrestler.countries_wrestled.map((code: string) => (
+                      <span key={code} className="text-2xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Verified badge */}
+                {wrestler.verification_status === 'verified' && (
+                  <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus="verified" />
+                )}
               </div>
 
               {/* Right: Wrestler render image */}
-              <div className="flex-shrink-0 relative w-[320px] lg:w-[400px] h-[380px] lg:h-[460px]">
+              <div className="flex-shrink-0 relative w-[320px] lg:w-[400px] h-[380px] lg:h-[460px] z-[2]">
                 {hasRender ? (
-                  <Image
-                    src={wrestler.render_url!}
-                    alt={wrestler.name}
-                    fill
-                    className="object-contain object-bottom"
-                    priority
-                    unoptimized
-                  />
+                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (
                   <div className="absolute bottom-0 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
                     <div className="w-full h-full rounded-2xl bg-background-tertiary overflow-hidden border-2 border-border">
-                      <Image
-                        src={wrestler.photo_url!}
-                        alt={wrestler.name}
-                        fill
-                        className="object-cover"
-                        priority
-                        unoptimized
-                      />
+                      <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover" priority unoptimized />
                     </div>
                   </div>
                 ) : (
@@ -262,42 +229,31 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           </div>
         </div>
 
-        {/* Mobile Hero — Trading Card */}
-        <div className="md:hidden relative px-4 pt-6 pb-8">
+        {/* ===== MOBILE HERO — Trading Card ===== */}
+        <div className="md:hidden relative px-4 pt-6 pb-8 z-[2]">
           <div className="relative mx-auto max-w-sm">
-            {/* Card */}
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-background-tertiary to-background-secondary border border-border/50">
-              {/* Image area */}
+              {/* Image */}
               <div className="relative h-72 flex items-end justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-transparent to-transparent z-[1]" />
                 {hasRender ? (
-                  <Image
-                    src={wrestler.render_url!}
-                    alt={wrestler.name}
-                    fill
-                    className="object-contain object-bottom"
-                    priority
-                    unoptimized
-                  />
+                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (
-                  <Image
-                    src={wrestler.photo_url!}
-                    alt={wrestler.name}
-                    fill
-                    className="object-cover"
-                    priority
-                    unoptimized
-                  />
+                  <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover" priority unoptimized />
                 ) : (
-                  <div className="flex items-center justify-center w-full h-full">
-                    <User className="w-24 h-24 text-foreground-muted/20" />
-                  </div>
+                  <div className="flex items-center justify-center w-full h-full"><User className="w-24 h-24 text-foreground-muted/20" /></div>
                 )}
               </div>
 
               {/* Card content */}
               <div className="relative z-[2] -mt-12 px-5 pb-5">
-                {/* Name */}
+                {/* PWI Badge */}
+                {wrestler.pwi_ranking && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold mb-2">
+                    PWI #{wrestler.pwi_ranking}
+                  </span>
+                )}
+
                 <h1 className="text-3xl font-display font-black uppercase leading-[0.9] tracking-tight mb-2">
                   {wrestler.name}
                 </h1>
@@ -306,7 +262,18 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   <p className="text-sm text-accent italic mb-3">&ldquo;{wrestler.moniker}&rdquo;</p>
                 )}
 
-                {/* Stats row */}
+                {/* Follow + Social — ABOVE stats on mobile */}
+                <div className="flex items-center gap-2 mb-3 border-t border-border/50 pt-3">
+                  <FollowWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} initialFollowerCount={followerCount} />
+                  {socialIcons.slice(0, 5).map((link, i) => (
+                    <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
+                      className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
+                      <link.icon className="w-4 h-4" />
+                    </a>
+                  ))}
+                </div>
+
+                {/* Stats */}
                 {(wrestler.height || wrestler.weight || wrestler.birthday || wrestler.birthplace) && (
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-muted mb-3 border-t border-border/50 pt-3">
                     {wrestler.height && (
@@ -324,28 +291,21 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </div>
                 )}
 
-                {/* Signature moves on card */}
+                {/* Signature moves */}
                 {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
                   <div className="border-t border-border/50 pt-3 mb-3">
-                    <div className="uppercase tracking-wider text-foreground-muted/50 text-[10px] mb-1.5">Signature Moves</div>
                     <div className="text-sm font-bold text-foreground">{wrestler.signature_moves.join(', ')}</div>
                   </div>
                 )}
 
-                {/* Follow + Social */}
-                <div className="flex items-center gap-2 pt-2">
-                  <FollowWrestlerButton
-                    wrestlerId={wrestler.id}
-                    wrestlerName={wrestler.name}
-                    initialFollowerCount={followerCount}
-                  />
-                  {socialLinks.slice(0, 4).map((link, i) => (
-                    <a key={i} href={link.href} target="_blank" rel="noopener noreferrer"
-                      className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
-                      <link.icon className="w-4 h-4" />
-                    </a>
-                  ))}
-                </div>
+                {/* Countries (no label) */}
+                {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {wrestler.countries_wrestled.map((code: string) => (
+                      <span key={code} className="text-xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -353,7 +313,24 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
       </div>
 
       {/* ======================================== */}
-      {/* DETAILS SECTION — below hero */}
+      {/* PROMOTION LOGOS BAR — below hero */}
+      {/* ======================================== */}
+      {wrestlerPromotions.length > 0 && (
+        <div className="border-b border-border bg-background">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center gap-4 overflow-x-auto">
+              {wrestlerPromotions.map((promo: any) => (
+                <Link key={promo.id} href={`/promotions/${promo.slug}`} className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity" title={promo.name}>
+                  <Image src={promo.logo_url} alt={promo.name} width={36} height={36} className="object-contain" unoptimized />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================== */}
+      {/* DETAILS SECTION */}
       {/* ======================================== */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -402,87 +379,27 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                   )}
                   {wrestler.trainer && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-xs uppercase tracking-wider text-foreground-muted">Trainer</span>
                       <span className="font-bold text-sm">{wrestler.trainer}</span>
                     </div>
                   )}
-                  {wrestler.pwi_ranking && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">PWI 500</span>
-                      <span className="font-bold text-sm text-amber-400">#{wrestler.pwi_ranking}</span>
-                    </div>
-                  )}
                 </div>
 
-                {/* Signature Moves */}
-                {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
+                {/* Claim / Verify */}
+                {wrestler.verification_status !== 'verified' && (
                   <div className="mt-5 pt-4 border-t border-border">
-                    <div className="text-xs uppercase tracking-wider text-foreground-muted mb-2">Signature Moves</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {wrestler.signature_moves.map((move: string, i: number) => (
-                        <span key={i} className="px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
-                          {move}
-                        </span>
-                      ))}
-                    </div>
+                    <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />
                   </div>
                 )}
-
-                {/* Countries */}
-                {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="text-xs uppercase tracking-wider text-foreground-muted mb-2">Countries Wrestled</div>
-                    <div className="flex flex-wrap gap-1">
-                      {wrestler.countries_wrestled.map((code: string) => (
-                        <span key={code} className="text-xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Claim button */}
-                <div className="mt-5 pt-4 border-t border-border">
-                  <ClaimWrestlerButton
-                    wrestlerId={wrestler.id}
-                    wrestlerName={wrestler.name}
-                    verificationStatus={wrestler.verification_status || 'unverified'}
-                  />
-                </div>
               </div>
             </div>
 
-            {/* Right: Bio + Additional social links */}
+            {/* Right: Bio + Championships + Groups */}
             <div className="flex-1 min-w-0">
               {wrestler.bio && (
                 <div className="mb-6">
                   <p className="text-foreground-muted leading-relaxed whitespace-pre-wrap">{wrestler.bio}</p>
-                </div>
-              )}
-
-              {/* Desktop additional social links (full labels) */}
-              {(wrestler.booking_email || wrestler.merch_url || wrestler.website) && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {wrestler.website && (
-                    <a href={wrestler.website} target="_blank" rel="noopener noreferrer" className="btn btn-ghost text-sm">
-                      <Globe className="w-4 h-4 mr-1.5" /> Website
-                    </a>
-                  )}
-                  {wrestler.booking_email && (
-                    <a href={`mailto:${wrestler.booking_email}`} className="btn btn-ghost text-sm">
-                      <Mail className="w-4 h-4 mr-1.5" /> Booking
-                    </a>
-                  )}
-                  {wrestler.merch_url && (
-                    <a href={wrestler.merch_url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost text-sm">
-                      <ShoppingBag className="w-4 h-4 mr-1.5" /> Merch
-                    </a>
-                  )}
-                  {wrestler.patreon_url && (
-                    <a href={wrestler.patreon_url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost text-sm">
-                      <PatreonIcon className="w-4 h-4 mr-1.5" /> Patreon
-                    </a>
-                  )}
                 </div>
               )}
 
@@ -501,12 +418,8 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                             {champ.promotions?.name}
                             {champ.partner && <> &middot; w/ {champ.partner.name}</>}
                             {champ.isGroupChampionship && champ.groupName && <> &middot; {champ.groupName}</>}
-                            {champ.partners && champ.partners.length > 0 && !champ.partner && (
-                              <> &middot; w/ {champ.partners.map((p: any) => p.name).join(' & ')}</>
-                            )}
-                            {champ.won_date && (
-                              <> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>
-                            )}
+                            {champ.partners && champ.partners.length > 0 && !champ.partner && (<> &middot; w/ {champ.partners.map((p: any) => p.name).join(' & ')}</>)}
+                            {champ.won_date && (<> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>)}
                           </div>
                         </div>
                       </Link>
@@ -557,9 +470,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                                   <div className="w-8 h-8 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-background-secondary hover:border-accent transition-colors">
                                     {m.wrestlers?.photo_url ? (
                                       <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
-                                    ) : (
-                                      <User className="w-4 h-4 text-foreground-muted" />
-                                    )}
+                                    ) : (<User className="w-4 h-4 text-foreground-muted" />)}
                                   </div>
                                 </Link>
                               ))}
@@ -580,7 +491,6 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           {wrestler.bio && (
             <p className="text-foreground-muted text-sm leading-relaxed whitespace-pre-wrap">{wrestler.bio}</p>
           )}
-
           {championships.length > 0 && (
             <div>
               <h2 className="text-lg font-display font-bold mb-3">Championships</h2>
@@ -598,24 +508,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               </div>
             </div>
           )}
-
-          {/* Countries on mobile */}
-          {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
-            <div>
-              <div className="text-xs uppercase tracking-wider text-foreground-muted mb-2">Countries Wrestled</div>
-              <div className="flex flex-wrap gap-1">
-                {wrestler.countries_wrestled.map((code: string) => (
-                  <span key={code} className="text-xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
-                ))}
-              </div>
-            </div>
+          {wrestler.verification_status !== 'verified' && (
+            <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />
           )}
-
-          <ClaimWrestlerButton
-            wrestlerId={wrestler.id}
-            wrestlerName={wrestler.name}
-            verificationStatus={wrestler.verification_status || 'unverified'}
-          />
         </div>
 
         {/* ======================================== */}
@@ -624,25 +519,17 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         <div className="py-8 border-t border-border">
           {upcomingEvents.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-2xl font-display font-bold mb-6">
-                Upcoming Events ({upcomingEvents.length})
-              </h2>
+              <h2 className="text-2xl font-display font-bold mb-6">Upcoming Events ({upcomingEvents.length})</h2>
               <div className="space-y-3">
                 {upcomingEvents.map((event: any) => (
-                  <Link key={event.id} href={`/events/${event.id}`}
-                    className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
+                  <Link key={event.id} href={`/events/${event.id}`} className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
                     <div className="flex-shrink-0 w-16 text-center">
                       <div className="text-accent font-bold">{new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
                       <div className="text-2xl font-bold">{new Date(event.event_date + 'T12:00:00').getDate()}</div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">
-                        {event.promotions?.name}
-                        {event.city && ` · ${event.city}`}
-                        {event.state && `, ${event.state}`}
-                        {event.country && event.country !== 'USA' && `, ${event.country}`}
-                      </div>
+                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
                     </div>
                     <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
                   </Link>
@@ -653,25 +540,17 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
           {pastEvents.length > 0 && (
             <div>
-              <h2 className="text-2xl font-display font-bold mb-6 text-foreground-muted">
-                Past Events ({pastEvents.length})
-              </h2>
+              <h2 className="text-2xl font-display font-bold mb-6 text-foreground-muted">Past Events ({pastEvents.length})</h2>
               <div className="space-y-3 opacity-60">
                 {pastEvents.slice(0, 10).map((event: any) => (
-                  <Link key={event.id} href={`/events/${event.id}`}
-                    className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
+                  <Link key={event.id} href={`/events/${event.id}`} className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
                     <div className="flex-shrink-0 w-16 text-center">
                       <div className="text-foreground-muted font-bold">{new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
                       <div className="text-2xl font-bold">{new Date(event.event_date + 'T12:00:00').getDate()}</div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">
-                        {event.promotions?.name}
-                        {event.city && ` · ${event.city}`}
-                        {event.state && `, ${event.state}`}
-                        {event.country && event.country !== 'USA' && `, ${event.country}`}
-                      </div>
+                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
                     </div>
                   </Link>
                 ))}

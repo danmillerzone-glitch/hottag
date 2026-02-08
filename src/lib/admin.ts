@@ -720,6 +720,25 @@ export async function uploadWrestlerPhotoAdmin(wrestlerId: string, file: File) {
   return urlWithBust
 }
 
+export async function uploadWrestlerRenderAdmin(wrestlerId: string, file: File) {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${wrestlerId}-render.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('wrestler-photos')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('wrestler-photos')
+    .getPublicUrl(filePath)
+
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  await updateWrestlerAdmin(wrestlerId, { render_url: urlWithBust })
+  return urlWithBust
+}
+
 export async function uploadPromotionLogoAdmin(promotionId: string, file: File) {
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()
