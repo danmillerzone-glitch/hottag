@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
-import { EventCard, EventCardSkeleton } from '@/components/EventCard'
+import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import NearYouSection from '@/components/NearYouSection'
 import ThisWeekendSection from '@/components/ThisWeekendSection'
 import RecommendedSection from '@/components/RecommendedSection'
@@ -258,16 +258,16 @@ export default function HomePage() {
                   </Link>
                 </div>
                 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {myEvents.slice(0, 4).map((event) => (
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {myEvents.slice(0, 5).map((event) => (
                     <div key={event.id} className="relative">
-                      <EventCard event={event} />
-                      <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
+                      <PosterEventCard event={event} />
+                      <span className={`absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-bold z-10 ${
                         event.attendance_status === 'attending' 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-pink-500/20 text-pink-400'
+                          ? 'bg-green-500/90 text-white' 
+                          : 'bg-pink-500/90 text-white'
                       }`}>
-                        {event.attendance_status === 'attending' ? 'Going' : 'Interested'}
+                        {event.attendance_status === 'attending' ? 'GOING' : 'INTERESTED'}
                       </span>
                     </div>
                   ))}
@@ -287,9 +287,9 @@ export default function HomePage() {
                   </h2>
                 </div>
                 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {followedEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <PosterEventCard key={event.id} event={event} />
                   ))}
                 </div>
               </div>
@@ -343,9 +343,9 @@ export default function HomePage() {
               </h2>
             </div>
             
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {hotEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <PosterEventCard key={event.id} event={event} />
               ))}
             </div>
           </div>
@@ -366,15 +366,15 @@ export default function HomePage() {
           </div>
           
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <EventCardSkeleton key={i} />
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <PosterEventCardSkeleton key={i} />
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {upcomingEvents.slice(0, 12).map((event) => (
-                <EventCard key={event.id} event={event} />
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {upcomingEvents.slice(0, 15).map((event) => (
+                <PosterEventCard key={event.id} event={event} />
               ))}
             </div>
           )}

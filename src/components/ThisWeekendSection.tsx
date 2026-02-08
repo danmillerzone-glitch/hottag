@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
-import { EventCard, EventCardSkeleton } from '@/components/EventCard'
+import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import { Zap, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -93,15 +93,15 @@ export default function ThisWeekendSection() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <EventCardSkeleton key={i} />
+              <PosterEventCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {events.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <PosterEventCard key={event.id} event={event} />
             ))}
           </div>
         )}
