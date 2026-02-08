@@ -70,17 +70,30 @@ async function getWrestlerGroups(wrestlerId: string) {
 }
 
 async function getWrestlerPromotions(wrestlerId: string) {
-  // Get unique promotions this wrestler has appeared in (from events)
-  const { data } = await supabase
+  const promoMap = new Map<string, any>()
+
+  // 1. From roster (wrestler_promotions)
+  const { data: rosterData } = await supabase
+    .from('wrestler_promotions')
+    .select('promotions ( id, name, slug, logo_url )')
+    .eq('wrestler_id', wrestlerId)
+    .eq('is_active', true)
+  for (const d of (rosterData || [])) {
+    const p = (d as any).promotions
+    if (p?.id && p?.logo_url) promoMap.set(p.id, p)
+  }
+
+  // 2. From events (event_wrestlers)
+  const { data: ewData } = await supabase
     .from('event_wrestlers')
     .select('events ( promotion_id, promotions ( id, name, slug, logo_url ) )')
     .eq('wrestler_id', wrestlerId)
-  const promoMap = new Map<string, any>()
-  for (const d of (data || [])) {
+  for (const d of (ewData || [])) {
     const p = (d as any).events?.promotions
     if (p?.id && p?.logo_url) promoMap.set(p.id, p)
   }
-  // Also from announced talent
+
+  // 3. From announced talent
   const { data: atData } = await supabase
     .from('event_announced_talent')
     .select('events ( promotion_id, promotions ( id, name, slug, logo_url ) )')
@@ -89,6 +102,7 @@ async function getWrestlerPromotions(wrestlerId: string) {
     const p = (d as any).events?.promotions
     if (p?.id && p?.logo_url) promoMap.set(p.id, p)
   }
+
   return Array.from(promoMap.values())
 }
 
@@ -143,15 +157,15 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
         }} />
 
-        {/* Bottom fade gradient — sits above bg but below all content */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background-secondary to-transparent z-[1]" />
+        {/* Bottom fade gradient — overlays render image to mask cutoff */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background-secondary via-background-secondary/60 to-transparent z-[3] pointer-events-none" />
 
         {/* ===== DESKTOP HERO ===== */}
         <div className="hidden md:block relative">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
             <div className="relative flex items-end min-h-[420px] lg:min-h-[480px] py-8">
               {/* Left: Text content */}
-              <div className="flex-1 z-10 pb-4">
+              <div className="flex-1 z-[5] pb-4">
                 {/* PWI Badge */}
                 {wrestler.pwi_ranking && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm font-bold mb-3">
@@ -274,7 +288,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 </div>
 
                 {/* Stats */}
-                {(wrestler.height || wrestler.weight || wrestler.birthday || wrestler.birthplace) && (
+                {(wrestler.height || wrestler.weight || wrestler.birthday || wrestler.birthplace || wrestler.residence) && (
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-muted mb-3 border-t border-border/50 pt-3">
                     {wrestler.height && (
                       <div><span className="uppercase tracking-wider text-foreground-muted/50 text-[10px]">Height</span><div className="font-bold text-foreground text-sm">{wrestler.height}</div></div>
@@ -287,6 +301,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     )}
                     {(wrestler.birthplace || wrestler.hometown) && (
                       <div><span className="uppercase tracking-wider text-foreground-muted/50 text-[10px]">From</span><div className="font-bold text-foreground text-sm">{wrestler.birthplace || wrestler.hometown}</div></div>
+                    )}
+                    {wrestler.residence && (
+                      <div><span className="uppercase tracking-wider text-foreground-muted/50 text-[10px]">Resides</span><div className="font-bold text-foreground text-sm">{wrestler.residence}</div></div>
                     )}
                   </div>
                 )}
@@ -366,7 +383,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                       <span className="font-bold text-sm">{wrestler.birthplace || wrestler.hometown}</span>
                     </div>
                   )}
-                  {(wrestler.residence && wrestler.residence !== wrestler.birthplace && wrestler.residence !== wrestler.hometown) && (
+                  {wrestler.residence && (
                     <div className="flex justify-between items-center border-b border-border/50 pb-2">
                       <span className="text-xs uppercase tracking-wider text-foreground-muted">Resides</span>
                       <span className="font-bold text-sm">{wrestler.residence}</span>

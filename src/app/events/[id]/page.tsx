@@ -415,7 +415,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 href={`/promotions/${promotion.slug}`}
                 className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
               >
-                <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden">
                   {promotion.logo_url ? (
                     <Image
                       src={promotion.logo_url}
@@ -426,10 +426,12 @@ export default async function EventPage({ params }: EventPageProps) {
                       unoptimized
                     />
                   ) : (
-                    <span className="text-2xl font-bold text-foreground-muted">
-                      {promotion.name.charAt(0)}
-                    </span>
-                  )}
+                    <div className="w-full h-full bg-background rounded-lg flex items-center justify-center">
+                      <span className="text-2xl font-bold text-foreground-muted">
+                        {promotion.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}}
                 </div>
                 <div>
                   <div className="font-semibold text-lg">{promotion.name}</div>

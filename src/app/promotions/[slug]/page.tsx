@@ -187,7 +187,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Logo */}
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
               {promotion.logo_url ? (
                 <Image
                   src={promotion.logo_url}
@@ -198,8 +198,10 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   unoptimized
                 />
               ) : (
-                <Building2 className="w-16 h-16 text-foreground-muted" />
-              )}
+                <div className="w-full h-full bg-background-tertiary rounded-lg flex items-center justify-center">
+                  <Building2 className="w-16 h-16 text-foreground-muted" />
+                </div>
+              )}}
             </div>
 
             {/* Info */}

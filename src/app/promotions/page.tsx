@@ -76,7 +76,7 @@ async function PromotionsList() {
               >
                 <div className="flex items-start gap-4">
                   {/* Logo placeholder */}
-                  <div className="w-16 h-16 rounded-lg bg-background-tertiary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {promo.logo_url ? (
                       <Image
                         src={promo.logo_url}
@@ -87,7 +87,10 @@ async function PromotionsList() {
                         unoptimized
                       />
                     ) : (
-                      <Building2 className="w-8 h-8 text-foreground-muted" />
+                      <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">
+                        <Building2 className="w-8 h-8 text-foreground-muted" />
+                      </div>
+                    )}
                     )}
                   </div>
 
