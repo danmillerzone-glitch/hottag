@@ -24,11 +24,22 @@ SCRAPE_HEADERS = {
 
 def get_events_to_update():
     """Get events that have cagematch URLs but missing venue details"""
-    url = f"{SUPABASE_URL}/rest/v1/events?select=id,name,source_url,venue_name,ticket_url&source_url=not.is.null&venue_name=is.null&limit=100"
-    response = requests.get(url, headers=HEADERS)
-    if response.status_code == 200:
-        return response.json()
-    return []
+    all_events = []
+    offset = 0
+    batch = 500
+    while True:
+        url = f"{SUPABASE_URL}/rest/v1/events?select=id,name,source_url,venue_name,ticket_url&source_url=not.is.null&venue_name=is.null&limit={batch}&offset={offset}"
+        response = requests.get(url, headers=HEADERS)
+        if response.status_code != 200:
+            break
+        data = response.json()
+        if not data:
+            break
+        all_events.extend(data)
+        if len(data) < batch:
+            break
+        offset += batch
+    return all_events
 
 
 def scrape_event_details(source_url):

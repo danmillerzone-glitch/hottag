@@ -37,7 +37,17 @@ async function PromotionsList() {
     'South',
     'West',
     'Pacific Northwest',
-    'International',
+    'Canada',
+    'Mexico',
+    'Puerto Rico',
+    'Japan',
+    'United Kingdom',
+    'Europe',
+    'Australia & New Zealand',
+    'Asia',
+    'Latin America',
+    'Middle East',
+    'Africa',
     'Other',
   ]
 

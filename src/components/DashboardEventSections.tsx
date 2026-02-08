@@ -11,6 +11,7 @@ import {
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
   ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
+  ChevronUp, ChevronDown,
 } from 'lucide-react'
 
 // ============================================
@@ -382,6 +383,20 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
     catch (err) { console.error('Error removing talent:', err) }
   }
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= talent.length) return
+    const updated = [...talent]
+    ;[updated[index], updated[newIndex]] = [updated[newIndex], updated[index]]
+    onUpdate(updated)
+    try {
+      await Promise.all([
+        updateAnnouncedTalent(updated[index].id, { sort_order: index }),
+        updateAnnouncedTalent(updated[newIndex].id, { sort_order: newIndex }),
+      ])
+    } catch (err) { console.error('Error reordering:', err) }
+  }
+
   const handleUpdateNote = async (talentId: string, note: string) => {
     try {
       await updateAnnouncedTalent(talentId, { announcement_note: note || null })
@@ -408,8 +423,18 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
 
       {talent.length > 0 ? (
         <div className="space-y-2 mb-4">
-          {talent.map((t) => (
+          {talent.map((t, index) => (
             <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary border border-border group">
+              <div className="flex flex-col gap-0.5">
+                <button onClick={() => handleMove(index, 'up')} disabled={index === 0}
+                  className="p-0.5 rounded hover:bg-background text-foreground-muted hover:text-foreground disabled:opacity-20 disabled:cursor-default transition-colors">
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleMove(index, 'down')} disabled={index === talent.length - 1}
+                  className="p-0.5 rounded hover:bg-background text-foreground-muted hover:text-foreground disabled:opacity-20 disabled:cursor-default transition-colors">
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
               {t.wrestlers?.photo_url ? (
                 <Image src={t.wrestlers.photo_url} alt={t.wrestlers?.name || ''} width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
               ) : (
@@ -478,6 +503,20 @@ export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: stri
     catch (err) { console.error('Error deleting match:', err) }
   }
 
+  const handleMoveMatch = async (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= matches.length) return
+    const updated = [...matches]
+    ;[updated[index], updated[newIndex]] = [updated[newIndex], updated[index]]
+    onUpdate(updated)
+    try {
+      await Promise.all([
+        updateMatch(updated[index].id, { match_order: index + 1 }),
+        updateMatch(updated[newIndex].id, { match_order: newIndex + 1 }),
+      ])
+    } catch (err) { console.error('Error reordering matches:', err) }
+  }
+
   const handleReloadMatches = async () => {
     const updated = await getEventMatches(eventId)
     onUpdate(updated)
@@ -499,7 +538,21 @@ export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: stri
       {matches.length > 0 ? (
         <div className="space-y-4">
           {matches.map((match, index) => (
-            <MatchItem key={match.id} match={match} index={index} onDelete={() => handleDeleteMatch(match.id)} onReload={handleReloadMatches} />
+            <div key={match.id} className="flex items-start gap-2">
+              <div className="flex flex-col gap-0.5 pt-3">
+                <button onClick={() => handleMoveMatch(index, 'up')} disabled={index === 0}
+                  className="p-0.5 rounded hover:bg-background-tertiary text-foreground-muted hover:text-foreground disabled:opacity-20 disabled:cursor-default transition-colors">
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleMoveMatch(index, 'down')} disabled={index === matches.length - 1}
+                  className="p-0.5 rounded hover:bg-background-tertiary text-foreground-muted hover:text-foreground disabled:opacity-20 disabled:cursor-default transition-colors">
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1">
+                <MatchItem match={match} index={index} onDelete={() => handleDeleteMatch(match.id)} onReload={handleReloadMatches} />
+              </div>
+            </div>
           ))}
         </div>
       ) : (

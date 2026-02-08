@@ -232,7 +232,7 @@ export default function HomePage() {
               <span className="text-accent">indie show</span>
             </h1>
             <p className="text-lg md:text-xl text-foreground-muted mb-8">
-              Discover wrestling events across the United States. Follow your favorite wrestlers. 
+              Discover wrestling events around the world. Follow your favorite wrestlers. 
               Connect with the indie wrestling community.
             </p>
             
@@ -388,30 +388,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Promotions */}
-      <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-display font-bold">Promotions</h2>
-            <Link href="/promotions" className="text-accent hover:text-accent-hover font-medium text-sm flex items-center">
-              View all <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {promotions.map((promo) => (
-              <Link
-                key={promo.id}
-                href={`/promotions/${promo.slug}`}
-                className="px-4 py-2 rounded-full bg-background-tertiary text-foreground-muted hover:text-foreground hover:bg-border transition-colors text-sm font-medium"
-              >
-                {promo.name}
-              </Link>
-            ))}
-          </div>
         </div>
       </section>
 

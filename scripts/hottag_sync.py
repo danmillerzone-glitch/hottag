@@ -443,27 +443,37 @@ def scrape_event_detail(source_url):
 
 def fetch_venue_details():
     """Scrape venue details for events that are missing them"""
-    events = db_get("events?select=id,name,source_url,venue_name&source_url=not.is.null&venue_name=is.null&limit=500")
-    if not events:
+    all_events = []
+    offset = 0
+    while True:
+        batch = db_get(f"events?select=id,name,source_url,venue_name&source_url=not.is.null&venue_name=is.null&limit=500&offset={offset}")
+        if not batch:
+            break
+        all_events.extend(batch)
+        if len(batch) < 500:
+            break
+        offset += 500
+
+    if not all_events:
         logger.info("All events have venue details")
         return
 
-    logger.info(f"Fetching venue details for {len(events)} events...")
+    logger.info(f"Fetching venue details for {len(all_events)} events...")
     updated = 0
 
-    for i, event in enumerate(events):
+    for i, event in enumerate(all_events):
         if not event.get('source_url'):
             continue
 
         if (i + 1) % 25 == 0:
-            logger.info(f"  Detail scraping {i+1}/{len(events)}...")
+            logger.info(f"  Detail scraping {i+1}/{len(all_events)}...")
 
         details = scrape_event_detail(event['source_url'])
         if details:
             if db_patch("events", f"id=eq.{event['id']}", details):
                 updated += 1
 
-    logger.info(f"Venue details updated: {updated}/{len(events)}")
+    logger.info(f"Venue details updated: {updated}/{len(all_events)}")
 
 
 # ============================================
@@ -499,17 +509,27 @@ def geocode_events():
         logger.warning("No GOOGLE_MAPS_API_KEY — skipping geocoding")
         return
 
-    events = db_get("events?select=id,name,venue_name,venue_address,city,state,country&or=(latitude.is.null,longitude.is.null)&limit=500")
-    if not events:
+    all_events = []
+    offset = 0
+    while True:
+        batch = db_get(f"events?select=id,name,venue_name,venue_address,city,state,country&or=(latitude.is.null,longitude.is.null)&limit=500&offset={offset}")
+        if not batch:
+            break
+        all_events.extend(batch)
+        if len(batch) < 500:
+            break
+        offset += 500
+
+    if not all_events:
         logger.info("All events have coordinates")
         return
 
-    logger.info(f"Geocoding {len(events)} events...")
+    logger.info(f"Geocoding {len(all_events)} events...")
     coded = 0
 
-    for i, e in enumerate(events):
+    for i, e in enumerate(all_events):
         if (i + 1) % 50 == 0:
-            logger.info(f"  Geocoding {i+1}/{len(events)}...")
+            logger.info(f"  Geocoding {i+1}/{len(all_events)}...")
 
         # Try venue_address first (more specific), fall back to venue_name
         venue = e.get('venue_address') or e.get('venue_name')
@@ -521,7 +541,7 @@ def geocode_events():
 
         time.sleep(0.1)  # Rate limit
 
-    logger.info(f"Geocoded: {coded}/{len(events)}")
+    logger.info(f"Geocoded: {coded}/{len(all_events)}")
 
 
 # ============================================

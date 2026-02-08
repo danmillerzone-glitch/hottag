@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -26,11 +26,15 @@ export default function ManageEventPage() {
   const [announcedTalent, setAnnouncedTalent] = useState<AnnouncedTalent[]>([])
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
+  const loadedRef = React.useRef(false)
 
   useEffect(() => {
     if (authLoading) return
     if (!user) { router.push('/signin'); return }
-    loadEvent()
+    if (!loadedRef.current) {
+      loadedRef.current = true
+      loadEvent()
+    }
   }, [user, authLoading, eventId])
 
   const loadEvent = async () => {
