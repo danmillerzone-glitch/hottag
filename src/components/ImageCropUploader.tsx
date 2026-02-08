@@ -142,16 +142,21 @@ export default function ImageCropUploader({
 
     ctx.drawImage(img, finalX * r, finalY * r, finalW * r, finalH * r)
 
+    // Use PNG for transparent images, JPEG for photos
+    const isPng = file?.type === 'image/png' || file?.name?.toLowerCase().endsWith('.png')
+    const mimeType = isPng ? 'image/png' : 'image/jpeg'
+    const fileExt = isPng ? 'png' : 'jpg'
+
     canvas.toBlob(async (blob) => {
       if (!blob) { setUploading(false); return }
       try {
-        const url = await onUpload(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
+        const url = await onUpload(new File([blob], `cropped.${fileExt}`, { type: mimeType }))
         setImageUrl(url.includes('?') ? url : `${url}?t=${Date.now()}`)
         setCropping(false)
         doCleanup()
       } catch (err: any) { alert(`Upload error: ${err.message}`) }
       setUploading(false)
-    }, 'image/jpeg', 0.92)
+    }, mimeType, isPng ? undefined : 0.92)
   }
 
   function doCleanup() {
