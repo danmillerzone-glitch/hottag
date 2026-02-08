@@ -104,6 +104,41 @@ export default async function EventPage({ params }: EventPageProps) {
     }
   }
 
+  // Fetch related events: same promotion or same city, upcoming, not this event
+  const today = new Date().toISOString().split('T')[0]
+  let relatedEvents: any[] = []
+
+  // Same promotion events
+  if (promotion?.id) {
+    const { data: promoEvents } = await supabase
+      .from('events')
+      .select('id, name, event_date, city, state, country, venue_name, poster_url, promotions(name, slug)')
+      .eq('promotion_id', promotion.id)
+      .neq('id', event.id)
+      .gte('event_date', today)
+      .order('event_date', { ascending: true })
+      .limit(4)
+    if (promoEvents) relatedEvents.push(...promoEvents)
+  }
+
+  // Same city events (if we need more)
+  if (relatedEvents.length < 6 && event.city) {
+    const { data: cityEvents } = await supabase
+      .from('events')
+      .select('id, name, event_date, city, state, country, venue_name, poster_url, promotions(name, slug)')
+      .eq('city', event.city)
+      .neq('id', event.id)
+      .gte('event_date', today)
+      .order('event_date', { ascending: true })
+      .limit(6 - relatedEvents.length)
+    if (cityEvents) {
+      const existingIds = new Set(relatedEvents.map(e => e.id))
+      relatedEvents.push(...cityEvents.filter(e => !existingIds.has(e.id)))
+    }
+  }
+
+  relatedEvents = relatedEvents.slice(0, 6)
+
   return (
     <div className="min-h-screen">
       {/* Hero/Banner */}
@@ -143,7 +178,7 @@ export default async function EventPage({ params }: EventPageProps) {
           </h1>
 
           {/* Key info grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-8">
             {/* Date */}
             <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
               <Calendar className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
@@ -171,41 +206,49 @@ export default async function EventPage({ params }: EventPageProps) {
             {/* Location */}
             <div className="flex items-start gap-3 p-4 rounded-lg bg-background-tertiary">
               <MapPin className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="text-sm text-foreground-muted">Location</div>
-                <div className="font-semibold">
-                  {event.venue_name && (
+                {event.venue_name && (
+                  <div className="font-semibold">
                     <Link 
                       href={`/venue/${encodeURIComponent(event.venue_name.toLowerCase().replace(/\s+/g, '-'))}`}
                       className="hover:text-accent hover:underline"
                     >
                       {event.venue_name}
                     </Link>
-                  )}
-                  <div className="text-sm mt-1">
-                    {event.city && (
-                      <Link 
-                        href={`/location/${encodeURIComponent(event.city.toLowerCase().replace(/\s+/g, '-'))}`}
-                        className="text-foreground-muted hover:text-accent hover:underline"
-                      >
-                        {event.city}
-                      </Link>
-                    )}
-                    {event.city && event.state && ', '}
-                    {event.state && (
-                      <Link 
-                        href={`/location/${event.state}`}
-                        className="text-foreground-muted hover:text-accent hover:underline"
-                      >
-                        {event.state}
-                      </Link>
-                    )}
                   </div>
+                )}
+                {event.venue_address && (
+                  <div className="text-sm text-foreground-muted mt-0.5">{event.venue_address}</div>
+                )}
+                <div className="text-sm mt-0.5">
+                  {event.city && (
+                    <Link 
+                      href={`/location/${encodeURIComponent(event.city.toLowerCase().replace(/\s+/g, '-'))}`}
+                      className="text-foreground-muted hover:text-accent hover:underline"
+                    >
+                      {event.city}
+                    </Link>
+                  )}
+                  {event.city && event.state && ', '}
+                  {event.state && (
+                    <Link 
+                      href={`/location/${event.state}`}
+                      className="text-foreground-muted hover:text-accent hover:underline"
+                    >
+                      {event.state}
+                    </Link>
+                  )}
+                  {event.country && event.country !== 'USA' && (
+                    <span className="text-foreground-muted">
+                      {(event.city || event.state) && ', '}{event.country}
+                    </span>
+                  )}
                 </div>
                 {/* Google Maps link */}
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    [event.venue_name, event.venue_address, event.city, event.state].filter(Boolean).join(', ')
+                    [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -336,24 +379,25 @@ export default async function EventPage({ params }: EventPageProps) {
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
                     src={`https://www.google.com/maps/embed/v1/search?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
-                      [event.venue_name, event.city, event.state, 'USA'].filter(Boolean).join(', ')
+                      [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
                     )}`}
                   />
                 </div>
-                <div className="p-4 flex items-center justify-between">
+                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     {event.venue_name && <div className="font-semibold">{event.venue_name}</div>}
+                    {event.venue_address && <div className="text-sm text-foreground-muted">{event.venue_address}</div>}
                     <div className="text-sm text-foreground-muted">
-                      {[event.city, event.state].filter(Boolean).join(', ')}
+                      {[event.city, event.state, event.country !== 'USA' ? event.country : null].filter(Boolean).join(', ')}
                     </div>
                   </div>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      [event.venue_name, event.city, event.state].filter(Boolean).join(', ')
+                      [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary flex-shrink-0"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     Get Directions
@@ -480,6 +524,44 @@ export default async function EventPage({ params }: EventPageProps) {
                     Merch
                   </a>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Related Events */}
+          {relatedEvents.length > 0 && (
+            <div className="border-t border-border pt-8">
+              <h2 className="text-xl font-semibold mb-4">More Events</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedEvents.map((related: any) => (
+                  <Link
+                    key={related.id}
+                    href={`/events/${related.id}`}
+                    className="card p-4 hover:border-accent/50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-12 text-center">
+                        <div className="text-accent font-bold text-xs">
+                          {new Date(related.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                        </div>
+                        <div className="text-lg font-bold">
+                          {new Date(related.event_date + 'T12:00:00').getDate()}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm group-hover:text-accent transition-colors truncate">
+                          {related.name}
+                        </div>
+                        <div className="text-xs text-foreground-muted truncate">
+                          {related.promotions?.name}
+                          {related.city && ` · ${related.city}`}
+                          {related.state && `, ${related.state}`}
+                          {related.country && related.country !== 'USA' && `, ${related.country}`}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}

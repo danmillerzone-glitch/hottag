@@ -545,6 +545,163 @@ def geocode_events():
 
 
 # ============================================
+# STEP 5: CHAMPIONSHIPS
+# ============================================
+
+def find_promotion_on_cagematch(promo_name):
+    """Search Cagematch for a promotion and return its ID"""
+    search_url = f"{BASE_URL}/?id=8&view=promotions&search={requests.utils.quote(promo_name)}"
+    try:
+        time.sleep(1.5)
+        resp = requests.get(search_url, headers=SCRAPE_HEADERS, timeout=30)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        for link in soup.find_all('a', href=True):
+            href = link.get('href', '')
+            if 'id=8' in href and 'nr=' in href and 'page=' not in href:
+                link_text = link.get_text(strip=True)
+                if link_text.lower() == promo_name.lower() or promo_name.lower() in link_text.lower():
+                    match = re.search(r'nr=(\d+)', href)
+                    if match:
+                        return match.group(1)
+    except Exception as e:
+        logger.warning(f"Cagematch search error for {promo_name}: {e}")
+    return None
+
+
+def scrape_title_page(cm_promo_id):
+    """Scrape current titles from Cagematch promotion page"""
+    url = f"{BASE_URL}/?id=8&nr={cm_promo_id}&page=5&reign=current"
+    titles = []
+    try:
+        time.sleep(1.5)
+        resp = requests.get(url, headers=SCRAPE_HEADERS, timeout=30)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        tables = soup.find_all('div', class_='TableContents')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows[1:]:
+                cells = row.find_all('td')
+                if len(cells) < 2:
+                    continue
+                title_name = None
+                champion_names = []
+                for link in cells[0].find_all('a'):
+                    if 'id=5' in link.get('href', ''):
+                        title_name = link.get_text(strip=True)
+                        break
+                if not title_name:
+                    title_name = cells[0].get_text(strip=True)
+                for cell in cells[1:]:
+                    for link in cell.find_all('a'):
+                        if 'id=2' in link.get('href', '') and 'nr=' in link.get('href', ''):
+                            name = link.get_text(strip=True)
+                            if name:
+                                champion_names.append(name)
+                if title_name and not title_name.startswith('«'):
+                    # Filter vacant
+                    champion_names = [c for c in champion_names if c.lower() != 'vacant']
+                    if champion_names:
+                        titles.append({'name': title_name, 'champions': champion_names})
+    except Exception as e:
+        logger.warning(f"Title scrape error for promo {cm_promo_id}: {e}")
+    return titles
+
+
+def find_wrestler_by_name(name):
+    """Match wrestler name to database"""
+    encoded = requests.utils.quote(name)
+    results = db_get(f"wrestlers?select=id,name,slug&name=ilike.{encoded}&limit=1")
+    if results:
+        return results[0]
+    results = db_get(f"wrestlers?select=id,name,slug&name=ilike.%25{encoded}%25&limit=3")
+    if results:
+        for r in results:
+            if r['name'].lower() == name.lower():
+                return r
+        if len(results) == 1:
+            return results[0]
+    return None
+
+
+def sync_championships():
+    """Scrape championships for all promotions in DB"""
+    promos = db_get("promotions?select=id,name,slug,country")
+    # Exclude WWE/AEW etc
+    filtered = []
+    for p in promos:
+        name_lower = p['name'].lower()
+        excluded = any(excl in name_lower or name_lower in excl for excl in EXCLUDED_PROMOTIONS)
+        if not excluded:
+            filtered.append(p)
+
+    logger.info(f"Checking championships for {len(filtered)} promotions...")
+    total_updated = 0
+    processed = 0
+
+    for promo in filtered:
+        try:
+            cm_id = find_promotion_on_cagematch(promo['name'])
+            if not cm_id:
+                continue
+
+            titles = scrape_title_page(cm_id)
+            if not titles:
+                continue
+
+            existing = db_get(f"promotion_championships?select=id,name,short_name,current_champion_id,current_champion_2_id,is_active&promotion_id=eq.{promo['id']}")
+            existing_by_name = {c['name'].lower(): c for c in existing}
+
+            for i, title in enumerate(titles):
+                champ_1_id = champ_2_id = None
+                if len(title['champions']) >= 1:
+                    w = find_wrestler_by_name(title['champions'][0])
+                    if w:
+                        champ_1_id = w['id']
+                if len(title['champions']) >= 2:
+                    w = find_wrestler_by_name(title['champions'][1])
+                    if w:
+                        champ_2_id = w['id']
+
+                # Short name
+                short_name = title['name']
+                for long, short in [('Heavyweight Championship', 'Heavyweight'), ('World Championship', 'World'),
+                                    ('Tag Team Championship', 'Tag Team'), ("Women's Championship", "Women's"),
+                                    ('Television Championship', 'TV'), ('Cruiserweight Championship', 'Cruiserweight')]:
+                    if long.lower() in title['name'].lower():
+                        short_name = short
+                        break
+
+                existing_champ = existing_by_name.get(title['name'].lower())
+                if existing_champ:
+                    update_data = {}
+                    if champ_1_id and existing_champ.get('current_champion_id') != champ_1_id:
+                        update_data['current_champion_id'] = champ_1_id
+                    if champ_2_id and existing_champ.get('current_champion_2_id') != champ_2_id:
+                        update_data['current_champion_2_id'] = champ_2_id
+                    if not champ_2_id and len(title['champions']) < 2:
+                        update_data['current_champion_2_id'] = None
+                    if update_data:
+                        db_patch("promotion_championships", f"id=eq.{existing_champ['id']}", update_data)
+                        total_updated += 1
+                else:
+                    result = db_post("promotion_championships", {
+                        "promotion_id": promo['id'], "name": title['name'], "short_name": short_name,
+                        "current_champion_id": champ_1_id, "current_champion_2_id": champ_2_id,
+                        "is_active": True, "sort_order": i,
+                    })
+                    if result:
+                        total_updated += 1
+
+            processed += 1
+        except Exception as e:
+            logger.error(f"Championship error for {promo['name']}: {e}")
+
+    logger.info(f"Championships: {processed} promotions processed, {total_updated} created/updated")
+
+
+# ============================================
 # MAIN
 # ============================================
 
@@ -553,6 +710,7 @@ def main():
     parser.add_argument('--days', type=int, default=120, help='Days ahead to scrape (default: 120)')
     parser.add_argument('--skip-details', action='store_true', help='Skip venue detail scraping')
     parser.add_argument('--skip-geocode', action='store_true', help='Skip geocoding')
+    parser.add_argument('--skip-championships', action='store_true', help='Skip championship scraping')
     parser.add_argument('--dry-run', action='store_true', help='Scrape only, save to JSON, don\'t load into DB')
     parser.add_argument('--output', type=str, default='events_sync.json', help='JSON output file for dry-run')
     args = parser.parse_args()
@@ -607,6 +765,15 @@ def main():
         geocode_events()
     else:
         print("\nSkipping geocoding (--skip-geocode)")
+
+    # Step 5: Championships
+    if not args.skip_championships:
+        print(f"\n{'='*60}")
+        print("STEP 5: SCRAPING CHAMPIONSHIPS")
+        print(f"{'='*60}")
+        sync_championships()
+    else:
+        print("\nSkipping championships (--skip-championships)")
 
     elapsed = time.time() - start
     print(f"\n{'='*60}")

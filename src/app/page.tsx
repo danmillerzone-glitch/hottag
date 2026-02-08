@@ -29,7 +29,6 @@ export default function HomePage() {
   const [followedEvents, setFollowedEvents] = useState<any[]>([])
   const [hotEvents, setHotEvents] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
-  const [promotions, setPromotions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -49,12 +48,6 @@ export default function HomePage() {
       .order('event_date', { ascending: true })
       .limit(20)
 
-    const promosPromise = supabase
-      .from('promotions')
-      .select('id, name, slug')
-      .order('name')
-      .limit(12)
-
     // User-specific queries (fire all at once if logged in)
     const attendingPromise = user
       ? supabase.from('user_event_attendance').select('status, event_id').eq('user_id', user.id).order('created_at', { ascending: false })
@@ -69,9 +62,8 @@ export default function HomePage() {
       : null
 
     // Await all initial queries together
-    const [upcomingRes, promosRes, attendingRes, fwRes, fpRes] = await Promise.all([
+    const [upcomingRes, attendingRes, fwRes, fpRes] = await Promise.all([
       upcomingPromise,
-      promosPromise,
       attendingPromise,
       followedWrestlersPromise,
       followedPromosPromise,
@@ -92,8 +84,6 @@ export default function HomePage() {
       ).filter(e => e.attending_count + e.interested_count > 0).slice(0, 4)
       setHotEvents(hot)
     }
-
-    if (promosRes.data) setPromotions(promosRes.data)
 
     // Process personalized data
     if (user) {
