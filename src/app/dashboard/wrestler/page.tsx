@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   getWrestlerDashboardData, getClaimedWrestler, getUserWrestlerClaims,
-  updateWrestlerProfile, uploadWrestlerPhoto,
+  updateWrestlerProfile, uploadWrestlerPhoto, uploadWrestlerRender,
   type WrestlerDashboardData,
 } from '@/lib/wrestler'
 import {
@@ -212,7 +212,7 @@ export default function WrestlerDashboardPage() {
               {claims.map((claim) => (
                 <div key={claim.id} className="card p-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden">
+                    <div className="w-12 h-12 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden">
                       {claim.wrestlers?.photo_url ? (
                         <Image
                           src={claim.wrestlers.photo_url}
@@ -293,7 +293,7 @@ export default function WrestlerDashboardPage() {
             Back to Dashboard
           </Link>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-accent">
+            <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-accent">
               {wrestler.photo_url ? (
                 <Image src={wrestler.photo_url} alt={wrestler.name} width={64} height={64} className="object-cover w-full h-full" />
               ) : (
@@ -345,7 +345,7 @@ export default function WrestlerDashboardPage() {
 
           <ImageCropUploader
             currentUrl={wrestler.photo_url}
-            shape="circle"
+            shape="square"
             size={96}
             onUpload={async (file) => {
               const updated = await uploadWrestlerPhoto(dashboardData!.wrestler.id, file)
@@ -355,6 +355,46 @@ export default function WrestlerDashboardPage() {
             label="Upload Photo"
           />
           <p className="text-xs text-foreground-muted mt-3">Square image recommended. Max 5MB.</p>
+        </section>
+
+        {/* Hero Render Image */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <ImageIcon className="w-5 h-5 text-accent" />
+            <h2 className="text-lg font-display font-bold">Hero Image</h2>
+          </div>
+
+          <p className="text-sm text-foreground-muted mb-4">
+            Upload a transparent PNG of yourself for a cinematic hero display on your profile page. This image appears large on desktop and as a trading card on mobile.
+          </p>
+
+          {wrestler.render_url && (
+            <div className="mb-4 p-4 rounded-lg bg-background-tertiary inline-block">
+              <Image src={wrestler.render_url} alt="Current render" width={200} height={200} className="object-contain" unoptimized />
+            </div>
+          )}
+
+          <label className="btn btn-secondary text-sm cursor-pointer inline-flex">
+            <Upload className="w-4 h-4 mr-1.5" />
+            {wrestler.render_url ? 'Replace Hero Image' : 'Upload Hero Image'}
+            <input
+              type="file"
+              accept="image/png"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                try {
+                  const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
+                  setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url } })
+                } catch (err) {
+                  console.error('Error uploading render:', err)
+                  alert('Failed to upload. Please try a PNG file under 5MB.')
+                }
+              }}
+            />
+          </label>
+          <p className="text-xs text-foreground-muted mt-3">Transparent PNG required. Recommended size: 800×1000px or larger.</p>
         </section>
 
         {/* Bio & Details */}

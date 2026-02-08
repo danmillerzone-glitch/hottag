@@ -32,7 +32,7 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
       href={`/wrestlers/${wrestler.slug}`}
       className="flex flex-col items-center gap-2 group w-[100px]"
     >
-      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 ${championTitle ? 'border-yellow-500' : 'border-border'} group-hover:border-accent transition-colors`}>
+      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-background flex items-center justify-center overflow-hidden border-2 ${championTitle ? 'border-yellow-500' : 'border-border'} group-hover:border-accent transition-colors`}>
         {wrestler.photo_url ? (
           <Image
             src={wrestler.photo_url}

@@ -273,6 +273,27 @@ export async function uploadWrestlerPhoto(wrestlerId: string, file: File) {
   return updated
 }
 
+export async function uploadWrestlerRender(wrestlerId: string, file: File) {
+  const supabase = createClient()
+
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${wrestlerId}-render.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('wrestler-photos')
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('wrestler-photos')
+    .getPublicUrl(filePath)
+
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  const updated = await updateWrestlerProfile(wrestlerId, { render_url: urlWithBust })
+  return updated
+}
+
 export async function redeemWrestlerClaimCode(code: string) {
   const supabase = createClient()
   const { data, error } = await supabase.rpc('redeem_wrestler_claim_code', { code })

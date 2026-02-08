@@ -161,7 +161,7 @@ function WrestlerCardComponent({ wrestler }: { wrestler: WrestlerCard }) {
       href={`/wrestlers/${wrestler.slug}`}
       className="flex items-center gap-3 p-4 rounded-xl bg-background-secondary border border-border hover:border-accent/50 transition-colors group"
     >
-      <div className="w-12 h-12 rounded-full bg-background-tertiary flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <div className="w-12 h-12 rounded-xl bg-background-tertiary flex items-center justify-center flex-shrink-0 overflow-hidden">
         {wrestler.photo_url ? (
           <Image src={wrestler.photo_url} alt={wrestler.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
         ) : (
@@ -202,7 +202,7 @@ function WrestlersSkeleton() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-4 rounded-xl bg-background-secondary border border-border">
-                <div className="w-12 h-12 skeleton rounded-full" />
+                <div className="w-12 h-12 skeleton rounded-xl" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-28 skeleton rounded" />
                   <div className="h-3 w-20 skeleton rounded" />

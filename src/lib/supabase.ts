@@ -46,6 +46,7 @@ export interface Wrestler {
   debut_year: number | null
   trainer: string | null
   photo_url: string | null
+  render_url: string | null
   twitter_handle: string | null
   instagram_handle: string | null
   tiktok_handle: string | null
