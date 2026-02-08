@@ -597,6 +597,17 @@ export default function WrestlerDashboardPage() {
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Bluesky</label>
+              <input
+                type="text"
+                value={blueskyHandle}
+                onChange={(e) => setBlueskyHandle(e.target.value)}
+                placeholder="yourname.bsky.social"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
           </div>
         </section>
 
@@ -636,27 +647,15 @@ export default function WrestlerDashboardPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Bluesky</label>
-                <input
-                  type="text"
-                  value={blueskyHandle}
-                  onChange={(e) => setBlueskyHandle(e.target.value)}
-                  placeholder="yourname.bsky.social"
-                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Patreon</label>
-                <input
-                  type="url"
-                  value={patreonUrl}
-                  onChange={(e) => setPatreonUrl(e.target.value)}
-                  placeholder="https://patreon.com/yourpage"
-                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Patreon</label>
+              <input
+                type="url"
+                value={patreonUrl}
+                onChange={(e) => setPatreonUrl(e.target.value)}
+                placeholder="https://patreon.com/yourpage"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
             </div>
           </div>
         </section>

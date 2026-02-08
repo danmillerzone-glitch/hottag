@@ -67,6 +67,8 @@ export default function EditPromotionPage() {
   const [country, setCountry] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
+  const [blueskyHandle, setBlueskyHandle] = useState('')
+  const [patreonUrl, setPatreonUrl] = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -97,6 +99,8 @@ export default function EditPromotionPage() {
     setCountry(data.country || 'USA')
     setBookingEmail(data.booking_email || '')
     setMerchUrl(data.merch_url || '')
+    setBlueskyHandle(data.bluesky_handle || '')
+    setPatreonUrl(data.patreon_url || '')
     setLoading(false)
   }
 
@@ -118,6 +122,8 @@ export default function EditPromotionPage() {
         country: country || null,
         booking_email: bookingEmail || null,
         merch_url: merchUrl || null,
+        bluesky_handle: blueskyHandle || null,
+        patreon_url: patreonUrl || null,
       })
       setPromotion(updated)
       setSaved(true)
@@ -334,6 +340,17 @@ export default function EditPromotionPage() {
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Bluesky</label>
+              <input
+                type="text"
+                value={blueskyHandle}
+                onChange={(e) => setBlueskyHandle(e.target.value)}
+                placeholder="yourpromotion.bsky.social"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
           </div>
         </section>
 
@@ -412,6 +429,17 @@ export default function EditPromotionPage() {
                 value={merchUrl}
                 onChange={(e) => setMerchUrl(e.target.value)}
                 placeholder="https://shop.yourpromotion.com"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Patreon</label>
+              <input
+                type="url"
+                value={patreonUrl}
+                onChange={(e) => setPatreonUrl(e.target.value)}
+                placeholder="https://patreon.com/yourpromotion"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
               />
             </div>

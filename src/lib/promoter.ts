@@ -431,6 +431,8 @@ export async function updatePromotion(promotionId: string, updates: {
   country?: string | null
   booking_email?: string | null
   merch_url?: string | null
+  bluesky_handle?: string | null
+  patreon_url?: string | null
 }) {
   const supabase = createClient()
 
