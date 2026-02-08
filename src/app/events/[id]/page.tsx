@@ -16,8 +16,7 @@ import {
   Youtube,
   Facebook,
   Mail,
-  ShoppingBag,
-  Crown
+  ShoppingBag
 } from 'lucide-react'
 import { 
   formatEventDateFull, 
@@ -278,7 +277,7 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
 
           {/* Match Card (from promoter-managed matches) */}
-          <MatchCard eventId={event.id} />
+          <MatchCard eventId={event.id} championMap={championMap} />
 
           {/* Announced Talent */}
           <AnnouncedTalentList eventId={event.id} championMap={championMap} />
@@ -313,7 +312,6 @@ export default async function EventPage({ params }: EventPageProps) {
                     </span>
                     {championMap[wrestler.id] && (
                       <div className="flex flex-col items-center mt-0.5" title={championMap[wrestler.id]}>
-                        <Crown className="w-3 h-3 text-yellow-500" />
                         <span className="text-xs text-yellow-500 text-center leading-tight">{championMap[wrestler.id]}</span>
                       </div>
                     )}

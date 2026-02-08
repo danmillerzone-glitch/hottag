@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Megaphone, User, Crown } from 'lucide-react'
+import { Megaphone, User } from 'lucide-react'
 
 interface Talent {
   id: string
@@ -75,7 +75,6 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
             </span>
             {championMap[t.wrestlers.id] && (
               <div className="flex flex-col items-center mt-0.5 w-full" title={championMap[t.wrestlers.id]}>
-                <Crown className="w-3 h-3 text-yellow-500" />
                 <span className="text-xs text-yellow-500 text-center leading-tight">{championMap[t.wrestlers.id]}</span>
               </div>
             )}

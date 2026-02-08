@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink, Trophy, Crown, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap } from 'lucide-react'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -500,7 +500,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               <Link
                 key={champ.id}
                 href={`/promotions/${champ.promotions?.slug}`}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border border-yellow-600/30 hover:border-yellow-500/50 transition-colors group"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border-2 border-yellow-500/60 hover:border-yellow-400 transition-colors group"
               >
                 <div>
                   <div className="font-semibold text-sm group-hover:text-accent transition-colors">

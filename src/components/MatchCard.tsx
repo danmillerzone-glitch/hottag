@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
-import { Swords, Trophy, User, Crown } from 'lucide-react'
+import { Swords, Trophy, User } from 'lucide-react'
 
 interface Match {
   id: string
@@ -50,7 +50,6 @@ function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; nam
       </span>
       {championTitle && (
         <div className="flex flex-col items-center -mt-1" title={championTitle}>
-          <Crown className="w-3 h-3 text-yellow-500" />
           <span className="text-xs text-yellow-500 text-center leading-tight">{championTitle}</span>
         </div>
       )}
