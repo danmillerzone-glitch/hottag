@@ -408,7 +408,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
         <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border mb-2">
           <div className="flex -space-x-2 flex-shrink-0">
             {champGroup.promotion_group_members?.map((m: any) => (
-              <div key={m.id} className="w-10 h-10 rounded-full bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
+              <div key={m.id} className="w-10 h-10 rounded-xl bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
                 {m.wrestlers?.photo_url ? (
                   <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={40} height={40} className="object-cover w-full h-full" />
                 ) : (
@@ -438,7 +438,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
         /* Individual champion display */
         <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border mb-2">
           <div className="flex -space-x-2 flex-shrink-0">
-            <div className="w-12 h-12 rounded-full bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 rounded-xl bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
               {champ.photo_url ? (
                 <Image src={champ.photo_url} alt={champ.name} width={48} height={48} className="object-cover w-full h-full" />
               ) : (
@@ -446,7 +446,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
               )}
             </div>
             {champ2 && (
-              <div className="w-12 h-12 rounded-full bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
                 {champ2.photo_url ? (
                   <Image src={champ2.photo_url} alt={champ2.name} width={48} height={48} className="object-cover w-full h-full" />
                 ) : (
@@ -494,7 +494,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
       ) : (
         /* Vacant */
         <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-dashed border-border mb-2">
-          <div className="w-12 h-12 rounded-full bg-background-tertiary flex items-center justify-center"><Trophy className="w-5 h-5 text-foreground-muted/30" /></div>
+          <div className="w-12 h-12 rounded-xl bg-background-tertiary flex items-center justify-center"><Trophy className="w-5 h-5 text-foreground-muted/30" /></div>
           <div className="flex-1">
             <span className="text-foreground-muted text-sm">Vacant</span>
           </div>
@@ -562,7 +562,7 @@ function ChampionshipItem({ championship, roster, groups, onUpdate, onDelete }: 
               {searchResults.map((w: any) => (
                 <button key={w.id} onClick={() => handleSetChampion(w.id, { id: w.id, name: w.name, slug: w.slug, photo_url: w.photo_url })}
                   className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background-tertiary transition-colors text-left text-sm">
-                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-full object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
+                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
                   <span>{w.name}</span>
                   {w.hometown && <span className="text-xs text-foreground-muted ml-auto">{w.hometown}</span>}
                 </button>
@@ -766,7 +766,7 @@ function GroupItem({ group, promotionId, onUpdate, onDelete }: {
       <div className="flex flex-wrap gap-2 mb-2">
         {members.map(m => (
           <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border border-border group">
-            <div className="w-7 h-7 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden">
+            <div className="w-7 h-7 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden">
               {m.wrestlers?.photo_url ? (
                 <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={28} height={28} className="object-cover w-full h-full" />
               ) : (
@@ -803,7 +803,7 @@ function GroupItem({ group, promotionId, onUpdate, onDelete }: {
               {searchResults.map((w: any) => (
                 <button key={w.id} onClick={() => handleAddMember(w)}
                   className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background-tertiary transition-colors text-left text-sm">
-                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-full object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
+                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
                   <span>{w.name}</span>
                 </button>
               ))}
@@ -898,7 +898,7 @@ function RosterSection({ promotionId, roster, onUpdate }: {
                 className="absolute top-2 right-2 p-1 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
                 <X className="w-3.5 h-3.5" />
               </button>
-              <div className="w-14 h-14 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2">
+              <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center overflow-hidden mb-2">
                 {member.wrestlers?.photo_url ? (
                   <Image src={member.wrestlers.photo_url} alt={member.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" />
                 ) : (
@@ -938,7 +938,7 @@ function RosterSection({ promotionId, roster, onUpdate }: {
               {searchResults.map((w: any) => (
                 <button key={w.id} onClick={() => handleAdd(w.id)}
                   className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left text-sm">
-                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-full object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
+                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
                   <span>{w.name}</span>
                   {w.hometown && <span className="text-xs text-foreground-muted ml-auto">{w.hometown}</span>}
                 </button>

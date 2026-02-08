@@ -179,7 +179,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 </h1>
 
                 {wrestler.moniker && (
-                  <p className="text-lg text-accent italic mb-4">&ldquo;{wrestler.moniker}&rdquo;</p>
+                  <p className="text-lg text-accent font-bold italic mb-4">&ldquo;{wrestler.moniker}&rdquo;</p>
                 )}
 
                 {/* Follow + Social row */}
@@ -224,7 +224,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               </div>
 
               {/* Right: Wrestler render image */}
-              <div className="flex-shrink-0 relative w-[320px] lg:w-[400px] h-[380px] lg:h-[460px] z-[2]">
+              <div className="flex-shrink-0 relative w-[340px] lg:w-[440px] h-[420px] lg:h-[500px] z-[2]">
                 {hasRender ? (
                   <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (
@@ -273,7 +273,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 </h1>
 
                 {wrestler.moniker && (
-                  <p className="text-sm text-accent italic mb-3">&ldquo;{wrestler.moniker}&rdquo;</p>
+                  <p className="text-sm text-accent font-bold italic mb-3">&ldquo;{wrestler.moniker}&rdquo;</p>
                 )}
 
                 {/* Follow + Social — ABOVE stats on mobile */}
@@ -546,7 +546,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
+                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
                     </div>
                     <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
                   </Link>
@@ -567,7 +567,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
+                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
                     </div>
                   </Link>
                 ))}

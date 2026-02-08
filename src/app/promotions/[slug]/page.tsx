@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
+import RosterCarousel from '@/components/RosterCarousel'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -115,7 +116,7 @@ async function getRoster(promotionId: string) {
     .from('wrestler_promotions')
     .select(`
       *,
-      wrestlers (id, name, slug, photo_url, hometown)
+      wrestlers (id, name, slug, photo_url, render_url, hometown)
     `)
     .eq('promotion_id', promotionId)
     .eq('is_active', true)
@@ -388,7 +389,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                         <div className="flex -space-x-3 flex-shrink-0">
                           {groupMembers.map((m: any) => (
                             <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
-                              <div className="w-14 h-14 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
+                              <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
                                 {m.wrestlers?.photo_url ? (
                                   <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
                                 ) : (
@@ -419,7 +420,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                       <div className="flex items-center gap-4">
                         <div className="flex -space-x-3 flex-shrink-0">
                           <Link href={`/wrestlers/${champion.slug}`}>
-                            <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
+                            <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
                               {champion.photo_url ? (
                                 <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
                               ) : (
@@ -429,7 +430,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                           </Link>
                           {champion2 && (
                             <Link href={`/wrestlers/${champion2.slug}`}>
-                              <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
+                              <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
                                 {champion2.photo_url ? (
                                   <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
                                 ) : (
@@ -457,7 +458,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 text-foreground-muted">
-                        <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center border-2 border-dashed border-border">
+                        <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center border-2 border-dashed border-border">
                           <Trophy className="w-6 h-6 text-foreground-muted/30" />
                         </div>
                         <span className="text-sm italic">Vacant</span>
@@ -472,41 +473,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
 
         {/* Roster */}
         {roster.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-              <Users className="w-6 h-6 text-accent" />
-              Roster ({roster.length})
-            </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {roster
-                .sort((a: any, b: any) => (a.wrestlers?.name || '').localeCompare(b.wrestlers?.name || ''))
-                .map((member: any) => (
-                <Link
-                  key={member.id}
-                  href={`/wrestlers/${member.wrestlers.slug}`}
-                  className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
-                >
-                  <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center overflow-hidden mb-2 border-2 border-transparent group-hover:border-accent transition-colors">
-                    {member.wrestlers.photo_url ? (
-                      <Image
-                        src={member.wrestlers.photo_url}
-                        alt={member.wrestlers.name}
-                        width={64}
-                        height={64}
-                        className="object-cover w-full h-full"
-                        unoptimized
-                      />
-                    ) : (
-                      <User className="w-8 h-8 text-foreground-muted" />
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
-                    {member.wrestlers.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <RosterCarousel roster={roster} />
         )}
 
         {/* Tag Teams & Factions */}
@@ -530,7 +497,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                     <div className="flex flex-wrap gap-3">
                       {members.map((m: any) => (
                         <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`} className="flex flex-col items-center group">
-                          <div className="w-14 h-14 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-accent transition-colors">
+                          <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-accent transition-colors">
                             {m.wrestlers?.photo_url ? (
                               <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
                             ) : (
