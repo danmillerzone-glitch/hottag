@@ -218,10 +218,10 @@ export async function getPromoterDashboardData(): Promise<PromoterDashboardData 
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Fetch upcoming events
+  // Fetch upcoming events with streaming link count
   const { data: upcoming } = await supabase
     .from('events')
-    .select('*')
+    .select('*, event_streaming_links(id)')
     .eq('promotion_id', promotion.id)
     .gte('event_date', today)
     .order('event_date', { ascending: true })

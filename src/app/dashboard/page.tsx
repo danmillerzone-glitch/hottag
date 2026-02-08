@@ -310,7 +310,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {upcomingEvents.map((event: any) => {
                 const hasTickets = !!event.ticket_url
-                const hasStreaming = !!event.streaming_url
+                const hasStreaming = event.event_streaming_links?.length > 0 || !!event.streaming_url
                 const hasPoster = !!event.poster_url
                 
                 return (
