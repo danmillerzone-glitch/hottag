@@ -24,6 +24,22 @@ function TikTokIcon({ className }: { className?: string }) {
   )
 }
 
+function BlueskyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.6 3.476 6.178 3.238-4.596.55-8.626 2.04-3.39 7.205 5.42 4.244 7.108-1.012 8.588-4.65.134-.33.221-.547.288-.547.066 0 .154.218.288.547 1.48 3.638 3.168 8.894 8.588 4.65 5.236-5.165 1.206-6.655-3.39-7.205 2.578.238 5.393-.611 6.178-3.238.246-.828.624-5.789.624-6.479 0-.688-.139-1.86-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z" />
+    </svg>
+  )
+}
+
+function PatreonIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M14.82 2.41c3.96 0 7.18 3.24 7.18 7.21 0 3.96-3.22 7.18-7.18 7.18-3.97 0-7.21-3.22-7.21-7.18 0-3.97 3.24-7.21 7.21-7.21M2 21.6h3.5V2.41H2V21.6z" />
+    </svg>
+  )
+}
+
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -303,6 +319,30 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   >
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     Merch
+                  </a>
+                )}
+
+                {promotion.bluesky_handle && (
+                  <a
+                    href={`https://bsky.app/profile/${promotion.bluesky_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <BlueskyIcon className="w-4 h-4 mr-2" />
+                    Bluesky
+                  </a>
+                )}
+
+                {promotion.patreon_url && (
+                  <a
+                    href={promotion.patreon_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    <PatreonIcon className="w-4 h-4 mr-2" />
+                    Patreon
                   </a>
                 )}
               </div>

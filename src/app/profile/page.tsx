@@ -145,6 +145,13 @@ export default function ProfilePage() {
   const goingEvents = attendingEvents.filter(e => e.status === 'attending')
   const interestedEvents = attendingEvents.filter(e => e.status === 'interested')
 
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const upcomingGoing = goingEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') >= today)
+  const upcomingInterested = interestedEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') >= today)
+  const pastEvents = attendingEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') < today)
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -232,12 +239,12 @@ export default function ProfilePage() {
         <section className="mb-12">
           <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
             <Check className="w-5 h-5 text-green-500" />
-            Events I'm Going To ({goingEvents.length})
+            Events I'm Going To ({upcomingGoing.length})
           </h2>
           
-          {goingEvents.length > 0 ? (
+          {upcomingGoing.length > 0 ? (
             <div className="space-y-3">
-              {goingEvents.map((item) => (
+              {upcomingGoing.map((item) => (
                 <Link
                   key={item.id}
                   href={`/events/${item.events.id}`}
@@ -263,7 +270,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <p className="text-foreground-muted">
-              You haven't marked any events as "going" yet. <Link href="/events" className="text-accent hover:underline">Browse events</Link>
+              No upcoming events. <Link href="/events" className="text-accent hover:underline">Browse events</Link>
             </p>
           )}
         </section>
@@ -272,12 +279,12 @@ export default function ProfilePage() {
         <section className="mb-12">
           <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
             <Heart className="w-5 h-5 text-pink-500" />
-            Events I'm Interested In ({interestedEvents.length})
+            Events I'm Interested In ({upcomingInterested.length})
           </h2>
           
-          {interestedEvents.length > 0 ? (
+          {upcomingInterested.length > 0 ? (
             <div className="space-y-3">
-              {interestedEvents.map((item) => (
+              {upcomingInterested.map((item) => (
                 <Link
                   key={item.id}
                   href={`/events/${item.events.id}`}
@@ -303,10 +310,49 @@ export default function ProfilePage() {
             </div>
           ) : (
             <p className="text-foreground-muted">
-              You haven't marked any events as "interested" yet.
+              No upcoming events you're interested in.
             </p>
           )}
         </section>
+
+        {/* Past Events */}
+        {pastEvents.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-foreground-muted" />
+              Past Events ({pastEvents.length})
+            </h2>
+            <div className="space-y-3">
+              {pastEvents
+                .sort((a, b) => new Date(b.events.event_date).getTime() - new Date(a.events.event_date).getTime())
+                .map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/events/${item.events.id}`}
+                  className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors opacity-70 hover:opacity-100"
+                >
+                  <div className="flex-shrink-0 w-14 text-center">
+                    <div className="text-foreground-muted font-bold text-sm">
+                      {new Date(item.events.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-xl font-bold text-foreground-muted">
+                      {new Date(item.events.event_date).getDate()}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">{item.events.name}</div>
+                    <div className="text-sm text-foreground-muted">
+                      {item.events.promotions?.name} • {item.events.city}, {item.events.state}
+                    </div>
+                  </div>
+                  <span className={`badge ${item.status === 'attending' ? 'bg-green-500/10 text-green-400/60' : 'bg-pink-500/10 text-pink-400/60'}`}>
+                    {item.status === 'attending' ? 'Went' : 'Interested'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Wrestlers I Follow */}
         <section className="mb-12">

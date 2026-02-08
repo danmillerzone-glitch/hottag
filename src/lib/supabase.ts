@@ -21,6 +21,8 @@ export interface Promotion {
   youtube_url: string | null
   booking_email: string | null
   merch_url: string | null
+  bluesky_handle: string | null
+  patreon_url: string | null
   city: string | null
   state: string | null
   country: string
@@ -51,6 +53,8 @@ export interface Wrestler {
   website: string | null
   booking_email: string | null
   merch_url: string | null
+  bluesky_handle: string | null
+  patreon_url: string | null
   countries_wrestled: string[] | null
   pwi_ranking: number | null
   verification_status: 'unverified' | 'pending' | 'verified'

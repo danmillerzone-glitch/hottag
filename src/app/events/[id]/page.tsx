@@ -31,8 +31,6 @@ import ShareButton from '@/components/ShareButton'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
-import EventCountdown from '@/components/EventCountdown'
-import AddToCalendar from '@/components/AddToCalendar'
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
@@ -236,11 +234,6 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
 
           {/* Action buttons */}
-          {/* Countdown */}
-          <div className="mb-6">
-            <EventCountdown eventDate={event.event_date} eventTime={event.event_time} />
-          </div>
-
           <div className="flex flex-wrap items-center gap-3 mb-8">
             {event.ticket_url && !event.is_sold_out && (
               <a
@@ -254,18 +247,6 @@ export default async function EventPage({ params }: EventPageProps) {
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             )}
-            <AddToCalendar
-              eventName={event.name}
-              eventDate={event.event_date}
-              eventTime={event.event_time}
-              doorsTime={event.doors_time}
-              venueName={event.venue_name}
-              city={event.city}
-              state={event.state}
-              venueAddress={(event as any).venue_address}
-              description={event.description}
-              eventUrl={`https://www.hottag.app/events/${event.id}`}
-            />
             <StreamingLinks eventId={event.id} />
             <div className="ml-auto">
               <ShareButton
