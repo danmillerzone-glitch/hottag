@@ -166,7 +166,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         {/* ===== DESKTOP HERO ===== */}
         <div className="hidden md:block relative">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="relative flex items-end min-h-[420px] lg:min-h-[480px] py-8">
+            <div className="relative flex items-end min-h-[440px] lg:min-h-[520px] py-8">
               {/* Left: Text content */}
               <div className="flex-1 z-[5] pb-4">
                 {/* PWI Badge */}
@@ -232,7 +232,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               </div>
 
               {/* Right: Wrestler render image */}
-              <div className="flex-shrink-0 relative w-[340px] lg:w-[440px] h-[420px] lg:h-[500px] z-[2]">
+              <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
                 {hasRender ? (
                   <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (

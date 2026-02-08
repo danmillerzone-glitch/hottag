@@ -228,10 +228,10 @@ export default function ImageCropUploader({
         </div>
       ) : (
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center overflow-hidden flex-shrink-0 bg-background-tertiary"
+          <div className={`flex items-center justify-center overflow-hidden flex-shrink-0 ${imageUrl ? '' : 'bg-background-tertiary'}`}
             style={{ width: size, height: size, borderRadius: bdr }}>
             {imageUrl
-              ? <img src={imageUrl} alt="" className="object-cover w-full h-full" style={{ borderRadius: bdr }} />
+              ? <img src={imageUrl} alt="" className="object-contain w-full h-full" style={{ borderRadius: bdr }} />
               : <Upload className="w-6 h-6 text-foreground-muted" />}
           </div>
           <label className="btn btn-secondary text-xs cursor-pointer">
