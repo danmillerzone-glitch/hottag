@@ -431,7 +431,7 @@ export default async function EventPage({ params }: EventPageProps) {
                         {promotion.name.charAt(0)}
                       </span>
                     </div>
-                  )}}
+                  )}
                 </div>
                 <div>
                   <div className="font-semibold text-lg">{promotion.name}</div>
