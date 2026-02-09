@@ -73,10 +73,19 @@ export default function HeroThemePicker({ currentStyle, onSelect }: Props) {
               }`}
               title={theme.label}
             >
-              <div
-                className="absolute inset-0"
-                style={{ background: theme.preview }}
-              />
+              {/* Preview background — use actual image for flags */}
+              {theme.style.type === 'flag' ? (
+                <img
+                  src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${theme.style.value.toLowerCase()}.jpg`}
+                  alt={theme.label}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{ background: theme.preview }}
+                />
+              )}
               {selected && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                   <Check className="w-5 h-5 text-accent" />

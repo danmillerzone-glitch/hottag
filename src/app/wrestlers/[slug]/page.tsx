@@ -240,9 +240,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
-                  <div className="absolute -inset-16 -right-32 overflow-hidden">
+                  <div className="absolute -inset-24 -right-40 overflow-hidden">
                     {wrestler.hero_style?.type === 'flag' ? (
-                      <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
                     ) : (
                       <>
                         <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.6 }} />
@@ -251,9 +251,15 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                         )}
                       </>
                     )}
-                    {/* Feathered edges — blend into hero bg */}
+                    {/* Multi-layer feathered edges for seamless blending */}
                     <div className="absolute inset-0" style={{
-                      background: 'radial-gradient(ellipse 80% 90% at 60% 55%, transparent 30%, #1c2228 75%)',
+                      background: 'radial-gradient(ellipse 70% 80% at 55% 50%, transparent 20%, #1c2228 65%)',
+                    }} />
+                    <div className="absolute inset-0" style={{
+                      background: 'linear-gradient(to right, #1c2228 0%, transparent 30%, transparent 85%, #1c2228 100%)',
+                    }} />
+                    <div className="absolute inset-0" style={{
+                      background: 'linear-gradient(to bottom, #1c2228 0%, transparent 20%, transparent 75%, #1c2228 100%)',
                     }} />
                   </div>
                 )}
