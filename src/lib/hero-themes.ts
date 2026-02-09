@@ -130,6 +130,7 @@ export const TEXTURE_THEMES: ThemeOption[] = [
 ]
 
 // ─── FLAG PRESETS ────────────────────────────────────────
+// Flags use image files from /flags/ directory. Upload custom flag images there.
 export const FLAG_THEMES: ThemeOption[] = [
   { id: 'flag-US', label: '🇺🇸 USA', style: { type: 'flag', value: 'US' }, preview: 'linear-gradient(180deg, #002868 0%, #002868 46%, #fff 46%, #fff 54%, #BF0A30 54%, #BF0A30 100%)' },
   { id: 'flag-MX', label: '🇲🇽 Mexico', style: { type: 'flag', value: 'MX' }, preview: 'linear-gradient(90deg, #006847 0%, #006847 33%, #fff 33%, #fff 67%, #ce1126 67%, #ce1126 100%)' },
@@ -145,11 +146,16 @@ export const FLAG_THEMES: ThemeOption[] = [
   { id: 'flag-IN', label: '🇮🇳 India', style: { type: 'flag', value: 'IN' }, preview: 'linear-gradient(180deg, #FF9933 0%, #FF9933 33%, #fff 33%, #fff 67%, #138808 67%)' },
 ]
 
+// Flag image path helper — checks for custom uploaded flag first
+export function getFlagImagePath(countryCode: string): string {
+  return `/flags/${countryCode.toLowerCase()}.png`
+}
+
 // ─── ALL THEMES ────────────────────────────────────────
 export const ALL_THEMES = [...GRADIENT_THEMES, ...TEXTURE_THEMES, ...FLAG_THEMES]
 
 // ─── GENERATE CSS FOR A HERO STYLE ────────────────────────────────────────
-export function getHeroCSS(style: HeroStyle | null): { background: string; texture?: string } {
+export function getHeroCSS(style: HeroStyle | null): { background: string; texture?: string; flagImage?: string } {
   if (!style) return { background: '#1c2228' }
 
   switch (style.type) {
@@ -160,7 +166,10 @@ export function getHeroCSS(style: HeroStyle | null): { background: string; textu
       return { background: getGradientCSS(style.value) }
 
     case 'flag':
-      return { background: getFlagCSS(style.value) }
+      return {
+        background: getFlagCSS(style.value),
+        flagImage: `/flags/${style.value.toLowerCase()}.png`,
+      }
 
     case 'texture':
       return getTextureCSS(style.value)

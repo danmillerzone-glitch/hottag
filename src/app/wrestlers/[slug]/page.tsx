@@ -157,6 +157,14 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
       {/* HERO */}
       {/* ======================================== */}
       <div className="relative overflow-hidden" style={{ background: heroCSS.background }}>
+        {/* Flag image background (if flag theme and image exists) */}
+        {heroCSS.flagImage && (
+          <div className="absolute inset-0 z-[0]">
+            <Image src={heroCSS.flagImage} alt="" fill className="object-cover opacity-30" unoptimized
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          </div>
+        )}
+
         {/* Texture overlay (theme texture or default diagonal) */}
         {heroCSS.texture ? (
           <div className="absolute inset-0" style={{ background: heroCSS.texture }} />

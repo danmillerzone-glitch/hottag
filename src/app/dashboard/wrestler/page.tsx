@@ -406,9 +406,22 @@ export default function WrestlerDashboardPage() {
               try {
                 const updated = await updateWrestlerProfile(wrestler.id, { hero_style: style })
                 setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, hero_style: updated.hero_style } })
-              } catch (err) {
+              } catch (err: any) {
                 console.error('Error updating theme:', err)
-                alert('Failed to update theme.')
+                // Fallback: try direct update via supabase-browser
+                try {
+                  const { createClient } = await import('@/lib/supabase-browser')
+                  const sb = createClient()
+                  const { error } = await sb
+                    .from('wrestlers')
+                    .update({ hero_style: style, updated_at: new Date().toISOString() })
+                    .eq('id', wrestler.id)
+                  if (error) throw error
+                  setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, hero_style: style } })
+                } catch (err2: any) {
+                  console.error('Fallback update also failed:', err2)
+                  alert(`Failed to update theme: ${err2.message || err.message}`)
+                }
               }
             }}
           />
