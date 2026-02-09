@@ -2188,6 +2188,95 @@ function PageRequestsTab() {
 
   async function handleUpdateStatus(id: string, status: string) {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
+    
+    // If approving, create the wrestler/promotion record
+    if (status === 'approved') {
+      const req = requests.find(r => r.id === id)
+      if (!req) return
+
+      const slug = req.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
+      if (req.type === 'wrestler') {
+        // Check if wrestler already exists with this name
+        const { data: existing } = await supabase
+          .from('wrestlers')
+          .select('id')
+          .ilike('name', req.name.trim())
+          .maybeSingle()
+
+        if (existing) {
+          // Wrestler exists — just claim it for the requester
+          if (req.requested_by) {
+            await supabase.from('wrestlers').update({ claimed_by: req.requested_by }).eq('id', existing.id)
+          }
+        } else {
+          // Create new wrestler
+          const { data: newWrestler, error: createErr } = await supabase
+            .from('wrestlers')
+            .insert({
+              name: req.name.trim(),
+              slug,
+              claimed_by: req.requested_by || null,
+              verification_status: req.requested_by ? 'pending' : 'unverified',
+            })
+            .select('id')
+            .single()
+
+          if (createErr) {
+            alert(`Error creating wrestler: ${createErr.message}`)
+            return
+          }
+        }
+      } else if (req.type === 'promotion') {
+        // Check if promotion already exists
+        const { data: existing } = await supabase
+          .from('promotions')
+          .select('id')
+          .ilike('name', req.name.trim())
+          .maybeSingle()
+
+        if (existing) {
+          // Promotion exists — create a claim for the requester
+          if (req.requested_by) {
+            await supabase.from('promotion_claims').insert({
+              promotion_id: existing.id,
+              user_id: req.requested_by,
+              status: 'approved',
+              role: 'owner',
+            }).select().maybeSingle()
+          }
+        } else {
+          // Create new promotion
+          const { data: newPromo, error: createErr } = await supabase
+            .from('promotions')
+            .insert({
+              name: req.name.trim(),
+              slug,
+              country: 'USA',
+              region: 'South',
+            })
+            .select('id')
+            .single()
+
+          if (createErr) {
+            alert(`Error creating promotion: ${createErr.message}`)
+            return
+          }
+
+          // Create claim for requester
+          if (req.requested_by && newPromo) {
+            await supabase.from('promotion_claims').insert({
+              promotion_id: newPromo.id,
+              user_id: req.requested_by,
+              status: 'approved',
+              role: 'owner',
+            }).select().maybeSingle()
+          }
+        }
+      }
+    }
+
+    // Update the request status
     const { error } = await supabase.from('page_requests').update({ status }).eq('id', id)
     if (error) { alert(`Error: ${error.message}`); return }
     setRequests(requests.map(r => r.id === id ? { ...r, status } : r))
