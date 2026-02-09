@@ -347,7 +347,6 @@ export default function HomePage() {
             <EventCarousel events={[]} loading={true} skeletonCount={8} />
           ) : (
             <EventCarousel events={upcomingEvents.slice(0, 20)} />
-            </div>
           )}
         </div>
       </section>
