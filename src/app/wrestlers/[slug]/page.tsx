@@ -242,7 +242,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {hasTheme && (
                   <div className="absolute -inset-16 -right-32 overflow-hidden">
                     {wrestler.hero_style?.type === 'flag' ? (
-                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <>
                         <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.6 }} />
@@ -285,7 +285,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {hasTheme && (
                   <div className="absolute inset-0 z-[0]">
                     {wrestler.hero_style?.type === 'flag' ? (
-                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <>
                         <div className="absolute inset-0" style={{ background: heroCSS.background }} />
