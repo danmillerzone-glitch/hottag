@@ -59,12 +59,12 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
   if (events.length === 0) return null
 
   return (
-    <div className="relative group">
+    <div className="relative group/carousel">
       {/* Left arrow */}
       {canScrollLeft && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover:opacity-100 -translate-x-1/2"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 -translate-x-1/2"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -74,7 +74,7 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
       {canScrollRight && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover:opacity-100 translate-x-1/2"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 translate-x-1/2"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
