@@ -245,6 +245,10 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     {heroCSS.texture && (
                       <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.4 }} />
                     )}
+                    {/* Flag image overlay */}
+                    {wrestler.hero_style?.type === 'flag' && (
+                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                    )}
                     {/* Feathered edges — blend into hero bg */}
                     <div className="absolute inset-0" style={{
                       background: 'radial-gradient(ellipse 80% 90% at 60% 55%, transparent 30%, #1c2228 75%)',
@@ -281,6 +285,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     <div className="absolute inset-0" style={{ background: heroCSS.background }} />
                     {heroCSS.texture && (
                       <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+                    )}
+                    {wrestler.hero_style?.type === 'flag' && (
+                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
                     )}
                   </div>
                 )}
