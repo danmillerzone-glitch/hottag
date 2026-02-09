@@ -150,29 +150,18 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
   // Compute hero background from wrestler's theme
   const heroCSS = getHeroCSS(wrestler.hero_style || null)
+  const hasTheme = !!wrestler.hero_style
 
   return (
     <div className="min-h-screen">
       {/* ======================================== */}
       {/* HERO */}
       {/* ======================================== */}
-      <div className="relative overflow-hidden" style={{ background: heroCSS.background }}>
-        {/* Flag image background (if flag theme and image exists) */}
-        {heroCSS.flagImage && (
-          <div className="absolute inset-0 z-[0]">
-            <Image src={heroCSS.flagImage} alt="" fill className="object-cover opacity-30" unoptimized
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          </div>
-        )}
-
-        {/* Texture overlay (theme texture or default diagonal) */}
-        {heroCSS.texture ? (
-          <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
-        ) : (
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
-          }} />
-        )}
+      <div className="relative overflow-hidden bg-background-secondary">
+        {/* Diagonal texture */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
+        }} />
 
         {/* Bottom fade gradient — overlays render image to mask cutoff */}
         <div className="absolute bottom-0 left-0 right-0 h-48 z-[3] pointer-events-none" style={{
@@ -249,8 +238,20 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
               {/* Right: Wrestler render image */}
               <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
+                {/* Theme backdrop — only behind the render */}
+                {hasTheme && (
+                  <div className="absolute inset-0 rounded-t-3xl overflow-hidden">
+                    <div className="absolute inset-0" style={{ background: heroCSS.background }} />
+                    {heroCSS.texture && (
+                      <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+                    )}
+                    {/* Soft edge blend into hero bg */}
+                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background-secondary/80" />
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background-secondary to-transparent" />
+                  </div>
+                )}
                 {hasRender ? (
-                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
+                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom relative z-[1]" priority unoptimized />
                 ) : hasPhoto ? (
                   <div className="absolute bottom-0 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
                     <div className="w-full h-full rounded-2xl bg-background-tertiary overflow-hidden border-2 border-border">
@@ -273,6 +274,15 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-background-tertiary to-background-secondary border border-border/50">
               {/* Image */}
               <div className="relative h-72 flex items-end justify-center overflow-hidden">
+                {/* Theme backdrop for mobile */}
+                {hasTheme && (
+                  <div className="absolute inset-0 z-[0]">
+                    <div className="absolute inset-0" style={{ background: heroCSS.background }} />
+                    {heroCSS.texture && (
+                      <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+                    )}
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-transparent to-transparent z-[1]" />
                 {hasRender ? (
                   <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />

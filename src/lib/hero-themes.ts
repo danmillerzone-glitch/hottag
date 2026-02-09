@@ -155,7 +155,7 @@ export function getFlagImagePath(countryCode: string): string {
 export const ALL_THEMES = [...GRADIENT_THEMES, ...TEXTURE_THEMES, ...FLAG_THEMES]
 
 // ─── GENERATE CSS FOR A HERO STYLE ────────────────────────────────────────
-export function getHeroCSS(style: HeroStyle | null): { background: string; texture?: string; flagImage?: string } {
+export function getHeroCSS(style: HeroStyle | null): { background: string; texture?: string } {
   if (!style) return { background: '#1c2228' }
 
   switch (style.type) {
@@ -166,10 +166,7 @@ export function getHeroCSS(style: HeroStyle | null): { background: string; textu
       return { background: getGradientCSS(style.value) }
 
     case 'flag':
-      return {
-        background: getFlagCSS(style.value),
-        flagImage: `/flags/${style.value.toLowerCase()}.png`,
-      }
+      return { background: getFlagCSS(style.value) }
 
     case 'texture':
       return getTextureCSS(style.value)
