@@ -241,13 +241,15 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
                   <div className="absolute -inset-16 -right-32 overflow-hidden">
-                    <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.6 }} />
-                    {heroCSS.texture && (
-                      <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.4 }} />
-                    )}
-                    {/* Flag image overlay */}
-                    {wrestler.hero_style?.type === 'flag' && (
-                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                    {wrestler.hero_style?.type === 'flag' ? (
+                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.6 }} />
+                        {heroCSS.texture && (
+                          <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.4 }} />
+                        )}
+                      </>
                     )}
                     {/* Feathered edges — blend into hero bg */}
                     <div className="absolute inset-0" style={{
@@ -282,12 +284,15 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Theme backdrop for mobile */}
                 {hasTheme && (
                   <div className="absolute inset-0 z-[0]">
-                    <div className="absolute inset-0" style={{ background: heroCSS.background }} />
-                    {heroCSS.texture && (
-                      <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
-                    )}
-                    {wrestler.hero_style?.type === 'flag' && (
-                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                    {wrestler.hero_style?.type === 'flag' ? (
+                      <img src={`/flags/${wrestler.hero_style.value.toLowerCase()}.png`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <div className="absolute inset-0" style={{ background: heroCSS.background }} />
+                        {heroCSS.texture && (
+                          <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+                        )}
+                      </>
                     )}
                   </div>
                 )}
