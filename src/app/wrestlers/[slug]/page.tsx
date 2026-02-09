@@ -241,8 +241,8 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
                   <div className="absolute -inset-8 -right-40 overflow-visible" style={{
-                    maskImage: 'radial-gradient(ellipse 65% 75% at 60% 50%, black 20%, transparent 70%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 65% 75% at 60% 50%, black 20%, transparent 70%)',
+                    maskImage: 'radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 65%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 65%)',
                   }}>
                     {wrestler.hero_style?.type === 'flag' ? (
                       <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
