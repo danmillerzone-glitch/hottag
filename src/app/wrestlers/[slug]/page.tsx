@@ -238,16 +238,17 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
               {/* Right: Wrestler render image */}
               <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
-                {/* Theme backdrop — only behind the render */}
+                {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
-                  <div className="absolute inset-0 rounded-t-3xl overflow-hidden">
-                    <div className="absolute inset-0" style={{ background: heroCSS.background }} />
+                  <div className="absolute -inset-16 -right-32 overflow-hidden">
+                    <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.6 }} />
                     {heroCSS.texture && (
-                      <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+                      <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.4 }} />
                     )}
-                    {/* Soft edge blend into hero bg */}
-                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background-secondary/80" />
-                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background-secondary to-transparent" />
+                    {/* Feathered edges — blend into hero bg */}
+                    <div className="absolute inset-0" style={{
+                      background: 'radial-gradient(ellipse 80% 90% at 60% 55%, transparent 30%, #1c2228 75%)',
+                    }} />
                   </div>
                 )}
                 {hasRender ? (
