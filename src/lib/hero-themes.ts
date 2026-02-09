@@ -148,7 +148,7 @@ export const FLAG_THEMES: ThemeOption[] = [
 
 // Flag image path helper — checks for custom uploaded flag first
 export function getFlagImagePath(countryCode: string): string {
-  return `/flags/${countryCode.toLowerCase()}.png`
+  return `/flags/${countryCode.toLowerCase()}.jpg`
 }
 
 // ─── ALL THEMES ────────────────────────────────────────
