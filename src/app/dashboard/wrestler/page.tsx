@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import ImageCropUploader from '@/components/ImageCropUploader'
+import HeroThemePicker from '@/components/HeroThemePicker'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -395,6 +396,23 @@ export default function WrestlerDashboardPage() {
             />
           </label>
           <p className="text-xs text-foreground-muted mt-3">Transparent PNG required. Recommended size: 800×1000px or larger.</p>
+        </section>
+
+        {/* Page Theme */}
+        <section className="card p-6">
+          <HeroThemePicker
+            currentStyle={wrestler.hero_style || null}
+            onSelect={async (style) => {
+              try {
+                const updated = await updateWrestlerProfile(wrestler.id, { hero_style: style })
+                setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, hero_style: updated.hero_style } })
+              } catch (err) {
+                console.error('Error updating theme:', err)
+                alert('Failed to update theme.')
+              }
+            }}
+          />
+          <p className="text-sm text-foreground-muted mt-4">Choose a background theme for your profile hero section. This replaces the default grey background behind your hero image.</p>
         </section>
 
         {/* Bio & Details */}

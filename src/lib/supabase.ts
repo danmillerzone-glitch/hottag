@@ -58,6 +58,7 @@ export interface Wrestler {
   patreon_url: string | null
   countries_wrestled: string[] | null
   pwi_ranking: number | null
+  hero_style: { type: string; value: string; accent?: string } | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number

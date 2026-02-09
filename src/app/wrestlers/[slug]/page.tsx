@@ -8,6 +8,7 @@ import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 import ShareButton from '@/components/ShareButton'
+import { getHeroCSS } from '@/lib/hero-themes'
 
 function XIcon({ className }: { className?: string }) {
   return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>)
@@ -147,16 +148,23 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
     wrestler.patreon_url && { href: wrestler.patreon_url, icon: PatreonIcon },
   ].filter(Boolean) as { href: string; icon: any }[]
 
+  // Compute hero background from wrestler's theme
+  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+
   return (
     <div className="min-h-screen">
       {/* ======================================== */}
       {/* HERO */}
       {/* ======================================== */}
-      <div className="relative overflow-hidden bg-background-secondary">
-        {/* Diagonal texture */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
-        }} />
+      <div className="relative overflow-hidden" style={{ background: heroCSS.background }}>
+        {/* Texture overlay (theme texture or default diagonal) */}
+        {heroCSS.texture ? (
+          <div className="absolute inset-0" style={{ background: heroCSS.texture }} />
+        ) : (
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
+          }} />
+        )}
 
         {/* Bottom fade gradient — overlays render image to mask cutoff */}
         <div className="absolute bottom-0 left-0 right-0 h-48 z-[3] pointer-events-none" style={{
