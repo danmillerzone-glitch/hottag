@@ -253,13 +253,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     )}
                     {/* Multi-layer feathered edges for seamless blending */}
                     <div className="absolute inset-0" style={{
-                      background: 'radial-gradient(ellipse 70% 80% at 55% 50%, transparent 20%, #1c2228 65%)',
-                    }} />
-                    <div className="absolute inset-0" style={{
-                      background: 'linear-gradient(to right, #1c2228 0%, transparent 30%, transparent 85%, #1c2228 100%)',
-                    }} />
-                    <div className="absolute inset-0" style={{
-                      background: 'linear-gradient(to bottom, #1c2228 0%, transparent 20%, transparent 75%, #1c2228 100%)',
+                      background: 'radial-gradient(ellipse 60% 70% at 55% 50%, transparent 25%, #1c2228 70%)',
                     }} />
                   </div>
                 )}
