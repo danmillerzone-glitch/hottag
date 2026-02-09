@@ -240,7 +240,10 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
-                  <div className="absolute -inset-32 -right-40 overflow-hidden">
+                  <div className="absolute -inset-8 -right-40 overflow-visible" style={{
+                    maskImage: 'radial-gradient(ellipse 65% 75% at 60% 50%, black 20%, transparent 70%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 65% 75% at 60% 50%, black 20%, transparent 70%)',
+                  }}>
                     {wrestler.hero_style?.type === 'flag' ? (
                       <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
                     ) : (
@@ -251,22 +254,6 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                         )}
                       </>
                     )}
-                    {/* Radial vignette */}
-                    <div className="absolute inset-0" style={{
-                      background: 'radial-gradient(ellipse 70% 80% at 55% 50%, transparent 20%, #1c2228 65%)',
-                    }} />
-                    {/* Left edge fade — wide and smooth */}
-                    <div className="absolute inset-0" style={{
-                      background: 'linear-gradient(to right, #1c2228 0%, #1c2228 8%, transparent 35%)',
-                    }} />
-                    {/* Top edge fade */}
-                    <div className="absolute inset-0" style={{
-                      background: 'linear-gradient(to bottom, #1c2228 0%, transparent 25%)',
-                    }} />
-                    {/* Bottom edge fade */}
-                    <div className="absolute inset-0" style={{
-                      background: 'linear-gradient(to top, #1c2228 0%, transparent 25%)',
-                    }} />
                   </div>
                 )}
                 {hasRender ? (
