@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
+import EventCarousel from '@/components/EventCarousel'
+import HeroSlideshow from '@/components/HeroSlideshow'
 import NearYouSection from '@/components/NearYouSection'
 import ThisWeekendSection from '@/components/ThisWeekendSection'
 import RecommendedSection from '@/components/RecommendedSection'
@@ -29,6 +31,7 @@ export default function HomePage() {
   const [followedEvents, setFollowedEvents] = useState<any[]>([])
   const [hotEvents, setHotEvents] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
+  const [heroImages, setHeroImages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -48,6 +51,12 @@ export default function HomePage() {
       .order('event_date', { ascending: true })
       .limit(20)
 
+    const heroPromise = supabase
+      .from('hero_slides')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
     // User-specific queries (fire all at once if logged in)
     const attendingPromise = user
       ? supabase.from('user_event_attendance').select('status, event_id').eq('user_id', user.id).order('created_at', { ascending: false })
@@ -62,12 +71,16 @@ export default function HomePage() {
       : null
 
     // Await all initial queries together
-    const [upcomingRes, attendingRes, fwRes, fpRes] = await Promise.all([
+    const [upcomingRes, heroRes, attendingRes, fwRes, fpRes] = await Promise.all([
       upcomingPromise,
+      heroPromise,
       attendingPromise,
       followedWrestlersPromise,
       followedPromosPromise,
     ])
+
+    // Process hero slides
+    if (heroRes.data) setHeroImages(heroRes.data)
 
     // Process upcoming events
     const upcoming = upcomingRes.data
@@ -214,32 +227,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-background-secondary to-background py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-4">
-              Never miss another{' '}
-              <span className="text-accent">indie show</span>
-            </h1>
-            <p className="text-lg md:text-xl text-foreground-muted mb-8">
-              Discover wrestling events around the world. Follow your favorite wrestlers. 
-              Connect with the indie wrestling community.
-            </p>
-            
-            {/* Quick actions */}
-            <div className="flex flex-wrap gap-3">
-              <Link href="/map" className="btn btn-primary">
-                <MapPin className="w-4 h-4 mr-2" />
-                Find Events Near Me
-              </Link>
-              <Link href="/events" className="btn btn-secondary">
-                <Calendar className="w-4 h-4 mr-2" />
-                Browse All Events
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSlideshow images={heroImages} />
 
       {/* Personalized Section for Logged-in Users */}
       {!authLoading && user && (
@@ -258,20 +246,18 @@ export default function HomePage() {
                   </Link>
                 </div>
                 
-                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {myEvents.slice(0, 5).map((event) => (
-                    <div key={event.id} className="relative">
-                      <PosterEventCard event={event} />
-                      <span className={`absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-bold z-10 ${
-                        event.attendance_status === 'attending' 
-                          ? 'bg-green-500/90 text-white' 
-                          : 'bg-pink-500/90 text-white'
-                      }`}>
-                        {event.attendance_status === 'attending' ? 'GOING' : 'INTERESTED'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <EventCarousel
+                  events={myEvents.slice(0, 10)}
+                  badge={(event) => (
+                    <span className={`absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-bold z-10 ${
+                      event.attendance_status === 'attending'
+                        ? 'bg-green-500/90 text-white'
+                        : 'bg-pink-500/90 text-white'
+                    }`}>
+                      {event.attendance_status === 'attending' ? 'GOING' : 'INTERESTED'}
+                    </span>
+                  )}
+                />
               </div>
             </section>
           )}
@@ -287,11 +273,7 @@ export default function HomePage() {
                   </h2>
                 </div>
                 
-                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {followedEvents.map((event) => (
-                    <PosterEventCard key={event.id} event={event} />
-                  ))}
-                </div>
+                <EventCarousel events={followedEvents} />
               </div>
             </section>
           )}
@@ -343,11 +325,7 @@ export default function HomePage() {
               </h2>
             </div>
             
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {hotEvents.map((event) => (
-                <PosterEventCard key={event.id} event={event} />
-              ))}
-            </div>
+            <EventCarousel events={hotEvents} />
           </div>
         </section>
       )}
@@ -366,16 +344,9 @@ export default function HomePage() {
           </div>
           
           {loading ? (
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <PosterEventCardSkeleton key={i} />
-              ))}
-            </div>
+            <EventCarousel events={[]} loading={true} skeletonCount={8} />
           ) : (
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {upcomingEvents.slice(0, 15).map((event) => (
-                <PosterEventCard key={event.id} event={event} />
-              ))}
+            <EventCarousel events={upcomingEvents.slice(0, 20)} />
             </div>
           )}
         </div>

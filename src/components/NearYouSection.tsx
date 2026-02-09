@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
+import EventCarousel from '@/components/EventCarousel'
 import { MapPin, Navigation, ChevronRight, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
@@ -131,22 +132,16 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <PosterEventCardSkeleton key={i} />
-            ))}
-          </div>
+          <EventCarousel events={[]} loading={true} skeletonCount={6} />
         ) : (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {events.slice(0, 8).map((event) => (
-              <div key={event.id} className="relative">
-                <PosterEventCard event={event} />
-                <span className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
-                  {event.distance < 1 ? '<1' : Math.round(event.distance)} mi
-                </span>
-              </div>
-            ))}
-          </div>
+          <EventCarousel
+            events={events.slice(0, 12)}
+            badge={(event) => (
+              <span className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 z-10">
+                {event.distance < 1 ? '<1' : Math.round(event.distance)} mi
+              </span>
+            )}
+          />
         )}
 
         {events.length > 8 && (

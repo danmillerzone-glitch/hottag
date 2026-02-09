@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
+import EventCarousel from '@/components/EventCarousel'
 import { Sparkles, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -164,17 +165,9 @@ export default function RecommendedSection() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <PosterEventCardSkeleton key={i} />
-            ))}
-          </div>
+          <EventCarousel events={[]} loading={true} skeletonCount={6} />
         ) : (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {events.map((event) => (
-              <PosterEventCard key={event.id} event={event} />
-            ))}
-          </div>
+          <EventCarousel events={events} />
         )}
       </div>
     </section>

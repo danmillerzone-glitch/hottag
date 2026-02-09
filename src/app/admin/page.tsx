@@ -35,10 +35,11 @@ import {
   Building2, Calendar, Search, Trash2, ExternalLink,
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
-  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox,
+  Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
+  ChevronUp, ChevronDown, Edit2,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import' | 'requests'
+type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -79,6 +80,7 @@ export default function AdminPage() {
     { id: 'merge', label: 'Merge', icon: GitMerge },
     { id: 'import', label: 'Bulk Import', icon: Upload },
     { id: 'requests', label: 'Page Requests', icon: Inbox },
+    { id: 'hero', label: 'Hero Images', icon: ImageIcon },
   ]
 
   return (
@@ -128,6 +130,7 @@ export default function AdminPage() {
         {activeTab === 'merge' && <MergeTab />}
         {activeTab === 'import' && <ImportTab />}
         {activeTab === 'requests' && <PageRequestsTab />}
+        {activeTab === 'hero' && <HeroSlidesTab />}
       </div>
     </div>
   )
@@ -2355,6 +2358,203 @@ function PageRequestsTab() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// HERO SLIDES TAB
+// ============================================
+
+function HeroSlidesTab() {
+  const [slides, setSlides] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [editingSlide, setEditingSlide] = useState<any>(null)
+
+  useEffect(() => { loadSlides() }, [])
+
+  async function loadSlides() {
+    setLoading(true)
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const { data } = await supabase
+      .from('hero_slides')
+      .select('*')
+      .order('sort_order', { ascending: true })
+    setSlides(data || [])
+    setLoading(false)
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const fileName = `hero-${Date.now()}.${file.name.split('.').pop()}`
+      const { error: uploadErr } = await supabase.storage
+        .from('hero-slides')
+        .upload(fileName, file)
+      if (uploadErr) throw uploadErr
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('hero-slides')
+        .getPublicUrl(fileName)
+
+      const { error: insertErr } = await supabase
+        .from('hero_slides')
+        .insert({
+          image_url: publicUrl,
+          sort_order: slides.length,
+          is_active: true,
+        })
+      if (insertErr) throw insertErr
+      await loadSlides()
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message}`)
+    }
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this hero slide?')) return
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    await supabase.from('hero_slides').delete().eq('id', id)
+    setSlides(slides.filter(s => s.id !== id))
+  }
+
+  async function handleToggleActive(id: string, isActive: boolean) {
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    await supabase.from('hero_slides').update({ is_active: !isActive }).eq('id', id)
+    setSlides(slides.map(s => s.id === id ? { ...s, is_active: !isActive } : s))
+  }
+
+  async function handleSaveEdit() {
+    if (!editingSlide) return
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const { error } = await supabase.from('hero_slides').update({
+      title: editingSlide.title || null,
+      subtitle: editingSlide.subtitle || null,
+      link_url: editingSlide.link_url || null,
+      sort_order: editingSlide.sort_order ?? 0,
+    }).eq('id', editingSlide.id)
+    if (error) { alert(error.message); return }
+    setSlides(slides.map(s => s.id === editingSlide.id ? editingSlide : s))
+    setEditingSlide(null)
+  }
+
+  async function handleMove(id: string, direction: 'up' | 'down') {
+    const idx = slides.findIndex(s => s.id === id)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= slides.length) return
+
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const a = slides[idx], b = slides[swapIdx]
+    await Promise.all([
+      supabase.from('hero_slides').update({ sort_order: b.sort_order }).eq('id', a.id),
+      supabase.from('hero_slides').update({ sort_order: a.sort_order }).eq('id', b.id),
+    ])
+
+    const newSlides = [...slides]
+    const tempOrder = a.sort_order
+    newSlides[idx] = { ...a, sort_order: b.sort_order }
+    newSlides[swapIdx] = { ...b, sort_order: tempOrder }
+    newSlides.sort((x: any, y: any) => x.sort_order - y.sort_order)
+    setSlides(newSlides)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <ImageIcon className="w-5 h-5" /> Hero Slides ({slides.length})
+        </h2>
+        <label className={`btn btn-primary text-sm cursor-pointer ${uploading ? 'opacity-50' : ''}`}>
+          {uploading ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Uploading...</> : <><Upload className="w-4 h-4 mr-1.5" /> Add Slide</>}
+          <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+        </label>
+      </div>
+
+      <p className="text-sm text-foreground-muted mb-4">
+        Upload hero images for the homepage slideshow. Recommended size: 1920x800px or wider. Images cycle every 5 seconds.
+      </p>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-foreground-muted" /></div>
+      ) : slides.length === 0 ? (
+        <div className="text-center py-12 text-foreground-muted">
+          <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p>No hero slides yet. Upload one to get started.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {slides.map((slide: any, idx: number) => (
+            <div key={slide.id} className={`card p-4 ${!slide.is_active ? 'opacity-50' : ''}`}>
+              <div className="flex gap-4">
+                <div className="w-48 h-24 rounded-lg overflow-hidden bg-background-tertiary flex-shrink-0 relative">
+                  <img src={slide.image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-sm">{slide.title || 'No title'}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${slide.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {slide.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  {slide.subtitle && <p className="text-xs text-foreground-muted truncate">{slide.subtitle}</p>}
+                  {slide.link_url && <p className="text-xs text-accent truncate">{slide.link_url}</p>}
+                  <p className="text-xs text-foreground-muted mt-1">Order: {slide.sort_order}</p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => handleMove(slide.id, 'up')} disabled={idx === 0} className="p-2 rounded hover:bg-background-tertiary disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
+                  <button onClick={() => handleMove(slide.id, 'down')} disabled={idx === slides.length - 1} className="p-2 rounded hover:bg-background-tertiary disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
+                  <button onClick={() => setEditingSlide({ ...slide })} className="p-2 rounded hover:bg-background-tertiary text-foreground-muted hover:text-accent"><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleToggleActive(slide.id, slide.is_active)} className="p-2 rounded hover:bg-background-tertiary text-foreground-muted">
+                    {slide.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => handleDelete(slide.id)} className="p-2 rounded hover:bg-red-500/10 text-foreground-muted hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {editingSlide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-background-secondary border border-border rounded-xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="font-display font-bold">Edit Slide</h3>
+              <button onClick={() => setEditingSlide(null)} className="p-1.5 rounded-lg hover:bg-background-tertiary"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Title</label>
+                <input type="text" value={editingSlide.title || ''} onChange={e => setEditingSlide({ ...editingSlide, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-accent" placeholder="Optional headline" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Subtitle</label>
+                <input type="text" value={editingSlide.subtitle || ''} onChange={e => setEditingSlide({ ...editingSlide, subtitle: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-accent" placeholder="Optional description" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Link URL</label>
+                <input type="text" value={editingSlide.link_url || ''} onChange={e => setEditingSlide({ ...editingSlide, link_url: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-accent" placeholder="/events/some-event or https://..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Sort Order</label>
+                <input type="number" value={editingSlide.sort_order} onChange={e => setEditingSlide({ ...editingSlide, sort_order: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-accent" />
+              </div>
+              <button onClick={handleSaveEdit} className="w-full btn btn-primary"><Save className="w-4 h-4 mr-1.5" /> Save Changes</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
