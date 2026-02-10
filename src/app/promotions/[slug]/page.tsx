@@ -6,6 +6,7 @@ import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 import RosterCarousel from '@/components/RosterCarousel'
+import QRCodeButton from '@/components/QRCodeButton'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -222,6 +223,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   promotionName={promotion.name}
                   initialFollowerCount={followerCount}
                 />
+                <QRCodeButton url={`https://hottag.app/promotions/${promotion.slug}`} name={promotion.name} />
 
                 <ClaimPromotionButton
                   promotionId={promotion.id}

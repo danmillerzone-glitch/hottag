@@ -31,6 +31,7 @@ import ShareButton from '@/components/ShareButton'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
+import CouponCodeButton from '@/components/CouponCodeButton'
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
@@ -289,6 +290,9 @@ export default async function EventPage({ params }: EventPageProps) {
                 Get Tickets
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
+            )}
+            {event.coupon_code && (
+              <CouponCodeButton code={event.coupon_code} label={event.coupon_label || 'Use code for discount'} />
             )}
             <StreamingLinks eventId={event.id} />
             <div className="ml-auto">

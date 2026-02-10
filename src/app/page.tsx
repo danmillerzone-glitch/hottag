@@ -45,7 +45,12 @@ export default function HomePage() {
     // Fire independent queries in parallel
     const upcomingPromise = supabase
       .from('events_with_counts')
-      .select(`*, promotions (id, name, slug, logo_url)`)
+      .select(`
+        id, name, event_date, city, state, country, poster_url,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count,
+        promotions (id, name, slug, logo_url)
+      `)
       .gte('event_date', today)
       .eq('status', 'upcoming')
       .order('event_date', { ascending: true })
@@ -53,7 +58,7 @@ export default function HomePage() {
 
     const heroPromise = supabase
       .from('hero_slides')
-      .select('*')
+      .select('id, image_url, title, subtitle, link_url')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
 
@@ -113,7 +118,12 @@ export default function HomePage() {
         const eventIds = attending.map((a: any) => a.event_id)
         myEventsPromise = Promise.resolve(supabase
           .from('events_with_counts')
-          .select(`*, promotions (id, name, slug, logo_url)`)
+          .select(`
+        id, name, event_date, city, state, country, poster_url, promotion_id,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count,
+        promotions (id, name, slug, logo_url)
+      `)
           .in('id', eventIds))
         secondWave.push(myEventsPromise)
       }
@@ -124,7 +134,12 @@ export default function HomePage() {
         const promoIds = followedPromos.map((f: any) => f.promotion_id)
         promoEventsPromise = Promise.resolve(supabase
           .from('events_with_counts')
-          .select(`*, promotions (id, name, slug, logo_url)`)
+          .select(`
+        id, name, event_date, city, state, country, poster_url, promotion_id,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count,
+        promotions (id, name, slug, logo_url)
+      `)
           .in('promotion_id', promoIds)
           .gte('event_date', today)
           .eq('status', 'upcoming')
@@ -193,7 +208,12 @@ export default function HomePage() {
         if (eventIds.length > 0) {
           const { data: wrestlerEvents } = await supabase
             .from('events_with_counts')
-            .select(`*, promotions (id, name, slug, logo_url)`)
+            .select(`
+        id, name, event_date, city, state, country, poster_url, promotion_id,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count,
+        promotions (id, name, slug, logo_url)
+      `)
             .in('id', eventIds)
             .gte('event_date', today)
             .eq('status', 'upcoming')

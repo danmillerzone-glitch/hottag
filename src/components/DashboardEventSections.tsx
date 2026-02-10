@@ -24,13 +24,15 @@ export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: 
   const [priceMax, setPriceMax] = useState(event.ticket_price_max?.toString() || '')
   const [isFree, setIsFree] = useState(event.is_free || false)
   const [isSoldOut, setIsSoldOut] = useState(event.is_sold_out || false)
+  const [couponCode, setCouponCode] = useState(event.coupon_code || '')
+  const [couponLabel, setCouponLabel] = useState(event.coupon_label || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     setSaving(true); setSaved(false)
     try {
-      const updated = await updateEvent(event.id, { ticket_url: ticketUrl || null, ticket_price_min: priceMin ? parseFloat(priceMin) : null, ticket_price_max: priceMax ? parseFloat(priceMax) : null, is_free: isFree, is_sold_out: isSoldOut })
+      const updated = await updateEvent(event.id, { ticket_url: ticketUrl || null, ticket_price_min: priceMin ? parseFloat(priceMin) : null, ticket_price_max: priceMax ? parseFloat(priceMax) : null, is_free: isFree, is_sold_out: isSoldOut, coupon_code: couponCode || null, coupon_label: couponLabel || null })
       onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
     } catch (err) { console.error('Error saving:', err) }
     setSaving(false)
@@ -69,6 +71,16 @@ export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: 
             <input type="checkbox" checked={isSoldOut} onChange={(e) => setIsSoldOut(e.target.checked)} className="w-4 h-4 rounded border-border bg-background-tertiary text-accent focus:ring-accent" />
             <span className="text-sm">Sold out</span>
           </label>
+        </div>
+        <div className="border-t border-border pt-4 mt-2">
+          <label className="block text-sm font-medium mb-1.5">Coupon Code</label>
+          <div className="grid grid-cols-2 gap-4">
+            <input type="text" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="e.g. HOTTAG20"
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors font-mono uppercase" />
+            <input type="text" value={couponLabel} onChange={(e) => setCouponLabel(e.target.value)} placeholder="Use code for 20% off"
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+          <p className="text-xs text-foreground-muted mt-1.5">Add a discount code that fans can copy with one click on the event page.</p>
         </div>
         <div className="flex justify-end pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">

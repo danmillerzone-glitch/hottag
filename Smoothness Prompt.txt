@@ -1,0 +1,14 @@
+Please perform a performance and UX smoothness pass on the existing (your app or website).
+Goals:
+    •    Reduce unnecessary Jetpack Compose recompositions
+    •    Improve scrolling and touch responsiveness
+    •    Ensure Room queries are efficient and scoped
+    •    Improve perceived startup speed
+Constraints:
+    •    Do not change app behavior or UI design
+    •    Do not refactor architecture
+    •    Focus on Compose, ViewModel, and Room optimizations
+Deliverables:
+    •    Identify specific bottlenecks
+    •    Provide targeted code changes only where necessary
+    •    Explain briefly why each change improves performance

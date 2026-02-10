@@ -18,6 +18,7 @@ import {
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import ImageCropUploader from '@/components/ImageCropUploader'
 import HeroThemePicker from '@/components/HeroThemePicker'
+import MerchManager from '@/components/MerchManager'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -70,6 +71,7 @@ export default function WrestlerDashboardPage() {
   const [merchUrl, setMerchUrl] = useState('')
   const [blueskyHandle, setBlueskyHandle] = useState('')
   const [patreonUrl, setPatreonUrl] = useState('')
+  const [featuredVideoUrl, setFeaturedVideoUrl] = useState('')
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
   const [signatureMoves, setSignatureMoves] = useState<string[]>([])
   const [newMove, setNewMove] = useState('')
@@ -115,6 +117,7 @@ export default function WrestlerDashboardPage() {
       setMerchUrl(data.wrestler.merch_url || '')
       setBlueskyHandle(data.wrestler.bluesky_handle || '')
       setPatreonUrl(data.wrestler.patreon_url || '')
+      setFeaturedVideoUrl(data.wrestler.featured_video_url || '')
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
     } else {
@@ -149,6 +152,7 @@ export default function WrestlerDashboardPage() {
         merch_url: merchUrl || null,
         bluesky_handle: blueskyHandle || null,
         patreon_url: patreonUrl || null,
+        featured_video_url: featuredVideoUrl || null,
         countries_wrestled: countriesWrestled,
         signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
@@ -429,6 +433,27 @@ export default function WrestlerDashboardPage() {
         </section>
 
         {/* Bio & Details */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Youtube className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-display font-bold">Featured Video</h2>
+          </div>
+          <input
+            type="text"
+            value={featuredVideoUrl}
+            onChange={(e) => setFeaturedVideoUrl(e.target.value)}
+            placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
+            className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+          />
+          <p className="text-sm text-foreground-muted mt-2">
+            Paste a YouTube link to embed on your profile. Great for entrance videos, highlight reels, or promos.
+          </p>
+        </section>
+
+        {/* Merch Gallery */}
+        <MerchManager wrestlerId={wrestler.id} />
+
+        {/* About */}
         <section className="card p-6">
           <div className="flex items-center gap-2 mb-5">
             <User className="w-5 h-5 text-accent" />

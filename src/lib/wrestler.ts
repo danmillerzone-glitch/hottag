@@ -232,6 +232,7 @@ export async function updateWrestlerProfile(wrestlerId: string, updates: {
   bluesky_handle?: string | null
   patreon_url?: string | null
   hero_style?: { type: string; value: string; accent?: string } | null
+  featured_video_url?: string | null
 }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()

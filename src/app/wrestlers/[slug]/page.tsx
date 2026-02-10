@@ -8,6 +8,9 @@ import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 import ShareButton from '@/components/ShareButton'
+import QRCodeButton from '@/components/QRCodeButton'
+import YouTubeEmbed from '@/components/YouTubeEmbed'
+import MerchGallery from '@/components/MerchGallery'
 import { getHeroCSS } from '@/lib/hero-themes'
 
 function XIcon({ className }: { className?: string }) {
@@ -128,6 +131,13 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const groups = await getWrestlerGroups(wrestler.id)
   const wrestlerPromotions = await getWrestlerPromotions(wrestler.id)
 
+  // Fetch merch items
+  const { data: merchItems } = await supabase
+    .from('wrestler_merch_items')
+    .select('id, title, image_url, link_url, price')
+    .eq('wrestler_id', wrestler.id)
+    .order('sort_order', { ascending: true })
+
   const today = new Date().toISOString().split('T')[0]
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
@@ -198,6 +208,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     text={`Check out ${wrestler.name} on Hot Tag`}
                     url={`https://hottag.app/wrestlers/${wrestler.slug}`}
                   />
+                  <QRCodeButton url={`https://hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
                   {socialIcons.length > 0 && (
                     <div className="flex items-center gap-1">
                       {socialIcons.map((link, i) => (
@@ -332,9 +343,10 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   />
                 </div>
 
-                {/* Social icons — own row on mobile */}
-                {socialIcons.length > 0 && (
+                {/* Social icons + QR — own row on mobile */}
+                {(socialIcons.length > 0 || true) && (
                   <div className="flex items-center gap-1 flex-wrap mb-3">
+                    <QRCodeButton url={`https://hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
                     {socialIcons.map((link, i) => (
                       <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                         className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
@@ -556,6 +568,24 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </div>
                 )
               })()}
+
+              {/* Featured Video */}
+              {wrestler.featured_video_url && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
+                    <Youtube className="w-5 h-5 text-red-500" />
+                    Featured Video
+                  </h2>
+                  <YouTubeEmbed url={wrestler.featured_video_url} />
+                </div>
+              )}
+
+              {/* Merch Gallery */}
+              {merchItems && merchItems.length > 0 && (
+                <div className="mb-6">
+                  <MerchGallery items={merchItems} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -581,6 +611,20 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 ))}
               </div>
             </div>
+          )}
+          {/* Featured Video - Mobile */}
+          {wrestler.featured_video_url && (
+            <div>
+              <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
+                <Youtube className="w-5 h-5 text-red-500" />
+                Featured Video
+              </h2>
+              <YouTubeEmbed url={wrestler.featured_video_url} />
+            </div>
+          )}
+          {/* Merch Gallery - Mobile */}
+          {merchItems && merchItems.length > 0 && (
+            <MerchGallery items={merchItems} />
           )}
           {wrestler.verification_status !== 'verified' && (
             <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />

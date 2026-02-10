@@ -58,7 +58,9 @@ export default function ThisWeekendSection() {
     const { data } = await supabase
       .from('events_with_counts')
       .select(`
-        *,
+        id, name, event_date, city, state, country, poster_url,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count,
         promotions (id, name, slug, logo_url)
       `)
       .gte('event_date', startStr)

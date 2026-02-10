@@ -59,6 +59,7 @@ export interface Wrestler {
   countries_wrestled: string[] | null
   pwi_ranking: number | null
   hero_style: { type: string; value: string; accent?: string } | null
+  featured_video_url: string | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number
@@ -93,6 +94,8 @@ export interface Event {
   attending_count: number
   interested_count: number
   streaming_url: string | null
+  coupon_code: string | null
+  coupon_label: string | null
   created_at: string
   // Joined fields
   promotion?: Promotion

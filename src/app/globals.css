@@ -4,6 +4,20 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
+/* Scrollbar-hide utility for carousels */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* GPU-accelerate carousel scrolling */
+.scroll-smooth {
+  -webkit-overflow-scrolling: touch;
+}
+
 :root {
   --background: #14181c;
   --background-secondary: #1c2228;

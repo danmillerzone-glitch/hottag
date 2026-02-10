@@ -66,7 +66,9 @@ export default function EventsPage() {
     let query = supabase
       .from('events_with_counts')
       .select(`
-        *,
+        id, name, event_date, city, state, country, poster_url, region,
+        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+        real_attending_count, real_interested_count, latitude, longitude,
         promotions (
           id,
           name,

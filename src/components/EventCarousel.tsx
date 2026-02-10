@@ -15,12 +15,19 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
+  const rafRef = useRef<number>(0)
 
   function checkScroll() {
-    const el = scrollRef.current
-    if (!el) return
-    setCanScrollLeft(el.scrollLeft > 4)
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+    // Debounce via rAF to avoid setState on every scroll pixel
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      const el = scrollRef.current
+      if (!el) return
+      const left = el.scrollLeft > 4
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 4
+      setCanScrollLeft(prev => prev !== left ? left : prev)
+      setCanScrollRight(prev => prev !== right ? right : prev)
+    })
   }
 
   useEffect(() => {
@@ -84,7 +91,7 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ willChange: 'scroll-position' }}
       >
         {events.map((event) => (
           <div key={event.id} className="flex-shrink-0 w-[240px] sm:w-[270px] lg:w-[300px] relative">

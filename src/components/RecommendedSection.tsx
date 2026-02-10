@@ -25,18 +25,18 @@ export default function RecommendedSection() {
   async function fetchRecommendations() {
     setLoading(true)
     const today = new Date().toISOString().split('T')[0]
+    const eventCols = `
+      id, name, event_date, city, state, country, poster_url, promotion_id,
+      status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
+      real_attending_count, real_interested_count,
+      promotions (id, name, slug, logo_url)
+    `
 
-    // Get user's followed promotions
-    const { data: followedPromos } = await supabase
-      .from('user_follows_promotion')
-      .select('promotion_id')
-      .eq('user_id', user!.id)
-
-    // Get user's attended events to find patterns
-    const { data: attended } = await supabase
-      .from('user_event_attendance')
-      .select('event_id')
-      .eq('user_id', user!.id)
+    // Fire first two queries in parallel
+    const [{ data: followedPromos }, { data: attended }] = await Promise.all([
+      supabase.from('user_follows_promotion').select('promotion_id').eq('user_id', user!.id),
+      supabase.from('user_event_attendance').select('event_id').eq('user_id', user!.id),
+    ])
 
     // Get regions of followed promotions for regional recommendations
     const followedPromoIds = (followedPromos || []).map((f: any) => f.promotion_id)
@@ -73,7 +73,7 @@ export default function RecommendedSection() {
         
         const { data: regionalEvents } = await supabase
           .from('events_with_counts')
-          .select(`*, promotions (id, name, slug, logo_url)`)
+          .select(eventCols)
           .in('promotion_id', regionalPromoIds)
           .gte('event_date', today)
           .eq('status', 'upcoming')
@@ -94,7 +94,7 @@ export default function RecommendedSection() {
     if (recommendedEvents.length < 4 && states.length > 0) {
       const { data: stateEvents } = await supabase
         .from('events_with_counts')
-        .select(`*, promotions (id, name, slug, logo_url)`)
+        .select(eventCols)
         .in('state', states)
         .gte('event_date', today)
         .eq('status', 'upcoming')
@@ -120,7 +120,7 @@ export default function RecommendedSection() {
     if (recommendedEvents.length < 4) {
       const { data: popular } = await supabase
         .from('events_with_counts')
-        .select(`*, promotions (id, name, slug, logo_url)`)
+        .select(eventCols)
         .gte('event_date', today)
         .eq('status', 'upcoming')
         .order('real_attending_count', { ascending: false })

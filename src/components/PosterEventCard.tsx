@@ -26,8 +26,8 @@ export default function PosterEventCard({ event }: PosterEventCardProps) {
             src={event.poster_url}
             alt={event.name}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
-            unoptimized
           />
         ) : hasLogo ? (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-background-tertiary to-background-secondary">
