@@ -2208,19 +2208,16 @@ function PageRequestsTab() {
           .maybeSingle()
 
         if (existing) {
-          // Wrestler exists — just claim it for the requester
-          if (req.requested_by) {
-            await supabase.from('wrestlers').update({ claimed_by: req.requested_by }).eq('id', existing.id)
-          }
+          // Wrestler already exists, nothing to create
+          alert(`Wrestler "${req.name}" already exists. The user can claim the existing page.`)
         } else {
-          // Create new wrestler
-          const { data: newWrestler, error: createErr } = await supabase
+          // Create new wrestler page (unclaimed)
+          const { error: createErr } = await supabase
             .from('wrestlers')
             .insert({
               name: req.name.trim(),
               slug,
-              claimed_by: req.requested_by || null,
-              verification_status: req.requested_by ? 'pending' : 'unverified',
+              verification_status: 'unverified',
             })
             .select('id')
             .single()
@@ -2239,18 +2236,11 @@ function PageRequestsTab() {
           .maybeSingle()
 
         if (existing) {
-          // Promotion exists — create a claim for the requester
-          if (req.requested_by) {
-            await supabase.from('promotion_claims').insert({
-              promotion_id: existing.id,
-              user_id: req.requested_by,
-              status: 'approved',
-              role: 'owner',
-            }).select().maybeSingle()
-          }
+          // Promotion already exists, nothing to create
+          alert(`Promotion "${req.name}" already exists. The user can claim the existing page.`)
         } else {
-          // Create new promotion
-          const { data: newPromo, error: createErr } = await supabase
+          // Create new promotion page (unclaimed)
+          const { error: createErr } = await supabase
             .from('promotions')
             .insert({
               name: req.name.trim(),
@@ -2264,16 +2254,6 @@ function PageRequestsTab() {
           if (createErr) {
             alert(`Error creating promotion: ${createErr.message}`)
             return
-          }
-
-          // Create claim for requester
-          if (req.requested_by && newPromo) {
-            await supabase.from('promotion_claims').insert({
-              promotion_id: newPromo.id,
-              user_id: req.requested_by,
-              status: 'approved',
-              role: 'owner',
-            }).select().maybeSingle()
           }
         }
       }
