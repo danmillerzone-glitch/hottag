@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
-import { ShoppingBag, Plus, Trash2, Loader2, Upload, X, Save, GripVertical } from 'lucide-react'
-import Image from 'next/image'
+import { ShoppingBag, Plus, Trash2, Loader2, Upload, X } from 'lucide-react'
 
 interface MerchItem {
   id: string
@@ -14,23 +13,33 @@ interface MerchItem {
   sort_order: number
 }
 
-export default function MerchManager({ wrestlerId }: { wrestlerId: string }) {
+interface MerchManagerProps {
+  wrestlerId?: string
+  promotionId?: string
+}
+
+export default function MerchManager({ wrestlerId, promotionId }: MerchManagerProps) {
   const [items, setItems] = useState<MerchItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({ title: '', link_url: '', price: '', image_url: '' })
 
+  const table = wrestlerId ? 'wrestler_merch_items' : 'promotion_merch_items'
+  const fkColumn = wrestlerId ? 'wrestler_id' : 'promotion_id'
+  const fkValue = wrestlerId || promotionId || ''
+  const storageBucket = wrestlerId ? 'wrestler-photos' : 'promotion-logos'
+
   useEffect(() => {
     loadItems()
-  }, [wrestlerId])
+  }, [fkValue])
 
   async function loadItems() {
     const supabase = createClient()
     const { data } = await supabase
-      .from('wrestler_merch_items')
+      .from(table)
       .select('*')
-      .eq('wrestler_id', wrestlerId)
+      .eq(fkColumn, fkValue)
       .order('sort_order', { ascending: true })
     setItems(data || [])
     setLoading(false)
@@ -42,13 +51,13 @@ export default function MerchManager({ wrestlerId }: { wrestlerId: string }) {
     setUploading(true)
     try {
       const supabase = createClient()
-      const fileName = `merch-${wrestlerId}-${Date.now()}.${file.name.split('.').pop()}`
+      const fileName = `merch-${fkValue}-${Date.now()}.${file.name.split('.').pop()}`
       const { error } = await supabase.storage
-        .from('wrestler-photos')
+        .from(storageBucket)
         .upload(fileName, file)
       if (error) throw error
       const { data: { publicUrl } } = supabase.storage
-        .from('wrestler-photos')
+        .from(storageBucket)
         .getPublicUrl(fileName)
       setFormData({ ...formData, image_url: publicUrl })
     } catch (err: any) {
@@ -63,8 +72,8 @@ export default function MerchManager({ wrestlerId }: { wrestlerId: string }) {
       return
     }
     const supabase = createClient()
-    const { error } = await supabase.from('wrestler_merch_items').insert({
-      wrestler_id: wrestlerId,
+    const { error } = await supabase.from(table).insert({
+      [fkColumn]: fkValue,
       title: formData.title,
       link_url: formData.link_url,
       price: formData.price || null,
@@ -80,7 +89,7 @@ export default function MerchManager({ wrestlerId }: { wrestlerId: string }) {
   async function handleDelete(id: string) {
     if (!confirm('Remove this merch item?')) return
     const supabase = createClient()
-    await supabase.from('wrestler_merch_items').delete().eq('id', id)
+    await supabase.from(table).delete().eq('id', id)
     setItems(items.filter(i => i.id !== id))
   }
 
@@ -146,7 +155,7 @@ export default function MerchManager({ wrestlerId }: { wrestlerId: string }) {
       {loading ? (
         <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-foreground-muted" /></div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-foreground-muted">No merch items yet. Add items to display a merch gallery on your profile.</p>
+        <p className="text-sm text-foreground-muted">No merch items yet. Add items to display a merch gallery on your page.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {items.map((item) => (
