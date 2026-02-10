@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -72,6 +72,7 @@ export default function EditPromotionPage() {
   const [patreonUrl, setPatreonUrl] = useState('')
   const [featuredVideoUrl, setFeaturedVideoUrl] = useState('')
   const [featuredVideoTitle, setFeaturedVideoTitle] = useState('')
+  const dataLoaded = useRef(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -79,7 +80,9 @@ export default function EditPromotionPage() {
       router.push('/signin')
       return
     }
-    loadPromotion()
+    if (!dataLoaded.current) {
+      loadPromotion()
+    }
   }, [user, authLoading])
 
   const loadPromotion = async () => {
@@ -106,6 +109,7 @@ export default function EditPromotionPage() {
     setPatreonUrl(data.patreon_url || '')
     setFeaturedVideoUrl(data.featured_video_url || '')
     setFeaturedVideoTitle(data.featured_video_title || '')
+    dataLoaded.current = true
     setLoading(false)
   }
 
