@@ -87,6 +87,15 @@ export default async function EventPage({ params }: EventPageProps) {
   const promotion = event.promotions
   const wrestlers = await getEventWrestlers(event.id)
 
+  // Fetch coupon data directly from events table (view may not include new columns)
+  const { data: couponData } = await supabase
+    .from('events')
+    .select('coupon_code, coupon_label')
+    .eq('id', event.id)
+    .single()
+  const couponCode = couponData?.coupon_code || null
+  const couponLabel = couponData?.coupon_label || null
+
   // Fetch current championships for this promotion to show champion badges
   let championMap: Record<string, string> = {} // wrestler_id -> championship short_name or name
   if (promotion?.id) {
@@ -291,8 +300,8 @@ export default async function EventPage({ params }: EventPageProps) {
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             )}
-            {event.coupon_code && (
-              <CouponCodeButton code={event.coupon_code} label={event.coupon_label || 'Use code for discount'} />
+            {couponCode && (
+              <CouponCodeButton code={couponCode} label={couponLabel || undefined} />
             )}
             <StreamingLinks eventId={event.id} />
             <div className="ml-auto">

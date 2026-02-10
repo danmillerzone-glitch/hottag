@@ -24,7 +24,7 @@ export default function CouponCodeButton({ code, label }: CouponCodeButtonProps)
     >
       <Tag className="w-4 h-4 text-accent" />
       <div className="text-left">
-        <div className="text-xs text-foreground-muted">{label || 'Discount code'}</div>
+        <div className="text-xs text-foreground-muted">{copied ? 'Copied!' : (label || 'Copy coupon code')}</div>
         <div className="text-sm font-bold text-accent font-mono tracking-wider">{code}</div>
       </div>
       {copied ? (

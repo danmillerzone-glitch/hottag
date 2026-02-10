@@ -191,14 +191,14 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </span>
                 )}
 
+                {wrestler.moniker && (
+                  <p className="text-lg text-accent font-bold italic mb-1">&ldquo;{wrestler.moniker}&rdquo;</p>
+                )}
+
                 {/* Name */}
-                <h1 className="text-5xl lg:text-7xl font-display font-black uppercase leading-[0.9] tracking-tight mb-3">
+                <h1 className="text-5xl lg:text-7xl font-display font-black uppercase leading-[0.9] tracking-tight mb-4">
                   {wrestler.name}
                 </h1>
-
-                {wrestler.moniker && (
-                  <p className="text-lg text-accent font-bold italic mb-4">&ldquo;{wrestler.moniker}&rdquo;</p>
-                )}
 
                 {/* Follow + Social row */}
                 <div className="flex items-center gap-3 mb-5">
@@ -206,9 +206,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   <ShareButton
                     title={`${wrestler.name} | Hot Tag`}
                     text={`Check out ${wrestler.name} on Hot Tag`}
-                    url={`https://hottag.app/wrestlers/${wrestler.slug}`}
+                    url={`https://www.hottag.app/wrestlers/${wrestler.slug}`}
                   />
-                  <QRCodeButton url={`https://hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
+                  <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
                   {socialIcons.length > 0 && (
                     <div className="flex items-center gap-1">
                       {socialIcons.map((link, i) => (
@@ -325,13 +325,13 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </span>
                 )}
 
-                <h1 className="text-3xl font-display font-black uppercase leading-[0.9] tracking-tight mb-2">
+                {wrestler.moniker && (
+                  <p className="text-sm text-accent font-bold italic mb-1">&ldquo;{wrestler.moniker}&rdquo;</p>
+                )}
+
+                <h1 className="text-3xl font-display font-black uppercase leading-[0.9] tracking-tight mb-3">
                   {wrestler.name}
                 </h1>
-
-                {wrestler.moniker && (
-                  <p className="text-sm text-accent font-bold italic mb-3">&ldquo;{wrestler.moniker}&rdquo;</p>
-                )}
 
                 {/* Follow + Share */}
                 <div className="flex items-center gap-2 mb-2 border-t border-border/50 pt-3">
@@ -339,14 +339,14 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   <ShareButton
                     title={`${wrestler.name} | Hot Tag`}
                     text={`Check out ${wrestler.name} on Hot Tag`}
-                    url={`https://hottag.app/wrestlers/${wrestler.slug}`}
+                    url={`https://www.hottag.app/wrestlers/${wrestler.slug}`}
                   />
                 </div>
 
                 {/* Social icons + QR — own row on mobile */}
                 {(socialIcons.length > 0 || true) && (
                   <div className="flex items-center gap-1 flex-wrap mb-3">
-                    <QRCodeButton url={`https://hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
+                    <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
                     {socialIcons.map((link, i) => (
                       <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                         className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
@@ -574,9 +574,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 <div className="mb-6">
                   <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
                     <Youtube className="w-5 h-5 text-red-500" />
-                    Featured Video
+                    {wrestler.featured_video_title || 'Featured Video'}
                   </h2>
-                  <YouTubeEmbed url={wrestler.featured_video_url} />
+                  <YouTubeEmbed url={wrestler.featured_video_url} title={wrestler.featured_video_title} />
                 </div>
               )}
 
@@ -617,9 +617,9 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             <div>
               <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
                 <Youtube className="w-5 h-5 text-red-500" />
-                Featured Video
+                {wrestler.featured_video_title || 'Featured Video'}
               </h2>
-              <YouTubeEmbed url={wrestler.featured_video_url} />
+              <YouTubeEmbed url={wrestler.featured_video_url} title={wrestler.featured_video_title} />
             </div>
           )}
           {/* Merch Gallery - Mobile */}
