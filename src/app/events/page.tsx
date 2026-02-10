@@ -64,17 +64,10 @@ export default function EventsPage() {
     }
     
     let query = supabase
-      .from('events_with_counts')
+      .from('events')
       .select(`
-        id, name, event_date, city, state, country, poster_url, region, promotion_id,
-        status, is_sold_out, is_free, ticket_url, ticket_price_min, ticket_price_max,
-        real_attending_count, real_interested_count, latitude, longitude,
-        promotions (
-          id,
-          name,
-          slug,
-          logo_url
-        )
+        *, 
+        promotions (id, name, slug, logo_url)
       `)
       .gte('event_date', today.toISOString().split('T')[0])
       .eq('status', 'upcoming')
@@ -110,8 +103,8 @@ export default function EventsPage() {
     } else {
       const mappedEvents = data.map((e: any) => ({
         ...e,
-        attending_count: e.real_attending_count || 0,
-        interested_count: e.real_interested_count || 0
+        attending_count: e.real_attending_count || e.attending_count || 0,
+        interested_count: e.real_interested_count || e.interested_count || 0
       }))
       setEvents(mappedEvents)
       
