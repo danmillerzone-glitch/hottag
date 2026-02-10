@@ -277,6 +277,8 @@ export async function updateEvent(eventId: string, updates: {
   venue_name?: string | null
   city?: string | null
   state?: string | null
+  coupon_code?: string | null
+  coupon_label?: string | null
 }) {
   const supabase = createClient()
 
