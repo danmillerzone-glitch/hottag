@@ -19,6 +19,7 @@ import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import ImageCropUploader from '@/components/ImageCropUploader'
 import HeroThemePicker from '@/components/HeroThemePicker'
 import MerchManager from '@/components/MerchManager'
+import VideoManager from '@/components/VideoManager'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -72,6 +73,8 @@ export default function WrestlerDashboardPage() {
   const [blueskyHandle, setBlueskyHandle] = useState('')
   const [patreonUrl, setPatreonUrl] = useState('')
   const [featuredVideoUrl, setFeaturedVideoUrl] = useState('')
+  const [featuredVideoTitle, setFeaturedVideoTitle] = useState('')
+  const [videoSectionTitle, setVideoSectionTitle] = useState('')
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
   const [signatureMoves, setSignatureMoves] = useState<string[]>([])
   const [newMove, setNewMove] = useState('')
@@ -118,6 +121,8 @@ export default function WrestlerDashboardPage() {
       setBlueskyHandle(data.wrestler.bluesky_handle || '')
       setPatreonUrl(data.wrestler.patreon_url || '')
       setFeaturedVideoUrl(data.wrestler.featured_video_url || '')
+      setFeaturedVideoTitle(data.wrestler.featured_video_title || '')
+      setVideoSectionTitle(data.wrestler.video_section_title || '')
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
     } else {
@@ -153,6 +158,8 @@ export default function WrestlerDashboardPage() {
         bluesky_handle: blueskyHandle || null,
         patreon_url: patreonUrl || null,
         featured_video_url: featuredVideoUrl || null,
+        featured_video_title: featuredVideoTitle || null,
+        video_section_title: videoSectionTitle || null,
         countries_wrestled: countriesWrestled,
         signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
       })
@@ -432,23 +439,12 @@ export default function WrestlerDashboardPage() {
           <p className="text-sm text-foreground-muted mt-4">Choose a background theme for your profile hero section. This replaces the default grey background behind your hero image.</p>
         </section>
 
-        {/* Bio & Details */}
-        <section className="card p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <Youtube className="w-5 h-5 text-red-500" />
-            <h2 className="text-lg font-display font-bold">Featured Video</h2>
-          </div>
-          <input
-            type="text"
-            value={featuredVideoUrl}
-            onChange={(e) => setFeaturedVideoUrl(e.target.value)}
-            placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
-            className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-          />
-          <p className="text-sm text-foreground-muted mt-2">
-            Paste a YouTube link to embed on your profile. Great for entrance videos, highlight reels, or promos.
-          </p>
-        </section>
+        {/* Videos */}
+        <VideoManager
+          wrestlerId={wrestler.id}
+          sectionTitle={videoSectionTitle}
+          onSectionTitleChange={setVideoSectionTitle}
+        />
 
         {/* Merch Gallery */}
         <MerchManager wrestlerId={wrestler.id} />

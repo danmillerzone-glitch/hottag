@@ -132,7 +132,7 @@ export default function QRCodeButton({ url, name }: { url: string; name: string 
 
   return (
     <>
-      <button onClick={() => setShowModal(true)} className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors" title="QR Code">
+      <button onClick={() => setShowModal(true)} className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors" title="QR Code">
         <QrCode className="w-4 h-4" />
       </button>
       {showModal && <QRCodeModal url={url} name={name} onClose={() => setShowModal(false)} />}

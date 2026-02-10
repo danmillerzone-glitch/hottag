@@ -8,7 +8,7 @@ import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 import RosterCarousel from '@/components/RosterCarousel'
 import QRCodeButton from '@/components/QRCodeButton'
 import MerchGallery from '@/components/MerchGallery'
-import YouTubeEmbed from '@/components/YouTubeEmbed'
+import VideoCarousel from '@/components/VideoCarousel'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -183,6 +183,12 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   const { data: merchItems } = await supabase
     .from('promotion_merch_items')
     .select('id, title, image_url, link_url, price')
+    .eq('promotion_id', promotion.id)
+    .order('sort_order', { ascending: true })
+
+  const { data: profileVideos } = await supabase
+    .from('profile_videos')
+    .select('id, title, url')
     .eq('promotion_id', promotion.id)
     .order('sort_order', { ascending: true })
   
@@ -526,15 +532,11 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
           </div>
         )}
 
-        {/* Featured Video */}
-        {promotion.featured_video_url && (
+        {/* Videos */}
+        {profileVideos && profileVideos.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
-              <Youtube className="w-6 h-6 text-red-500" />
-              {promotion.featured_video_title || 'Featured Video'}
-            </h2>
             <div className="max-w-3xl">
-              <YouTubeEmbed url={promotion.featured_video_url} title={promotion.featured_video_title} />
+              <VideoCarousel videos={profileVideos} sectionTitle={promotion.video_section_title} />
             </div>
           </div>
         )}

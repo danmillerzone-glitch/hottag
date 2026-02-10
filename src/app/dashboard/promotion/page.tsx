@@ -9,6 +9,7 @@ import { getPromoterPromotion, updatePromotion } from '@/lib/promoter'
 import { createClient } from '@/lib/supabase-browser'
 import ImageCropUploader from '@/components/ImageCropUploader'
 import MerchManager from '@/components/MerchManager'
+import VideoManager from '@/components/VideoManager'
 import {
   Loader2,
   ArrowLeft,
@@ -72,6 +73,7 @@ export default function EditPromotionPage() {
   const [patreonUrl, setPatreonUrl] = useState('')
   const [featuredVideoUrl, setFeaturedVideoUrl] = useState('')
   const [featuredVideoTitle, setFeaturedVideoTitle] = useState('')
+  const [videoSectionTitle, setVideoSectionTitle] = useState('')
   const dataLoaded = useRef(false)
 
   useEffect(() => {
@@ -109,6 +111,7 @@ export default function EditPromotionPage() {
     setPatreonUrl(data.patreon_url || '')
     setFeaturedVideoUrl(data.featured_video_url || '')
     setFeaturedVideoTitle(data.featured_video_title || '')
+    setVideoSectionTitle(data.video_section_title || '')
     dataLoaded.current = true
     setLoading(false)
   }
@@ -135,6 +138,7 @@ export default function EditPromotionPage() {
         patreon_url: patreonUrl || null,
         featured_video_url: featuredVideoUrl || null,
         featured_video_title: featuredVideoTitle || null,
+        video_section_title: videoSectionTitle || null,
       })
       setPromotion(updated)
       setSaved(true)
@@ -457,38 +461,12 @@ export default function EditPromotionPage() {
           </div>
         </section>
 
-        {/* Featured Video */}
-        <section className="card p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <Youtube className="w-5 h-5 text-red-500" />
-            <h2 className="text-lg font-display font-bold">Featured Video</h2>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">YouTube Link</label>
-              <input
-                type="text"
-                value={featuredVideoUrl}
-                onChange={(e) => setFeaturedVideoUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
-                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Video Title <span className="text-foreground-muted font-normal">(optional)</span></label>
-              <input
-                type="text"
-                value={featuredVideoTitle}
-                onChange={(e) => setFeaturedVideoTitle(e.target.value)}
-                placeholder='e.g. "Our Latest Show" — defaults to "Featured Video"'
-                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-              />
-            </div>
-          </div>
-          <p className="text-sm text-foreground-muted mt-3">
-            Embed a YouTube video on your promotion page.
-          </p>
-        </section>
+        {/* Videos */}
+        <VideoManager
+          promotionId={promotion.id}
+          sectionTitle={videoSectionTitle}
+          onSectionTitleChange={setVideoSectionTitle}
+        />
 
         {/* Merch Gallery */}
         <MerchManager promotionId={promotion.id} />

@@ -30,6 +30,7 @@ export interface Promotion {
   verification_status: 'unverified' | 'pending' | 'verified'
   featured_video_url: string | null
   featured_video_title: string | null
+  video_section_title: string | null
   created_at: string
 }
 
@@ -63,6 +64,7 @@ export interface Wrestler {
   hero_style: { type: string; value: string; accent?: string } | null
   featured_video_url: string | null
   featured_video_title: string | null
+  video_section_title: string | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number
