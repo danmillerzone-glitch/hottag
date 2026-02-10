@@ -237,12 +237,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               </div>
 
               {/* Right: Wrestler render image */}
-              <div className="flex-shrink-0 relative w-[380px] lg:w-[480px] h-[460px] lg:h-[540px] z-[2] translate-y-8">
+              <div className="flex-shrink-0 relative w-[420px] lg:w-[540px] h-[500px] lg:h-[580px] z-[2] translate-y-8">
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
-                  <div className="absolute -inset-8 -right-40 overflow-visible" style={{
-                    maskImage: 'radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 65%)',
+                  <div className="absolute -inset-12 -right-48 overflow-visible" style={{
+                    maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 25%, transparent 70%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 25%, transparent 70%)',
                   }}>
                     {wrestler.hero_style?.type === 'flag' ? (
                       <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" />
@@ -322,21 +322,27 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   <p className="text-sm text-accent font-bold italic mb-3">&ldquo;{wrestler.moniker}&rdquo;</p>
                 )}
 
-                {/* Follow + Social — ABOVE stats on mobile */}
-                <div className="flex items-center gap-2 mb-3 border-t border-border/50 pt-3">
+                {/* Follow + Share */}
+                <div className="flex items-center gap-2 mb-2 border-t border-border/50 pt-3">
                   <FollowWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} initialFollowerCount={followerCount} />
                   <ShareButton
                     title={`${wrestler.name} | Hot Tag`}
                     text={`Check out ${wrestler.name} on Hot Tag`}
                     url={`https://hottag.app/wrestlers/${wrestler.slug}`}
                   />
-                  {socialIcons.slice(0, 4).map((link, i) => (
-                    <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
-                      className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
-                      <link.icon className="w-4 h-4" />
-                    </a>
-                  ))}
                 </div>
+
+                {/* Social icons — own row on mobile */}
+                {socialIcons.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap mb-3">
+                    {socialIcons.map((link, i) => (
+                      <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
+                        className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
+                        <link.icon className="w-4 h-4" />
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {/* Stats */}
                 {(wrestler.height || wrestler.weight || wrestler.birthday || wrestler.birthplace || wrestler.residence) && (

@@ -81,7 +81,7 @@ export default function ThisWeekendSection() {
   if (!loading && events.length === 0) return null
 
   return (
-    <section className="py-10 bg-gradient-to-r from-purple-500/5 to-accent/5">
+    <section className="py-10 bg-gradient-to-t from-purple-500/5 to-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2">

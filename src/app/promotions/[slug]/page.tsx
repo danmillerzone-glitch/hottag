@@ -116,7 +116,7 @@ async function getRoster(promotionId: string) {
     .from('wrestler_promotions')
     .select(`
       *,
-      wrestlers (id, name, slug, photo_url, render_url, hometown)
+      wrestlers (id, name, slug, photo_url, render_url, hometown, moniker, hero_style)
     `)
     .eq('promotion_id', promotionId)
     .eq('is_active', true)
@@ -539,7 +539,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{event.name}</div>
                     <div className="text-sm text-foreground-muted">
-                      {event.city}, {event.state}
+                      {[event.city?.replace(/,$/, ''), event.state, event.country !== 'United States' && event.country !== 'USA' ? event.country : null].filter(Boolean).join(', ')}
                     </div>
                   </div>
                   <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
@@ -573,7 +573,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{event.name}</div>
                     <div className="text-sm text-foreground-muted">
-                      {event.city}, {event.state}
+                      {[event.city?.replace(/,$/, ''), event.state, event.country !== 'United States' && event.country !== 'USA' ? event.country : null].filter(Boolean).join(', ')}
                     </div>
                   </div>
                 </Link>

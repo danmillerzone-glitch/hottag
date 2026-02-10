@@ -234,7 +234,7 @@ export default function HomePage() {
         <>
           {/* My Events */}
           {myEvents.length > 0 && (
-            <section className="py-10 bg-gradient-to-r from-green-500/5 to-accent/5">
+            <section className="py-10 bg-gradient-to-t from-green-500/5 to-transparent">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-display font-bold flex items-center gap-2">
