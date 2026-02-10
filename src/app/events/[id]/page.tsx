@@ -28,6 +28,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import AttendanceButtons from '@/components/AttendanceButtons'
 import ShareButton from '@/components/ShareButton'
+import QRCodeButton from '@/components/QRCodeButton'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
@@ -304,7 +305,8 @@ export default async function EventPage({ params }: EventPageProps) {
               <CouponCodeButton code={couponCode} label={couponLabel || undefined} />
             )}
             <StreamingLinks eventId={event.id} />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} />
               <ShareButton
                 title={event.name}
                 text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}

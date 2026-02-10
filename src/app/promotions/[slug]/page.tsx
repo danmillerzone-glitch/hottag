@@ -7,6 +7,8 @@ import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 import RosterCarousel from '@/components/RosterCarousel'
 import QRCodeButton from '@/components/QRCodeButton'
+import MerchGallery from '@/components/MerchGallery'
+import YouTubeEmbed from '@/components/YouTubeEmbed'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -176,6 +178,13 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   const championships = await getChampionships(promotion.id)
   const roster = await getRoster(promotion.id)
   const groups = await getGroups(promotion.id)
+
+  // Fetch promotion merch items
+  const { data: merchItems } = await supabase
+    .from('promotion_merch_items')
+    .select('id, title, image_url, link_url, price')
+    .eq('promotion_id', promotion.id)
+    .order('sort_order', { ascending: true })
   
   // Split events into upcoming and past (compare dates only, not time)
   const today = new Date().toISOString().split('T')[0]
@@ -223,7 +232,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   promotionName={promotion.name}
                   initialFollowerCount={followerCount}
                 />
-                <QRCodeButton url={`https://hottag.app/promotions/${promotion.slug}`} name={promotion.name} />
+                <QRCodeButton url={`https://www.hottag.app/promotions/${promotion.slug}`} name={promotion.name} />
 
                 <ClaimPromotionButton
                   promotionId={promotion.id}
@@ -514,6 +523,26 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* Featured Video */}
+        {promotion.featured_video_url && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
+              <Youtube className="w-6 h-6 text-red-500" />
+              {promotion.featured_video_title || 'Featured Video'}
+            </h2>
+            <div className="max-w-3xl">
+              <YouTubeEmbed url={promotion.featured_video_url} title={promotion.featured_video_title} />
+            </div>
+          </div>
+        )}
+
+        {/* Merch Gallery */}
+        {merchItems && merchItems.length > 0 && (
+          <div className="mb-10">
+            <MerchGallery items={merchItems} />
           </div>
         )}
 

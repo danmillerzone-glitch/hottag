@@ -435,6 +435,8 @@ export async function updatePromotion(promotionId: string, updates: {
   merch_url?: string | null
   bluesky_handle?: string | null
   patreon_url?: string | null
+  featured_video_url?: string | null
+  featured_video_title?: string | null
 }) {
   const supabase = createClient()
 
