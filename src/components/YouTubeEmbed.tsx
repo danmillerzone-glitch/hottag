@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Play } from 'lucide-react'
+import { Play, ExternalLink } from 'lucide-react'
 
 function getYouTubeId(url: string): string | null {
+  if (!url) return null
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
   ]
@@ -23,7 +24,21 @@ export default function YouTubeEmbed({ url, title }: YouTubeEmbedProps) {
   const [playing, setPlaying] = useState(false)
   const videoId = getYouTubeId(url)
 
-  if (!videoId) return null
+  // If not a valid YouTube URL, show a link button instead
+  if (!videoId) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-background-tertiary border border-border hover:border-accent/50 transition-colors"
+      >
+        <Play className="w-5 h-5 text-accent" />
+        <span className="font-semibold text-sm">{title || 'Watch Video'}</span>
+        <ExternalLink className="w-3.5 h-3.5 text-foreground-muted" />
+      </a>
+    )
+  }
 
   return (
     <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
