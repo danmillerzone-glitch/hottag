@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { getUpcomingEvents, type EventWithPromotion } from '@/lib/supabase'
 import { formatEventDate, formatLocation } from '@/lib/utils'
 import { MapPin, Calendar, List, X } from 'lucide-react'
 import Link from 'next/link'
@@ -18,15 +17,34 @@ export default function MapPage() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markersAdded = useRef(false)
-  const [events, setEvents] = useState<EventWithPromotion[]>([])
+  const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showList, setShowList] = useState(false)
 
   useEffect(() => {
     async function fetchEvents() {
-      const data = await getUpcomingEvents(200)
-      const eventsWithCoords = data.filter(e => e.latitude && e.longitude)
-      setEvents(eventsWithCoords)
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const today = new Date().toISOString().split('T')[0]
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          id, name, event_date, venue_name, city, state, country,
+          latitude, longitude, poster_url, status,
+          promotions (id, name, slug, logo_url)
+        `)
+        .eq('status', 'upcoming')
+        .gte('event_date', today)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('event_date', { ascending: true })
+        .limit(1000)
+
+      if (error) {
+        console.error('Map events error:', error)
+        setEvents([])
+      } else {
+        setEvents(data || [])
+      }
       setLoading(false)
     }
     fetchEvents()
@@ -82,7 +100,7 @@ export default function MapPage() {
     if (!map.current || events.length === 0 || markersAdded.current) return
     markersAdded.current = true
 
-    const locationGroups = new Map<string, EventWithPromotion[]>()
+    const locationGroups = new Map<string, any[]>()
     events.forEach(event => {
       const key = `${event.latitude},${event.longitude}`
       if (!locationGroups.has(key)) locationGroups.set(key, [])

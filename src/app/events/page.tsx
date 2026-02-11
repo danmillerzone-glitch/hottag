@@ -19,19 +19,20 @@ const REGIONS = [
   { id: 'asia', label: 'Asia', filter: { countries: ['India', 'China', 'South Korea', 'Korea', 'Philippines', 'Singapore', 'Malaysia', 'Thailand', 'Indonesia', 'Taiwan'] } },
 ]
 
-// Popular US states for quick filters
-const POPULAR_STATES = [
-  { abbrev: 'CA', name: 'California' },
-  { abbrev: 'TX', name: 'Texas' },
-  { abbrev: 'NY', name: 'New York' },
-  { abbrev: 'FL', name: 'Florida' },
-  { abbrev: 'PA', name: 'Pennsylvania' },
-  { abbrev: 'IL', name: 'Illinois' },
-  { abbrev: 'NV', name: 'Nevada' },
-  { abbrev: 'GA', name: 'Georgia' },
-  { abbrev: 'NJ', name: 'New Jersey' },
-  { abbrev: 'OH', name: 'Ohio' },
-]
+// Full US state abbreviation to name mapping
+const US_STATES: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  DC: 'Washington D.C.', PR: 'Puerto Rico',
+}
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([])
@@ -131,8 +132,7 @@ export default function EventsPage() {
   })
 
   const getStateName = (abbrev: string) => {
-    const state = POPULAR_STATES.find(s => s.abbrev === abbrev)
-    return state?.name || abbrev
+    return US_STATES[abbrev] || abbrev
   }
 
   const getRegionLabel = (id: string) => {
@@ -222,42 +222,25 @@ export default function EventsPage() {
                   <div className="absolute top-full left-0 mt-2 w-64 bg-background-secondary border border-border rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
                     <button
                       onClick={() => { setSelectedState(null); setShowStateDropdown(false) }}
-                      className={`w-full text-left px-4 py-2 hover:bg-background-tertiary ${!selectedState ? 'text-accent' : ''}`}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-background-tertiary text-sm ${!selectedState ? 'text-accent' : ''}`}
                     >
                       All States
                     </button>
                     <div className="border-t border-border" />
-                    <div className="p-2">
-                      <div className="text-xs text-foreground-muted px-2 py-1">Popular</div>
-                      {POPULAR_STATES.map(state => (
-                        <button
-                          key={state.abbrev}
-                          onClick={() => { setSelectedState(state.abbrev); if (!selectedRegion) setSelectedRegion('usa'); setShowStateDropdown(false) }}
-                          className={`w-full text-left px-3 py-2 rounded hover:bg-background-tertiary ${selectedState === state.abbrev ? 'text-accent' : ''}`}
-                        >
-                          {state.name}
-                        </button>
-                      ))}
+                    <div className="p-1">
+                      {availableStates
+                        .map(abbrev => ({ abbrev, name: US_STATES[abbrev] || abbrev }))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(state => (
+                          <button
+                            key={state.abbrev}
+                            onClick={() => { setSelectedState(state.abbrev); if (!selectedRegion) setSelectedRegion('usa'); setShowStateDropdown(false) }}
+                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-background-tertiary ${selectedState === state.abbrev ? 'text-accent' : ''}`}
+                          >
+                            {state.name}
+                          </button>
+                        ))}
                     </div>
-                    {availableStates.filter(s => !POPULAR_STATES.some(ps => ps.abbrev === s)).length > 0 && (
-                      <>
-                        <div className="border-t border-border" />
-                        <div className="p-2">
-                          <div className="text-xs text-foreground-muted px-2 py-1">Other States</div>
-                          {availableStates
-                            .filter(s => !POPULAR_STATES.some(ps => ps.abbrev === s))
-                            .map(state => (
-                              <button
-                                key={state}
-                                onClick={() => { setSelectedState(state); if (!selectedRegion) setSelectedRegion('usa'); setShowStateDropdown(false) }}
-                                className={`w-full text-left px-3 py-2 rounded hover:bg-background-tertiary ${selectedState === state ? 'text-accent' : ''}`}
-                              >
-                                {state}
-                              </button>
-                            ))}
-                        </div>
-                      </>
-                    )}
                   </div>
                 </>
               )}
