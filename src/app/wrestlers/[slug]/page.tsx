@@ -186,21 +186,6 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
       {/* HERO */}
       {/* ======================================== */}
       <div className="relative overflow-hidden bg-background-secondary">
-        {/* Full-bleed flag/theme background for desktop */}
-        {hasTheme && (
-          <div className="hidden md:block absolute inset-0 z-[0]">
-            {wrestler.hero_style?.type === 'flag' ? (
-              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
-            ) : (
-              <>
-                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.15 }} />
-                {heroCSS.texture && (
-                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.1 }} />
-                )}
-              </>
-            )}
-          </div>
-        )}
         {/* Diagonal texture */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 8px)',
@@ -282,7 +267,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               <div className="flex-shrink-0 relative w-[420px] lg:w-[540px] h-[500px] lg:h-[580px] z-[2] translate-y-8">
                 {/* Theme backdrop — soft glow behind the render */}
                 {hasTheme && (
-                  <div className="absolute -inset-12 -right-48 overflow-visible" style={{
+                  <div className="absolute -inset-12 -top-24 -right-48 overflow-visible" style={{
                     maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 25%, transparent 70%)',
                     WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 25%, transparent 70%)',
                   }}>

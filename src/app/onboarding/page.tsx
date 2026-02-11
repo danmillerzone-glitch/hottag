@@ -198,12 +198,16 @@ function StepPickPromotions({
 
   useEffect(() => {
     async function load() {
-      // Load recommended promotions — verified first, then by follower count
-      const { data } = await supabase
+      // Load recommended promotions
+      const { data, error } = await supabase
         .from('promotions')
         .select('id, name, slug, logo_url, region, state, city')
-        .order('follower_count', { ascending: false })
+        .order('name')
         .limit(50)
+
+      if (error) {
+        console.error('Promotions query error:', error)
+      }
 
       setRecommended(data || [])
       setLoading(false)
@@ -397,7 +401,7 @@ function StepPickWrestlers({
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
       ) : displayList.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {displayList.map(w => (
             <WrestlerHeroCard key={w.id} wrestler={w} selected={selected.includes(w.id)} onToggle={() => toggle(w.id)} />
           ))}
