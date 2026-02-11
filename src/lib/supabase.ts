@@ -273,7 +273,10 @@ export async function getEventWrestlers(eventId: string) {
         name,
         slug,
         photo_url,
-        hometown
+        render_url,
+        hometown,
+        moniker,
+        hero_style
       )
     `)
     .eq('event_id', eventId)

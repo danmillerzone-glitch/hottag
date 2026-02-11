@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getEvent, getEventWrestlers } from '@/lib/supabase'
+import { getHeroCSS } from '@/lib/hero-themes'
 import { 
   Calendar, 
   MapPin, 
@@ -16,7 +17,8 @@ import {
   Youtube,
   Facebook,
   Mail,
-  ShoppingBag
+  ShoppingBag,
+  Crown
 } from 'lucide-react'
 import { 
   formatEventDateFull, 
@@ -344,37 +346,71 @@ export default async function EventPage({ params }: EventPageProps) {
           {wrestlers.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Card ({wrestlers.length} wrestlers)</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {wrestlers.map((wrestler) => (
-                  <Link
-                    key={wrestler.id}
-                    href={`/wrestlers/${wrestler.slug}`}
-                    className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
-                  >
-                    <div className={`w-16 h-16 rounded-xl bg-background flex items-center justify-center overflow-hidden mb-2 border-2 ${championMap[wrestler.id] ? 'border-yellow-500' : 'border-transparent'}`}>
-                      {wrestler.photo_url ? (
-                        <Image
-                          src={wrestler.photo_url}
-                          alt={wrestler.name}
-                          width={64}
-                          height={64}
-                          className="object-cover w-full h-full"
-                          unoptimized
-                        />
-                      ) : (
-                        <User className="w-8 h-8 text-foreground-muted" />
-                      )}
-                    </div>
-                    <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
-                      {wrestler.name}
-                    </span>
-                    {championMap[wrestler.id] && (
-                      <div className="flex flex-col items-center mt-0.5" title={championMap[wrestler.id]}>
-                        <span className="text-xs text-yellow-500 text-center leading-tight">{championMap[wrestler.id]}</span>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {wrestlers.map((wrestler) => {
+                  const imageUrl = wrestler.render_url || wrestler.photo_url
+                  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+                  const hasTheme = !!wrestler.hero_style
+                  const isChamp = !!championMap[wrestler.id]
+
+                  return (
+                    <Link key={wrestler.id} href={`/wrestlers/${wrestler.slug}`} className="block group">
+                      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ${isChamp ? 'ring-2 ring-yellow-500/60' : ''}`}>
+                        {hasTheme && (
+                          <div className="absolute inset-0 z-[0]">
+                            {wrestler.hero_style?.type === 'flag' ? (
+                              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                            ) : (
+                              <>
+                                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                                {heroCSS.texture && (
+                                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {imageUrl ? (
+                          <>
+                            <Image
+                              src={imageUrl}
+                              alt={wrestler.name}
+                              fill
+                              className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
+                              sizes="160px"
+                              unoptimized
+                            />
+                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="w-12 h-12 text-foreground-muted/30" />
+                          </div>
+                        )}
+                        {isChamp && (
+                          <div className="absolute top-2 right-2 z-[3]">
+                            <Crown className="w-4 h-4 text-yellow-400 drop-shadow-lg" />
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 p-2.5 z-[3]">
+                          {wrestler.moniker && (
+                            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
+                              &ldquo;{wrestler.moniker}&rdquo;
+                            </span>
+                          )}
+                          <span className="text-sm font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg">
+                            {wrestler.name}
+                          </span>
+                          {isChamp && (
+                            <span className="text-[10px] font-semibold text-yellow-400 line-clamp-1 drop-shadow-lg">
+                              {championMap[wrestler.id]}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </Link>
-                ))}
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           )}

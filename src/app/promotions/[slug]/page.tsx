@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
@@ -96,11 +97,11 @@ async function getChampionships(promotionId: string) {
     .from('promotion_championships')
     .select(`
       *,
-      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url),
-      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url),
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (id, name, slug, photo_url, render_url, moniker, hero_style),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (id, name, slug, photo_url, render_url, moniker, hero_style),
       champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (
         id, name, type,
-        promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url))
+        promotion_group_members (id, wrestler_id, wrestlers (id, name, slug, photo_url, render_url, moniker, hero_style))
       )
     `)
     .eq('promotion_id', promotionId)
@@ -384,102 +385,45 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
               <Trophy className="w-6 h-6 text-interested" />
               Championships
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-8">
               {championships.map((champ: any) => {
                 const champion = champ.current_champion
                 const champion2 = champ.current_champion_2
                 const champGroup = champ.champion_group
                 const groupMembers = champGroup?.promotion_group_members || []
-                return (
-                  <div key={champ.id} className="card p-5 relative overflow-hidden">
-                    {/* Gold accent top border */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
-                    
-                    <div className="text-sm font-semibold text-interested mb-3 flex items-center gap-1.5">
-                      <Crown className="w-4 h-4" />
-                      {champ.name}
-                    </div>
 
-                    {champGroup ? (
-                      /* Group champion display */
-                      <div className="flex items-center gap-4">
-                        <div className="flex -space-x-3 flex-shrink-0">
-                          {groupMembers.map((m: any) => (
-                            <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
-                              <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
-                                {m.wrestlers?.photo_url ? (
-                                  <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
-                                ) : (
-                                  <User className="w-7 h-7 text-foreground-muted" />
-                                )}
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                        <div>
-                          <div className="font-bold text-lg">{champGroup.name}</div>
-                          <div className="text-sm text-foreground-muted">
-                            {groupMembers.map((m: any, i: number) => (
-                              <span key={m.id}>
-                                {i > 0 && (i === groupMembers.length - 1 ? ' & ' : ', ')}
-                                <Link href={`/wrestlers/${m.wrestlers?.slug}`} className="hover:text-accent transition-colors">{m.wrestlers?.name}</Link>
-                              </span>
-                            ))}
-                          </div>
-                          {champ.won_date && (
-                            <div className="text-xs text-foreground-muted mt-0.5">
-                              Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : champion ? (
-                      <div className="flex items-center gap-4">
-                        <div className="flex -space-x-3 flex-shrink-0">
-                          <Link href={`/wrestlers/${champion.slug}`}>
-                            <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
-                              {champion.photo_url ? (
-                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
-                              ) : (
-                                <User className="w-8 h-8 text-foreground-muted" />
-                              )}
-                            </div>
-                          </Link>
-                          {champion2 && (
-                            <Link href={`/wrestlers/${champion2.slug}`}>
-                              <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
-                                {champion2.photo_url ? (
-                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
-                                ) : (
-                                  <User className="w-8 h-8 text-foreground-muted" />
-                                )}
-                              </div>
-                            </Link>
-                          )}
-                        </div>
-                        <div>
-                          <div>
-                            <Link href={`/wrestlers/${champion.slug}`} className="font-bold text-lg hover:text-accent transition-colors">
-                              {champion.name}
-                            </Link>
-                            {champion2 && (
-                              <><span className="text-foreground-muted"> &amp; </span><Link href={`/wrestlers/${champion2.slug}`} className="font-bold text-lg hover:text-accent transition-colors">{champion2.name}</Link></>
-                            )}
-                          </div>
-                          {champ.won_date && (
-                            <div className="text-xs text-foreground-muted mt-0.5">
-                              Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                            </div>
-                          )}
-                        </div>
+                // Collect all champion wrestlers for hero cards
+                const championWrestlers: any[] = []
+                if (champGroup) {
+                  groupMembers.forEach((m: any) => { if (m.wrestlers) championWrestlers.push(m.wrestlers) })
+                } else {
+                  if (champion) championWrestlers.push(champion)
+                  if (champion2) championWrestlers.push(champion2)
+                }
+
+                return (
+                  <div key={champ.id}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Crown className="w-4 h-4 text-interested" />
+                      <h3 className="font-bold text-interested">{champ.name}</h3>
+                      {champGroup && <span className="text-sm text-foreground-muted">— {champGroup.name}</span>}
+                    </div>
+                    {championWrestlers.length > 0 ? (
+                      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+                        {championWrestlers.map((w: any) => (
+                          <ChampionHeroCard key={w.id} wrestler={w} />
+                        ))}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 text-foreground-muted">
-                        <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center border-2 border-dashed border-border">
-                          <Trophy className="w-6 h-6 text-foreground-muted/30" />
-                        </div>
+                      <div className="flex items-center gap-3 text-foreground-muted p-4 rounded-xl bg-background-tertiary border border-dashed border-border">
+                        <Trophy className="w-6 h-6 text-foreground-muted/30" />
                         <span className="text-sm italic">Vacant</span>
                       </div>
+                    )}
+                    {champ.won_date && (
+                      <p className="text-xs text-foreground-muted mt-2">
+                        Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
                     )}
                   </div>
                 )
@@ -627,5 +571,65 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         )}
       </div>
     </div>
+  )
+}
+
+function ChampionHeroCard({ wrestler }: { wrestler: any }) {
+  const imageUrl = wrestler.render_url || wrestler.photo_url
+  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+  const hasTheme = !!wrestler.hero_style
+
+  return (
+    <Link href={`/wrestlers/${wrestler.slug}`} className="block group flex-shrink-0 w-[140px] sm:w-[160px]">
+      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ring-2 ring-yellow-500/60">
+        {/* Hero background */}
+        {hasTheme && (
+          <div className="absolute inset-0 z-[0]">
+            {wrestler.hero_style?.type === 'flag' ? (
+              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                {heroCSS.texture && (
+                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />
+                )}
+              </>
+            )}
+          </div>
+        )}
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={wrestler.name}
+              fill
+              className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
+              sizes="160px"
+              unoptimized
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <User className="w-12 h-12 text-foreground-muted/30" />
+          </div>
+        )}
+        {/* Crown badge */}
+        <div className="absolute top-2 right-2 z-[3]">
+          <Crown className="w-4 h-4 text-yellow-400 drop-shadow-lg" />
+        </div>
+        {/* Name + moniker */}
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 z-[3]">
+          {wrestler.moniker && (
+            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
+              &ldquo;{wrestler.moniker}&rdquo;
+            </span>
+          )}
+          <span className="text-sm font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg">
+            {wrestler.name}
+          </span>
+        </div>
+      </div>
+    </Link>
   )
 }
