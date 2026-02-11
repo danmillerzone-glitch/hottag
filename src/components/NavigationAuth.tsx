@@ -19,7 +19,7 @@ const navItems = [
 ]
 
 // Show Vegas Weekend nav item until end of April 19, 2026
-const VEGAS_WEEKEND_END = new Date('2026-04-20T06:00:00Z') // April 20 6AM UTC = April 19 11PM PT
+const VEGAS_WEEKEND_END = new Date('2026-04-21T06:00:00Z') // April 21 6AM UTC = April 20 11PM PT
 
 function useShowVegasWeekend() {
   const [show, setShow] = useState(false)

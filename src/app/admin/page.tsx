@@ -43,7 +43,7 @@ import {
   ChevronUp, ChevronDown, Edit2, Briefcase, Star,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero'
+type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -87,6 +87,7 @@ export default function AdminPage() {
     { id: 'import', label: 'Bulk Import', icon: Upload },
     { id: 'requests', label: 'Page Requests', icon: Inbox },
     { id: 'hero', label: 'Hero Images', icon: ImageIcon },
+    { id: 'vegas', label: 'Vegas Weekend', icon: Star },
   ]
 
   return (
@@ -139,6 +140,7 @@ export default function AdminPage() {
         {activeTab === 'import' && <ImportTab />}
         {activeTab === 'requests' && <PageRequestsTab />}
         {activeTab === 'hero' && <HeroSlidesTab />}
+        {activeTab === 'vegas' && <VegasWeekendTab />}
       </div>
     </div>
   )
@@ -2947,6 +2949,232 @@ function HeroSlidesTab() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// =============================================
+// VEGAS WEEKEND TAB
+// =============================================
+function VegasWeekendTab() {
+  const [events, setEvents] = useState<any[]>([])
+  const [collectives, setCollectives] = useState<any[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState<string | null>(null)
+
+  useEffect(() => { loadData() }, [])
+
+  const loadData = async () => {
+    const supabase = createClient()
+    const [eventsRes, collectivesRes] = await Promise.all([
+      supabase.from('events')
+        .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
+        .eq('vegas_weekend', true)
+        .order('event_date', { ascending: true }),
+      supabase.from('vegas_weekend_collectives')
+        .select('*')
+        .order('sort_order', { ascending: true })
+    ])
+    setEvents(eventsRes.data || [])
+    setCollectives(collectivesRes.data || [])
+    setLoading(false)
+  }
+
+  const searchEvents = async (q: string) => {
+    if (q.length < 2) { setSearchResults([]); return }
+    setSearching(true)
+    const supabase = createClient()
+    const { data } = await supabase.from('events')
+      .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
+      .ilike('name', `%${q}%`)
+      .gte('event_date', '2026-04-10')
+      .lte('event_date', '2026-04-25')
+      .order('event_date', { ascending: true })
+      .limit(20)
+    setSearchResults(data || [])
+    setSearching(false)
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => searchEvents(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const toggleVegasWeekend = async (eventId: string, current: boolean) => {
+    const supabase = createClient()
+    await supabase.from('events').update({ vegas_weekend: !current, ...(!current ? {} : { vegas_collective: null }) }).eq('id', eventId)
+    loadData()
+    if (searchQuery.length >= 2) searchEvents(searchQuery)
+  }
+
+  const setCollective = async (eventId: string, collectiveKey: string | null) => {
+    const supabase = createClient()
+    await supabase.from('events').update({ vegas_collective: collectiveKey }).eq('id', eventId)
+    loadData()
+  }
+
+  const uploadCollectiveImage = async (collectiveKey: string, file: File) => {
+    setUploading(collectiveKey)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `vegas-weekend/${collectiveKey}.${ext}`
+    
+    const { error: uploadError } = await supabase.storage
+      .from('promotion-logos')
+      .upload(path, file, { upsert: true })
+
+    if (uploadError) {
+      alert('Upload failed: ' + uploadError.message)
+      setUploading(null)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('promotion-logos').getPublicUrl(path)
+    const imageUrl = urlData.publicUrl + '?t=' + Date.now()
+
+    await supabase.from('vegas_weekend_collectives').update({ image_url: imageUrl }).eq('key', collectiveKey)
+    setUploading(null)
+    loadData()
+  }
+
+  const updateCollective = async (key: string, field: string, value: string) => {
+    const supabase = createClient()
+    await supabase.from('vegas_weekend_collectives').update({ [field]: value }).eq('key', key)
+    loadData()
+  }
+
+  if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
+
+  return (
+    <div className="space-y-8">
+      {/* Collectives management */}
+      <div>
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Star className="w-5 h-5 text-yellow-400" />
+          Collectives
+        </h3>
+        <div className="space-y-4">
+          {collectives.map(c => (
+            <div key={c.key} className="card p-5">
+              <div className="flex items-start gap-4">
+                {/* Image upload */}
+                <div className="flex-shrink-0">
+                  <label className="cursor-pointer block">
+                    <div className="w-32 h-20 rounded-lg overflow-hidden bg-background-tertiary border-2 border-dashed border-border hover:border-accent transition-colors flex items-center justify-center">
+                      {c.image_url ? (
+                        <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center">
+                          <Upload className="w-5 h-5 text-foreground-muted mx-auto mb-1" />
+                          <span className="text-[10px] text-foreground-muted">Upload</span>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) uploadCollectiveImage(c.key, file)
+                      }}
+                    />
+                  </label>
+                  {uploading === c.key && <div className="text-[10px] text-accent mt-1 text-center">Uploading...</div>}
+                </div>
+                {/* Details */}
+                <div className="flex-1 space-y-2">
+                  <input
+                    defaultValue={c.name}
+                    onBlur={(e) => updateCollective(c.key, 'name', e.target.value)}
+                    className="font-bold text-yellow-400 bg-transparent border-b border-transparent hover:border-border focus:border-accent outline-none w-full"
+                  />
+                  <textarea
+                    defaultValue={c.description || ''}
+                    onBlur={(e) => updateCollective(c.key, 'description', e.target.value)}
+                    rows={2}
+                    className="text-sm text-foreground-muted bg-transparent border border-transparent hover:border-border focus:border-accent outline-none w-full rounded p-1 resize-none"
+                  />
+                  <div className="text-xs text-foreground-muted">
+                    Key: <code className="text-accent">{c.key}</code> · {events.filter(e => e.vegas_collective === c.key).length} events assigned
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Add events */}
+      <div>
+        <h3 className="text-lg font-bold mb-4">Add Events to Vegas Weekend</h3>
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search events by name (Apr 10-25 range)..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-background-secondary border border-border text-sm outline-none focus:border-accent"
+          />
+        </div>
+        {searchQuery.length >= 2 && (
+          <div className="space-y-2 mb-6">
+            {searching && <div className="text-sm text-foreground-muted">Searching...</div>}
+            {searchResults.map(event => (
+              <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-background-secondary">
+                <div>
+                  <div className="text-sm font-medium">{event.name}</div>
+                  <div className="text-xs text-foreground-muted">{event.event_date} · {event.venue_name} · {(event.promotions as any)?.name}</div>
+                </div>
+                <button
+                  onClick={() => toggleVegasWeekend(event.id, !!event.vegas_weekend)}
+                  className={`px-3 py-1 rounded text-xs font-medium ${event.vegas_weekend ? 'bg-yellow-500/20 text-yellow-400' : 'bg-background-tertiary text-foreground-muted hover:text-foreground'}`}
+                >
+                  {event.vegas_weekend ? '★ Added' : '+ Add'}
+                </button>
+              </div>
+            ))}
+            {!searching && searchResults.length === 0 && <div className="text-sm text-foreground-muted">No results</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Current events */}
+      <div>
+        <h3 className="text-lg font-bold mb-4">Vegas Weekend Events ({events.length})</h3>
+        <div className="space-y-2">
+          {events.map(event => (
+            <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-background-secondary">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{event.name}</div>
+                <div className="text-xs text-foreground-muted">{event.event_date} · {event.venue_name}</div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <select
+                  value={event.vegas_collective || ''}
+                  onChange={(e) => setCollective(event.id, e.target.value || null)}
+                  className="text-xs bg-background border border-border rounded px-2 py-1 outline-none focus:border-accent"
+                >
+                  <option value="">No collective</option>
+                  {collectives.map(c => (
+                    <option key={c.key} value={c.key}>{c.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => toggleVegasWeekend(event.id, true)}
+                  className="text-xs text-red-400 hover:text-red-300 px-2 py-1"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

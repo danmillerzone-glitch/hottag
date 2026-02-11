@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Calendar, MapPin, Star, ExternalLink } from 'lucide-react'
+import { Calendar, MapPin, Star } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
 // Vegas Weekend: April 15–19, 2025
@@ -12,69 +12,65 @@ const VEGAS_START = '2026-04-15'
 const VEGAS_END = '2026-04-19'
 
 interface Collective {
+  key: string
   name: string
   description: string
   imageUrl: string | null
-  venueFilter: string[] // venue_name values to match
-  link?: string
 }
 
-const COLLECTIVES: Collective[] = [
-  {
-    name: 'The Collective',
-    description: 'GCW\'s massive multi-show event series at the Horseshoe Las Vegas. Featuring Spring Break, Bloodsport, Big Gay Brunch, and more — the largest independent wrestling gathering of the year.',
-    imageUrl: null, // Add image URL when available
-    venueFilter: ['Horseshoe Las Vegas'],
-    link: undefined,
-  },
-  {
-    name: 'Shooting Star Fest',
-    description: 'An eclectic mix of indie promotions taking over the Swan Dive and Bizarre Bar on Fremont East. Expect the unexpected from some of the most creative promotions in wrestling.',
-    imageUrl: null, // Add image URL when available
-    venueFilter: ['Swan Dive', 'Bizzare Bar', 'Bizarre Bar'],
-    link: undefined,
-  },
-]
+interface Collective {
+  key: string
+  name: string
+  description: string | null
+  image_url: string | null
+}
 
 export default function VegasWeekendPage() {
   const [events, setEvents] = useState<any[]>([])
+  const [collectives, setCollectives] = useState<Collective[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadEvents()
+    loadData()
   }, [])
 
-  const loadEvents = async () => {
+  const loadData = async () => {
     const supabase = createClient()
-    const { data } = await supabase
-      .from('events')
-      .select(`
-        id, name, slug, event_date, event_time, doors_time,
-        venue_name, city, state, country,
-        poster_url, ticket_url, is_free, is_sold_out,
-        ticket_price_min, ticket_price_max,
-        promotion_id,
-        promotions (id, name, slug, logo_url)
-      `)
-      .gte('event_date', VEGAS_START)
-      .lte('event_date', VEGAS_END)
-      .or('city.ilike.%las vegas%,city.ilike.%las vegas,%')
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: true })
+    
+    const [eventsRes, collectivesRes] = await Promise.all([
+      supabase
+        .from('events')
+        .select(`
+          id, name, slug, event_date, event_time, doors_time,
+          venue_name, city, state, country,
+          poster_url, ticket_url, is_free, is_sold_out,
+          ticket_price_min, ticket_price_max,
+          promotion_id, vegas_weekend, vegas_collective,
+          promotions (id, name, slug, logo_url)
+        `)
+        .gte('event_date', VEGAS_START)
+        .lte('event_date', VEGAS_END)
+        .eq('vegas_weekend', true)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true, nullsFirst: true }),
+      supabase
+        .from('vegas_weekend_collectives')
+        .select('*')
+        .order('sort_order', { ascending: true })
+    ])
 
-    setEvents(data || [])
+    setEvents(eventsRes.data || [])
+    setCollectives(collectivesRes.data || [])
     setLoading(false)
   }
 
   // Group events into collectives and standalone
-  const collectiveEvents = COLLECTIVES.map(collective => {
-    const matched = events.filter(e =>
-      collective.venueFilter.some(v => e.venue_name?.toLowerCase() === v.toLowerCase())
-    )
+  const collectiveEvents = collectives.map(collective => {
+    const matched = events.filter(e => e.vegas_collective === collective.key)
     return { ...collective, events: matched }
   })
 
-  const assignedEventIds = new Set(collectiveEvents.flatMap(c => c.events.map(e => e.id)))
+  const assignedEventIds = new Set(collectiveEvents.flatMap(c => c.events.map((e: any) => e.id)))
   const standaloneEvents = events.filter(e => !assignedEventIds.has(e.id))
 
   // Group standalone by date
@@ -137,10 +133,10 @@ export default function VegasWeekendPage() {
                 <section key={collective.name}>
                   {/* Collective Header */}
                   <div className="rounded-xl overflow-hidden mb-6 bg-background-secondary border border-border">
-                    {collective.imageUrl && (
+                    {collective.image_url && (
                       <div className="relative h-48 sm:h-56">
                         <Image
-                          src={collective.imageUrl}
+                          src={collective.image_url}
                           alt={collective.name}
                           fill
                           className="object-cover"
@@ -149,7 +145,7 @@ export default function VegasWeekendPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/60 to-transparent" />
                       </div>
                     )}
-                    <div className={`p-6 ${collective.imageUrl ? '-mt-16 relative z-10' : ''}`}>
+                    <div className={`p-6 ${collective.image_url ? '-mt-16 relative z-10' : ''}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <h2 className="text-2xl font-display font-bold text-yellow-400 mb-2">
@@ -163,11 +159,6 @@ export default function VegasWeekendPage() {
                           {collective.events.length} shows
                         </span>
                       </div>
-                      {collective.link && (
-                        <a href={collective.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-yellow-400 hover:underline mt-3">
-                          Learn more <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
                     </div>
                   </div>
 
