@@ -282,9 +282,37 @@ export async function updateEvent(eventId: string, updates: {
 }) {
   const supabase = createClient()
 
+  // Re-geocode if any location field changed
+  const locationChanged = 'venue_name' in updates || 'venue_address' in updates || 'city' in updates || 'state' in updates
+  let coordUpdates: { latitude?: number; longitude?: number } = {}
+
+  if (locationChanged) {
+    // Fetch existing event to merge with updates
+    const { data: existing } = await supabase
+      .from('events')
+      .select('venue_name, venue_address, city, state, country')
+      .eq('id', eventId)
+      .single()
+
+    if (existing) {
+      const { geocodeVenue } = await import('@/lib/geocode')
+      const coords = await geocodeVenue({
+        venue_name: updates.venue_name !== undefined ? updates.venue_name : existing.venue_name,
+        venue_address: updates.venue_address !== undefined ? updates.venue_address : existing.venue_address,
+        city: updates.city !== undefined ? updates.city : existing.city,
+        state: updates.state !== undefined ? updates.state : existing.state,
+        country: existing.country || 'USA',
+      })
+
+      if (coords) {
+        coordUpdates = { latitude: coords.latitude, longitude: coords.longitude }
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from('events')
-    .update(updates)
+    .update({ ...updates, ...coordUpdates })
     .eq('id', eventId)
     .select()
     .single()
@@ -658,6 +686,16 @@ export async function createEvent(data: {
 }) {
   const supabase = createClient()
 
+  // Geocode the venue
+  const { geocodeVenue } = await import('@/lib/geocode')
+  const coords = await geocodeVenue({
+    venue_name: data.venue_name,
+    venue_address: data.venue_address,
+    city: data.city,
+    state: data.state,
+    country: data.country || 'USA',
+  })
+
   // Generate a slug from the name
   const slug = data.name
     .toLowerCase()
@@ -671,6 +709,7 @@ export async function createEvent(data: {
       slug,
       status: 'upcoming',
       country: data.country || 'USA',
+      ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
     })
     .select()
     .single()
