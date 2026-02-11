@@ -56,7 +56,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
       ))}
 
       {/* Content overlay */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 md:pt-40 pb-12 md:pb-16 flex items-end" style={{ minHeight: 'inherit' }}>
         <div className="max-w-3xl">
           {/* Show slide-specific title/subtitle if available */}
           {hasImages && images[current]?.title ? (

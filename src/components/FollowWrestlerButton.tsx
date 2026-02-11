@@ -82,31 +82,28 @@ export default function FollowWrestlerButton({
   }
 
   return (
-    <div className="inline-flex flex-col items-start">
-      <button
-        onClick={handleFollow}
-        disabled={loading}
-        className={`btn ${
-          isFollowing 
-            ? 'bg-accent text-white hover:bg-accent/80' 
-            : 'btn-secondary'
-        }`}
-      >
-        {loading ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : isFollowing ? (
-          <UserCheck className="w-4 h-4 mr-2" />
-        ) : (
-          <UserPlus className="w-4 h-4 mr-2" />
-        )}
-        {isFollowing ? 'Following' : 'Follow'}
-      </button>
-      
+    <button
+      onClick={handleFollow}
+      disabled={loading}
+      className={`btn ${
+        isFollowing 
+          ? 'bg-accent text-white hover:bg-accent/80' 
+          : 'btn-secondary'
+      }`}
+    >
+      {loading ? (
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      ) : isFollowing ? (
+        <UserCheck className="w-4 h-4 mr-2" />
+      ) : (
+        <UserPlus className="w-4 h-4 mr-2" />
+      )}
+      {isFollowing ? 'Following' : 'Follow'}
       {followerCount > 0 && (
-        <span className="text-xs text-foreground-muted mt-1">
-          {followerCount} follower{followerCount !== 1 ? 's' : ''}
+        <span className="ml-1.5 text-xs opacity-60">
+          · {followerCount}
         </span>
       )}
-    </div>
+    </button>
   )
 }
