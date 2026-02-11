@@ -103,7 +103,7 @@ export async function redeemProfessionalClaimCode(code: string) {
     .eq('id', pro.id)
 
   if (error) throw error
-  return { success: true, professional_id: pro.id, professional_name: pro.name }
+  return { success: true, professional_id: pro.id, professional_name: pro.name } as { success: boolean; error?: string; professional_id?: string; professional_name?: string }
 }
 
 // ============================================
