@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
-import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield } from 'lucide-react'
+import { supabase, ROLE_LABELS } from '@/lib/supabase'
+import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield, Briefcase } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 import RosterCarousel from '@/components/RosterCarousel'
@@ -132,6 +132,20 @@ async function getRoster(promotionId: string) {
   return data
 }
 
+async function getPromotionCrew(promotionId: string) {
+  const { data, error } = await supabase
+    .from('professional_promotions')
+    .select('*, professionals (id, name, slug, photo_url, role)')
+    .eq('promotion_id', promotionId)
+    .eq('status', 'accepted')
+
+  if (error) {
+    console.error('Error fetching crew:', error)
+    return []
+  }
+  return data || []
+}
+
 async function getGroups(promotionId: string) {
   const { data, error } = await supabase
     .from('promotion_groups')
@@ -177,6 +191,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   const followerCount = await getFollowerCount(promotion.id)
   const championships = await getChampionships(promotion.id)
   const roster = await getRoster(promotion.id)
+  const promotionCrew = await getPromotionCrew(promotion.id)
   const groups = await getGroups(promotion.id)
 
   // Fetch promotion merch items
@@ -491,6 +506,39 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         {/* Roster */}
         {roster.length > 0 && (
           <RosterCarousel roster={roster} />
+        )}
+
+        {/* Crew */}
+        {promotionCrew.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
+              <Briefcase className="w-6 h-6 text-purple-400" />
+              Crew
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {promotionCrew.map((pc: any) => (
+                <Link
+                  key={pc.id}
+                  href={`/crew/${pc.professionals.slug}`}
+                  className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
+                >
+                  <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center overflow-hidden mb-2">
+                    {pc.professionals.photo_url ? (
+                      <Image src={pc.professionals.photo_url} alt={pc.professionals.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
+                    ) : (
+                      <Briefcase className="w-8 h-8 text-foreground-muted" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2 w-full">
+                    {pc.professionals.name}
+                  </span>
+                  <span className="text-[10px] text-purple-400 mt-0.5 text-center line-clamp-1 w-full">
+                    {pc.professionals.role?.map((r: string) => ROLE_LABELS[r] || r).join(' / ')}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Tag Teams & Factions */}

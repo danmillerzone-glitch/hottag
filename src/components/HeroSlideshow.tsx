@@ -32,7 +32,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
   }, [images.length, multi])
 
   return (
-    <section className="relative overflow-hidden bg-background-secondary" style={{ minHeight: hasImages ? '420px' : undefined }}>
+    <section className="relative overflow-hidden bg-background-secondary" style={{ minHeight: hasImages ? '480px' : undefined, maxHeight: '600px' }}>
       {/* Slideshow images */}
       {hasImages && images.map((img, i) => (
         <div

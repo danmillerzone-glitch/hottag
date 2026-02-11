@@ -96,7 +96,7 @@ export const WRESTLING_STYLE_LABELS: Record<string, string> = {
 export const PROFESSIONAL_ROLES = [
   'referee', 'photographer', 'videographer', 'video_editor', 'camera_operator',
   'graphic_designer', 'ring_announcer', 'commentator', 'manager_valet',
-  'producer', 'trainer', 'dj_music', 'ring_crew', 'other'
+  'producer', 'director', 'trainer', 'dj_music', 'ring_crew', 'other'
 ] as const
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -110,6 +110,7 @@ export const ROLE_LABELS: Record<string, string> = {
   commentator: 'Commentator',
   manager_valet: 'Manager / Valet',
   producer: 'Producer',
+  director: 'Director',
   trainer: 'Trainer',
   dj_music: 'DJ / Music',
   ring_crew: 'Ring Crew',

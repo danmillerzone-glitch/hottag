@@ -14,8 +14,8 @@ const navItems = [
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/map', label: 'Map', icon: Map },
   { href: '/wrestlers', label: 'Wrestlers', icon: Users },
-  { href: '/crew', label: 'Crew', icon: Briefcase },
   { href: '/promotions', label: 'Promotions', icon: Building2 },
+  { href: '/crew', label: 'Crew', icon: Briefcase },
 ]
 
 // Show Vegas Weekend nav item until end of April 19, 2026

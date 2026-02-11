@@ -237,28 +237,6 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </div>
                 </div>
 
-                {/* Wrestling Style */}
-                {wrestler.wrestling_style && wrestler.wrestling_style.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {wrestler.wrestling_style.map((style: string, i: number) => (
-                      <span key={i} className="px-2.5 py-1 rounded-md bg-yellow-500/10 text-yellow-400 text-xs font-semibold border border-yellow-500/20">
-                        {WRESTLING_STYLE_LABELS[style] || style}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Signature Moves */}
-                {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {wrestler.signature_moves.map((move: string, i: number) => (
-                      <span key={i} className="px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
-                        {move}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 {/* Countries Wrestled (no label) */}
                 {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
@@ -405,9 +383,28 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 )}
 
                 {/* Signature moves */}
+                {wrestler.wrestling_style && wrestler.wrestling_style.length > 0 && (
+                  <div className="border-t border-border/50 pt-3 mb-3">
+                    <span className="uppercase tracking-wider text-foreground-muted/50 text-[10px] block mb-1.5">Style</span>
+                    <div className="flex flex-wrap gap-1">
+                      {wrestler.wrestling_style.map((style: string, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 text-xs font-semibold border border-yellow-500/20">
+                          {WRESTLING_STYLE_LABELS[style] || style}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
                   <div className="border-t border-border/50 pt-3 mb-3">
-                    <div className="text-sm font-bold text-foreground">{wrestler.signature_moves.join(', ')}</div>
+                    <span className="uppercase tracking-wider text-foreground-muted/50 text-[10px] block mb-1.5">Signature Moves</span>
+                    <div className="flex flex-wrap gap-1">
+                      {wrestler.signature_moves.map((move: string, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+                          {move}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -492,9 +489,33 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                   )}
                   {wrestler.trainer && (
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
                       <span className="text-xs uppercase tracking-wider text-foreground-muted">Trainer</span>
                       <span className="font-bold text-sm">{wrestler.trainer}</span>
+                    </div>
+                  )}
+                  {wrestler.wrestling_style && wrestler.wrestling_style.length > 0 && (
+                    <div className="border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted block mb-1.5">Style</span>
+                      <div className="flex flex-wrap gap-1">
+                        {wrestler.wrestling_style.map((style: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 text-xs font-semibold border border-yellow-500/20">
+                            {WRESTLING_STYLE_LABELS[style] || style}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (
+                    <div>
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted block mb-1.5">Signature Moves</span>
+                      <div className="flex flex-wrap gap-1">
+                        {wrestler.signature_moves.map((move: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+                            {move}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

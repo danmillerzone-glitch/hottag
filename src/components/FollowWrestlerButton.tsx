@@ -82,7 +82,7 @@ export default function FollowWrestlerButton({
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="inline-flex flex-col items-start">
       <button
         onClick={handleFollow}
         disabled={loading}
@@ -103,7 +103,7 @@ export default function FollowWrestlerButton({
       </button>
       
       {followerCount > 0 && (
-        <span className="text-sm text-foreground-muted">
+        <span className="text-xs text-foreground-muted mt-1">
           {followerCount} follower{followerCount !== 1 ? 's' : ''}
         </span>
       )}
