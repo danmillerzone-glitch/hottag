@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, Calendar, Users, TrendingUp, Loader2 } from 'lucide-react'
+import { User, Search, ShieldCheck, Calendar, TrendingUp, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
-import { formatNumber } from '@/lib/utils'
+import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import RequestPageButton from '@/components/RequestPageButton'
 
 interface WrestlerCard {
@@ -13,11 +13,16 @@ interface WrestlerCard {
   name: string
   slug: string
   photo_url: string | null
+  render_url: string | null
   hometown: string | null
+  moniker: string | null
+  hero_style: HeroStyle | null
   verification_status: string | null
   follower_count: number
   upcoming_events_count: number
 }
+
+const SELECT_COLS = 'id, name, slug, photo_url, render_url, hometown, moniker, hero_style, verification_status, follower_count, upcoming_events_count'
 
 export default function WrestlersPage() {
   const [query, setQuery] = useState('')
@@ -36,11 +41,11 @@ export default function WrestlersPage() {
     const supabase = createClient()
 
     const [verifiedRes, popularRes, activeRes] = await Promise.all([
-      supabase.from('wrestlers').select('id, name, slug, photo_url, hometown, verification_status, follower_count, upcoming_events_count')
+      supabase.from('wrestlers').select(SELECT_COLS)
         .eq('verification_status', 'verified').order('follower_count', { ascending: false }).limit(12),
-      supabase.from('wrestlers').select('id, name, slug, photo_url, hometown, verification_status, follower_count, upcoming_events_count')
-        .order('follower_count', { ascending: false }).limit(16),
-      supabase.from('wrestlers').select('id, name, slug, photo_url, hometown, verification_status, follower_count, upcoming_events_count')
+      supabase.from('wrestlers').select(SELECT_COLS)
+        .order('follower_count', { ascending: false }).limit(18),
+      supabase.from('wrestlers').select(SELECT_COLS)
         .gt('upcoming_events_count', 0).order('upcoming_events_count', { ascending: false }).limit(12),
     ])
 
@@ -56,7 +61,7 @@ export default function WrestlersPage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('wrestlers')
-      .select('id, name, slug, photo_url, hometown, verification_status, follower_count, upcoming_events_count')
+      .select(SELECT_COLS)
       .ilike('name', `%${q}%`)
       .order('follower_count', { ascending: false })
       .limit(20)
@@ -104,8 +109,8 @@ export default function WrestlersPage() {
             <h2 className="text-lg font-display font-semibold mb-4 text-foreground-muted">
               {searchResults.length > 0 ? `${searchResults.length} results for "${query}"` : searching ? 'Searching...' : `No results for "${query}"`}
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {searchResults.map(w => <WrestlerCardComponent key={w.id} wrestler={w} />)}
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {searchResults.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
             </div>
           </div>
         ) : loading ? (
@@ -119,8 +124,8 @@ export default function WrestlersPage() {
                   <ShieldCheck className="w-5 h-5 text-accent" />
                   <h2 className="text-xl font-display font-bold">Verified Wrestlers</h2>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {verified.map(w => <WrestlerCardComponent key={w.id} wrestler={w} />)}
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {verified.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
                 </div>
               </section>
             )}
@@ -132,8 +137,8 @@ export default function WrestlersPage() {
                   <Calendar className="w-5 h-5 text-accent" />
                   <h2 className="text-xl font-display font-bold">Most Booked</h2>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {active.map(w => <WrestlerCardComponent key={w.id} wrestler={w} />)}
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {active.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
                 </div>
               </section>
             )}
@@ -144,8 +149,8 @@ export default function WrestlersPage() {
                 <TrendingUp className="w-5 h-5 text-accent" />
                 <h2 className="text-xl font-display font-bold">Popular</h2>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {popular.map(w => <WrestlerCardComponent key={w.id} wrestler={w} />)}
+              <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {popular.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
               </div>
             </section>
           </div>
@@ -155,38 +160,62 @@ export default function WrestlersPage() {
   )
 }
 
-function WrestlerCardComponent({ wrestler }: { wrestler: WrestlerCard }) {
+function WrestlerHeroCard({ wrestler }: { wrestler: WrestlerCard }) {
+  const imageUrl = wrestler.render_url || wrestler.photo_url
+  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+  const hasTheme = !!wrestler.hero_style
+
   return (
-    <Link
-      href={`/wrestlers/${wrestler.slug}`}
-      className="flex items-center gap-3 p-4 rounded-xl bg-background-secondary border border-border hover:border-accent/50 transition-colors group"
-    >
-      <div className="w-12 h-12 rounded-xl bg-background-tertiary flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {wrestler.photo_url ? (
-          <Image src={wrestler.photo_url} alt={wrestler.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
-        ) : (
-          <User className="w-6 h-6 text-foreground-muted" />
+    <Link href={`/wrestlers/${wrestler.slug}`} className="block group">
+      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary">
+        {/* Hero background */}
+        {hasTheme && (
+          <div className="absolute inset-0 z-[0]">
+            {wrestler.hero_style?.type === 'flag' ? (
+              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                {heroCSS.texture && (
+                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />
+                )}
+              </>
+            )}
+          </div>
         )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors truncate">{wrestler.name}</span>
-          {wrestler.verification_status === 'verified' && (
-            <ShieldCheck className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-          )}
-        </div>
-        <div className="flex items-center gap-3 text-xs text-foreground-muted mt-0.5">
-          {wrestler.hometown && <span className="truncate">{wrestler.hometown}</span>}
-          {wrestler.upcoming_events_count > 0 && (
-            <span className="flex items-center gap-1 flex-shrink-0">
-              <Calendar className="w-3 h-3" /> {wrestler.upcoming_events_count}
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={wrestler.name}
+              fill
+              className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
+              sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 180px"
+              unoptimized
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <User className="w-12 h-12 text-foreground-muted/30" />
+          </div>
+        )}
+        {/* Verified badge */}
+        {wrestler.verification_status === 'verified' && (
+          <div className="absolute top-2 right-2 z-[3]">
+            <ShieldCheck className="w-4 h-4 text-accent drop-shadow-lg" />
+          </div>
+        )}
+        {/* Name + moniker overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 z-[3]">
+          {wrestler.moniker && (
+            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
+              &ldquo;{wrestler.moniker}&rdquo;
             </span>
           )}
-          {wrestler.follower_count > 0 && (
-            <span className="flex items-center gap-1 flex-shrink-0">
-              <Users className="w-3 h-3" /> {formatNumber(wrestler.follower_count)}
-            </span>
-          )}
+          <span className="text-sm font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg">
+            {wrestler.name}
+          </span>
         </div>
       </div>
     </Link>
@@ -199,13 +228,12 @@ function WrestlersSkeleton() {
       {[1, 2, 3].map(s => (
         <div key={s}>
           <div className="h-7 w-48 skeleton rounded mb-4" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 rounded-xl bg-background-secondary border border-border">
-                <div className="w-12 h-12 skeleton rounded-xl" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-28 skeleton rounded" />
-                  <div className="h-3 w-20 skeleton rounded" />
+          <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary animate-pulse">
+                <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+                  <div className="h-3 w-16 rounded bg-white/10" />
+                  <div className="h-4 w-3/4 rounded bg-white/10" />
                 </div>
               </div>
             ))}
