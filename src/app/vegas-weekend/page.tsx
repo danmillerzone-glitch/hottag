@@ -18,7 +18,7 @@ interface Collective {
   imageUrl: string | null
 }
 
-interface Collective {
+interface VegasCollective {
   key: string
   name: string
   description: string | null
@@ -27,7 +27,7 @@ interface Collective {
 
 export default function VegasWeekendPage() {
   const [events, setEvents] = useState<any[]>([])
-  const [collectives, setCollectives] = useState<Collective[]>([])
+  const [collectives, setCollectives] = useState<VegasCollective[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
