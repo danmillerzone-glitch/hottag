@@ -2643,7 +2643,7 @@ function PageRequestsTab() {
             .insert({
               name: req.name.trim(),
               slug,
-              role: 'other',
+              role: ['other'],
               verification_status: 'unverified',
             })
             .select('id')

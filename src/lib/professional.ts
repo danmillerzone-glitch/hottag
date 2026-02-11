@@ -138,7 +138,7 @@ export async function updateProfessional(professionalId: string, updates: {
   name?: string
   moniker?: string | null
   bio?: string | null
-  role?: string
+  role?: string[]
   hometown?: string | null
   residence?: string | null
   photo_url?: string | null
