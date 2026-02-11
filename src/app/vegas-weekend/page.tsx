@@ -64,8 +64,12 @@ export default function VegasWeekendPage() {
     setLoading(false)
   }
 
+  // Separate page hero from event collectives
+  const pageHero = collectives.find(c => c.key === 'page-hero')
+  const eventCollectives = collectives.filter(c => c.key !== 'page-hero')
+
   // Group events into collectives and standalone
-  const collectiveEvents = collectives.map(collective => {
+  const collectiveEvents = eventCollectives.map(collective => {
     const matched = events.filter(e => e.vegas_collective === collective.key)
     return { ...collective, events: matched }
   })
@@ -84,8 +88,25 @@ export default function VegasWeekendPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <div className="relative bg-gradient-to-b from-yellow-900/30 via-background to-background border-b border-yellow-500/20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+      <div className="relative border-b border-yellow-500/20 overflow-hidden">
+        {/* Background image if uploaded */}
+        {pageHero?.image_url && (
+          <>
+            <Image
+              src={pageHero.image_url}
+              alt="Vegas Weekend"
+              fill
+              className="object-cover"
+              priority
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-black/60" />
+          </>
+        )}
+        {!pageHero?.image_url && (
+          <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/30 via-background to-background" />
+        )}
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-semibold mb-6">
             <Star className="w-4 h-4" />
             April 15–19, 2026

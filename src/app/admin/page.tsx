@@ -3050,14 +3050,49 @@ function VegasWeekendTab() {
 
   return (
     <div className="space-y-8">
-      {/* Collectives management */}
+      {/* Page Hero Banner */}
+      <div>
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Star className="w-5 h-5 text-yellow-400" />
+          Page Hero Banner
+        </h3>
+        {collectives.filter(c => c.key === 'page-hero').map(c => (
+          <div key={c.key} className="card p-5">
+            <label className="cursor-pointer block mb-3">
+              <div className="w-full h-40 rounded-lg overflow-hidden bg-background-tertiary border-2 border-dashed border-border hover:border-yellow-400 transition-colors flex items-center justify-center">
+                {c.image_url ? (
+                  <img src={c.image_url} alt="Page Hero" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center">
+                    <Upload className="w-8 h-8 text-foreground-muted mx-auto mb-2" />
+                    <span className="text-sm text-foreground-muted">Upload hero banner (1920×600 recommended)</span>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) uploadCollectiveImage(c.key, file)
+                }}
+              />
+            </label>
+            {uploading === c.key && <div className="text-sm text-accent">Uploading...</div>}
+            <p className="text-xs text-foreground-muted">This image appears behind the title at the top of the Vegas Weekend page.</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Collectives */}
       <div>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Star className="w-5 h-5 text-yellow-400" />
           Collectives
         </h3>
         <div className="space-y-4">
-          {collectives.map(c => (
+          {collectives.filter(c => c.key !== 'page-hero').map(c => (
             <div key={c.key} className="card p-5">
               <div className="flex items-start gap-4">
                 {/* Image upload */}
