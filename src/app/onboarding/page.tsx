@@ -233,24 +233,41 @@ function StepPickPromotions({
     async function load() {
       // Try to get user location via IP
       let detectedState: string | null = null
+      let stateAbbrev: string | null = null
       try {
-        const res = await fetch('https://ip-api.com/json/?fields=regionName,countryCode')
+        const res = await fetch('https://ip-api.com/json/?fields=regionName,region,countryCode')
         const geo = await res.json()
         if (geo.regionName) {
           detectedState = geo.regionName
+          stateAbbrev = geo.region || null // ip-api returns 2-letter state code in "region"
           setUserState(detectedState)
         }
       } catch {}
 
       // Fetch nearby promotions if we have a state
-      if (detectedState) {
-        const { data: nearby } = await supabase
-          .from('promotions')
-          .select('id, name, slug, logo_url, region, state, city')
-          .ilike('state', `%${detectedState}%`)
-          .order('name')
-          .limit(20)
-        if (nearby && nearby.length > 0) setNearbyPromotions(nearby)
+      if (stateAbbrev || detectedState) {
+        // Try abbreviation first (DB stores "TX"), then full name as fallback
+        let nearby: any[] = []
+        if (stateAbbrev) {
+          const { data } = await supabase
+            .from('promotions')
+            .select('id, name, slug, logo_url, region, state, city')
+            .ilike('state', stateAbbrev)
+            .order('name')
+            .limit(20)
+          if (data && data.length > 0) nearby = data
+        }
+        // Fallback to full name match if abbreviation returned nothing
+        if (nearby.length === 0 && detectedState) {
+          const { data } = await supabase
+            .from('promotions')
+            .select('id, name, slug, logo_url, region, state, city')
+            .ilike('state', `%${detectedState}%`)
+            .order('name')
+            .limit(20)
+          if (data && data.length > 0) nearby = data
+        }
+        if (nearby.length > 0) setNearbyPromotions(nearby)
       }
 
       // Fetch all promotions grouped by region
@@ -328,8 +345,9 @@ function StepPickPromotions({
         <div className="space-y-8">
           {/* Nearby promotions */}
           {nearbyPromotions.length > 0 && (
-            <div>
-              <h2 className="text-lg font-display font-bold mb-3">📍 Near You{userState ? ` — ${userState}` : ''}</h2>
+            <div className="pb-6 mb-2 border-b border-border">
+              <h2 className="text-lg font-display font-bold mb-1">📍 Near You{userState ? ` — ${userState}` : ''}</h2>
+              <p className="text-sm text-foreground-muted mb-3">Promotions in your area</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {nearbyPromotions.map(p => (
                   <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
@@ -338,17 +356,22 @@ function StepPickPromotions({
             </div>
           )}
 
-          {/* All promotions by region */}
-          {Object.entries(allPromotions).map(([region, list]) => (
-            <div key={region}>
-              <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {list.map(p => (
-                  <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
-                ))}
+          {/* All promotions by region (excluding nearby) */}
+          {Object.entries(allPromotions).map(([region, list]) => {
+            const nearbyIds = new Set(nearbyPromotions.map(p => p.id))
+            const filtered = list.filter(p => !nearbyIds.has(p.id))
+            if (filtered.length === 0) return null
+            return (
+              <div key={region}>
+                <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {filtered.map(p => (
+                    <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* Nothing at all */}
           {Object.keys(allPromotions).length === 0 && nearbyPromotions.length === 0 && (
