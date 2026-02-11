@@ -198,10 +198,11 @@ function StepPickPromotions({
 
   useEffect(() => {
     async function load() {
-      // Load recommended promotions
+      // Load admin-curated featured promotions for onboarding
       const { data, error } = await supabase
         .from('promotions')
         .select('id, name, slug, logo_url, region, state, city')
+        .eq('onboarding_featured', true)
         .order('name')
         .limit(50)
 
@@ -305,7 +306,9 @@ function PromotionCard({ item, selected, onToggle }: { item: any; selected: bool
       {/* 4:5 image area */}
       <div className="relative aspect-[4/5] bg-background-tertiary">
         {item.logo_url ? (
-          <Image src={item.logo_url} alt={item.name} fill className="object-cover" sizes="200px" unoptimized />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <Image src={item.logo_url} alt={item.name} fill className="object-contain" sizes="200px" unoptimized />
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Building2 className="w-10 h-10 text-foreground-muted/30" />

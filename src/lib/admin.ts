@@ -196,7 +196,7 @@ export async function searchPromotions(query: string, limit = 20) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('promotions')
-    .select('id, name, slug, city, state, claimed_by, verification_status, claim_code')
+    .select('id, name, slug, city, state, claimed_by, verification_status, claim_code, onboarding_featured')
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(limit)

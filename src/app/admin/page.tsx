@@ -40,7 +40,7 @@ import {
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2, Briefcase,
+  ChevronUp, ChevronDown, Edit2, Briefcase, Star,
 } from 'lucide-react'
 
 type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero'
@@ -461,6 +461,14 @@ function PromotionsTab() {
     catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
+  async function handleToggleFeatured(id: string, currentlyFeatured: boolean) {
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      await supabase.from('promotions').update({ onboarding_featured: !currentlyFeatured }).eq('id', id)
+      setResults(results.map(p => p.id === id ? { ...p, onboarding_featured: !currentlyFeatured } : p))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
   async function openEdit(id: string) {
     try { const data = await getPromotionFull(id); setEditing(data) }
     catch (err: any) { alert(`Error: ${err.message}`) }
@@ -551,10 +559,14 @@ function PromotionsTab() {
                 <div className="flex items-center gap-2">
                   <Link href={`/promotions/${promo.slug}`} target="_blank" className="font-semibold text-accent hover:underline">{promo.name}</Link>
                   {promo.verification_status === 'verified' && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Verified</span>}
+                  {promo.onboarding_featured && <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Featured</span>}
                 </div>
                 <p className="text-sm text-foreground-muted">{promo.city && promo.state ? `${promo.city}, ${promo.state}` : 'No location'} • {promo.claimed_by ? 'Claimed' : 'Unclaimed'}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => handleToggleFeatured(promo.id, !!promo.onboarding_featured)} className={`p-2 rounded transition-colors ${promo.onboarding_featured ? 'text-amber-400 hover:bg-amber-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={promo.onboarding_featured ? 'Remove from onboarding' : 'Feature in onboarding'}>
+                  <Star className={`w-4 h-4 ${promo.onboarding_featured ? 'fill-amber-400' : ''}`} />
+                </button>
                 <button onClick={() => openRoster(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Roster"><Users className="w-4 h-4" /></button>
                 <button onClick={() => openGroups(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Tag Teams & Factions"><Shield className="w-4 h-4" /></button>
                 <button onClick={() => openChampionships(promo.id, promo.name)} className="p-2 text-foreground-muted hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Championships"><Award className="w-4 h-4" /></button>
