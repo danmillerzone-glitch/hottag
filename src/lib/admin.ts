@@ -828,3 +828,87 @@ export async function removeGroupMemberAdmin(memberId: string) {
   const { error } = await supabase.from('promotion_group_members').delete().eq('id', memberId)
   if (error) throw error
 }
+
+// ============================================
+// PROFESSIONAL / CREW ADMIN
+// ============================================
+
+export async function searchProfessionalsAdmin(query: string, limit = 20) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('id, name, slug, role, photo_url, verification_status, claimed_by, claim_code')
+    .ilike('name', `%${query}%`)
+    .order('name')
+    .limit(limit)
+  if (error) throw error
+  return data || []
+}
+
+export async function getProfessionalFull(id: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.from('professionals').select('*').eq('id', id).single()
+  if (error) throw error
+  return data
+}
+
+export async function updateProfessionalAdmin(id: string, updates: Record<string, any>) {
+  const supabase = createClient()
+  const { error } = await supabase.from('professionals').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteProfessional(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('professionals').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function verifyProfessional(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('professionals').update({ verification_status: 'verified' }).eq('id', id)
+  if (error) throw error
+}
+
+export async function unverifyProfessional(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('professionals').update({ verification_status: 'unverified' }).eq('id', id)
+  if (error) throw error
+}
+
+export async function getPendingProfessionalClaims() {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('professional_claims')
+    .select('*, professionals (id, name, slug)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function getAllProfessionalClaims() {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('professional_claims')
+    .select('*, professionals (id, name, slug)')
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw error
+  return data || []
+}
+
+export async function approveProfessionalClaim(claimId: string) {
+  const supabase = createClient()
+  const { error } = await supabase.rpc('approve_professional_claim', { claim_id: claimId })
+  if (error) throw error
+}
+
+export async function rejectProfessionalClaim(claimId: string, notes?: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('professional_claims')
+    .update({ status: 'rejected', admin_notes: notes || null, reviewed_at: new Date().toISOString() })
+    .eq('id', claimId)
+  if (error) throw error
+}

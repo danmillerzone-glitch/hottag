@@ -29,17 +29,21 @@ import {
   getPromotionRosterAdmin, addToRosterAdmin, removeFromRosterAdmin,
   getPromotionGroupsAdmin, createGroupAdmin, updateGroupAdmin, deleteGroupAdmin,
   addGroupMemberAdmin, removeGroupMemberAdmin,
+  searchProfessionalsAdmin, getProfessionalFull, updateProfessionalAdmin, deleteProfessional,
+  verifyProfessional, unverifyProfessional, getPendingProfessionalClaims, getAllProfessionalClaims,
+  approveProfessionalClaim, rejectProfessionalClaim,
 } from '@/lib/admin'
+import { ROLE_LABELS, PROFESSIONAL_ROLES } from '@/lib/supabase'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
   Building2, Calendar, Search, Trash2, ExternalLink,
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2,
+  ChevronUp, ChevronDown, Edit2, Briefcase,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'events' | 'promotions' | 'wrestlers' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero'
+type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -72,9 +76,11 @@ export default function AdminPage() {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'promo-claims', label: 'Promo Claims', icon: Building2 },
     { id: 'wrestler-claims', label: 'Wrestler Claims', icon: Users },
+    { id: 'crew-claims', label: 'Crew Claims', icon: Briefcase },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'promotions', label: 'Promotions', icon: Building2 },
     { id: 'wrestlers', label: 'Wrestlers', icon: Award },
+    { id: 'crew', label: 'Crew', icon: Briefcase },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'users', label: 'Users & Bans', icon: Ban },
     { id: 'merge', label: 'Merge', icon: GitMerge },
@@ -122,9 +128,11 @@ export default function AdminPage() {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'promo-claims' && <PromoClaimsTab />}
         {activeTab === 'wrestler-claims' && <WrestlerClaimsTab />}
+        {activeTab === 'crew-claims' && <CrewClaimsTab />}
         {activeTab === 'events' && <EventsTab />}
         {activeTab === 'promotions' && <PromotionsTab />}
         {activeTab === 'wrestlers' && <WrestlersTab />}
+        {activeTab === 'crew' && <CrewTab />}
         {activeTab === 'announcements' && <AnnouncementsTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'merge' && <MergeTab />}
@@ -633,6 +641,289 @@ function WrestlersTab() {
                   <BadgeCheck className="w-4 h-4" />
                 </button>
                 <button onClick={() => handleDelete(w.id, w.name)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// CREW TAB
+// ============================================
+
+function CrewTab() {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [editing, setEditing] = useState<any>(null)
+  const [creating, setCreating] = useState(false)
+
+  async function handleSearch() {
+    if (!query.trim()) return
+    setLoading(true)
+    const data = await searchProfessionalsAdmin(query)
+    setResults(data)
+    setLoading(false)
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    try { await deleteProfessional(id); setResults(results.filter(p => p.id !== id)) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleVerify(id: string, isVerified: boolean) {
+    try {
+      if (isVerified) await unverifyProfessional(id)
+      else await verifyProfessional(id)
+      setResults(results.map(p => p.id === id ? { ...p, verification_status: isVerified ? 'unverified' : 'verified' } : p))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function openEdit(id: string) {
+    try { const data = await getProfessionalFull(id); setEditing(data) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-display font-bold">Manage Crew</h2>
+        <button onClick={() => setCreating(true)} className="btn btn-primary text-sm">
+          <Plus className="w-4 h-4 mr-1" /> New Crew Member
+        </button>
+      </div>
+      <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} loading={loading} placeholder="Search crew by name..." />
+
+      {creating && <CreateCrewModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); if (query) handleSearch() }} />}
+      {editing && <EditCrewModal professional={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); handleSearch() }} />}
+
+      {results.length > 0 && (
+        <div className="space-y-2">
+          {results.map((p) => (
+            <div key={p.id} className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Link href={`/crew/${p.slug}`} target="_blank" className="font-semibold text-accent hover:underline">{p.name}</Link>
+                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">{ROLE_LABELS[p.role] || p.role}</span>
+                  {p.verification_status === 'verified' && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Verified</span>}
+                </div>
+                <p className="text-sm text-foreground-muted">{p.claimed_by ? 'Claimed' : 'Unclaimed'}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => openEdit(p.id)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit"><Edit3 className="w-4 h-4" /></button>
+                <button onClick={() => handleVerify(p.id, p.verification_status === 'verified')} className={`p-2 rounded transition-colors ${p.verification_status === 'verified' ? 'text-green-400 hover:bg-green-500/20' : 'text-foreground-muted hover:bg-accent/10'}`} title={p.verification_status === 'verified' ? 'Remove verification' : 'Verify'}>
+                  <BadgeCheck className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleDelete(p.id, p.name)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CreateCrewModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
+  const [name, setName] = useState('')
+  const [role, setRole] = useState('other')
+  const [saving, setSaving] = useState(false)
+
+  async function handleCreate() {
+    if (!name.trim()) return
+    setSaving(true)
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const { error } = await supabase.from('professionals').insert({ name: name.trim(), slug, role })
+      if (error) throw error
+      onCreated()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <div className="card p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-lg">Create Crew Member</h3>
+        <button onClick={onClose} className="p-1"><X className="w-5 h-5" /></button>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Name *</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Role</label>
+          <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent">
+            {PROFESSIONAL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+          </select>
+        </div>
+        <button onClick={handleCreate} disabled={saving || !name.trim()} className="btn btn-primary w-full">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Create
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function EditCrewModal({ professional, onClose, onSaved }: { professional: any, onClose: () => void, onSaved: () => void }) {
+  const [form, setForm] = useState({
+    name: professional.name || '',
+    role: professional.role || 'other',
+    moniker: professional.moniker || '',
+    bio: professional.bio || '',
+    hometown: professional.hometown || '',
+    residence: professional.residence || '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await updateProfessionalAdmin(professional.id, {
+        name: form.name,
+        role: form.role,
+        moniker: form.moniker || null,
+        bio: form.bio || null,
+        hometown: form.hometown || null,
+        residence: form.residence || null,
+      })
+      onSaved()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <div className="card p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-lg">Edit: {professional.name}</h3>
+        <button onClick={onClose} className="p-1"><X className="w-5 h-5" /></button>
+      </div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Name</label>
+            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
+            <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent">
+              {PROFESSIONAL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Tagline</label>
+          <input type="text" value={form.moniker} onChange={e => setForm({ ...form, moniker: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Hometown</label>
+            <input type="text" value={form.hometown} onChange={e => setForm({ ...form, hometown: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Based In</label>
+            <input type="text" value={form.residence} onChange={e => setForm({ ...form, residence: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Bio</label>
+          <textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent resize-y" />
+        </div>
+
+        <ClaimCodeSection type="professionals" id={professional.id} currentCode={professional.claim_code} claimedBy={professional.claimed_by} />
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="btn btn-ghost flex-1">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="btn btn-primary flex-1">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />} Save
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// CREW CLAIMS TAB
+// ============================================
+
+function CrewClaimsTab() {
+  const [claims, setClaims] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending')
+
+  useEffect(() => { loadClaims() }, [filter])
+
+  async function loadClaims() {
+    setLoading(true)
+    const data = filter === 'pending' ? await getPendingProfessionalClaims() : await getAllProfessionalClaims()
+    setClaims(data)
+    setLoading(false)
+  }
+
+  async function handleApprove(id: string) {
+    if (!confirm('Approve this claim?')) return
+    try { await approveProfessionalClaim(id); await loadClaims() }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleReject(id: string) {
+    const notes = prompt('Rejection reason (optional):')
+    try { await rejectProfessionalClaim(id, notes || undefined); await loadClaims() }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Briefcase className="w-5 h-5" /> Crew Claims ({claims.length})
+        </h2>
+        <div className="flex gap-2">
+          <button onClick={() => setFilter('pending')} className={`px-3 py-1.5 rounded-lg text-sm ${filter === 'pending' ? 'bg-accent text-white' : 'bg-background-tertiary'}`}>Pending</button>
+          <button onClick={() => setFilter('all')} className={`px-3 py-1.5 rounded-lg text-sm ${filter === 'all' ? 'bg-accent text-white' : 'bg-background-tertiary'}`}>All</button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+      ) : claims.length === 0 ? (
+        <p className="text-foreground-muted text-center py-8">No {filter === 'pending' ? 'pending' : ''} crew claims</p>
+      ) : (
+        <div className="space-y-3">
+          {claims.map((claim) => (
+            <div key={claim.id} className="card p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1">
+                  <p className="font-semibold">
+                    {claim.contact_name}
+                    {claim.professionals && (
+                      <> → <Link href={`/crew/${claim.professionals.slug}`} target="_blank" className="text-accent hover:underline">{claim.professionals.name}</Link></>
+                    )}
+                  </p>
+                  <p className="text-sm text-foreground-muted">{claim.user_email}</p>
+                  {claim.role_title && <p className="text-sm mt-1">Role: {claim.role_title}</p>}
+                  {claim.proof_description && <p className="text-sm mt-1 text-foreground-muted">{claim.proof_description}</p>}
+                  {claim.website_or_social && <p className="text-sm mt-1"><a href={claim.website_or_social} target="_blank" className="text-accent hover:underline">{claim.website_or_social}</a></p>}
+                  <p className="text-xs text-foreground-muted mt-1">{new Date(claim.created_at).toLocaleDateString()}</p>
+                  {claim.status !== 'pending' && (
+                    <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${claim.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {claim.status}
+                    </span>
+                  )}
+                </div>
+                {claim.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleApprove(claim.id)} className="btn btn-primary text-sm"><CheckCircle className="w-4 h-4 mr-1" /> Approve</button>
+                    <button onClick={() => handleReject(claim.id)} className="btn btn-ghost text-sm text-red-400"><XCircle className="w-4 h-4 mr-1" /> Reject</button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -2079,7 +2370,7 @@ function EditChampionshipInline({ championship, onSaved, onCancel }: { champions
   )
 }
 
-function ClaimCodeSection({ type, id, currentCode, claimedBy }: { type: 'wrestlers' | 'promotions', id: string, currentCode?: string, claimedBy?: string }) {
+function ClaimCodeSection({ type, id, currentCode, claimedBy }: { type: 'wrestlers' | 'promotions' | 'professionals', id: string, currentCode?: string, claimedBy?: string }) {
   const [code, setCode] = useState(currentCode || '')
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -2153,7 +2444,7 @@ function ClaimCodeSection({ type, id, currentCode, claimedBy }: { type: 'wrestle
           Generate Claim Code
         </button>
       )}
-      <p className="text-xs text-foreground-muted mt-1">DM this code to the {type === 'wrestlers' ? 'wrestler' : 'promoter'} for instant profile claiming.</p>
+      <p className="text-xs text-foreground-muted mt-1">DM this code to the {type === 'wrestlers' ? 'wrestler' : type === 'professionals' ? 'crew member' : 'promoter'} for instant profile claiming.</p>
     </div>
   )
 }
