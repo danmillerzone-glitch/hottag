@@ -355,7 +355,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
                   return (
                     <Link key={wrestler.id} href={`/wrestlers/${wrestler.slug}`} className="block group">
-                      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ${isChamp ? 'ring-2 ring-yellow-500/60' : ''}`}>
+                      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ${isChamp ? 'border-2 border-yellow-500/60' : ''}`}>
                         {hasTheme && (
                           <div className="absolute inset-0 z-[0]">
                             {wrestler.hero_style?.type === 'flag' ? (

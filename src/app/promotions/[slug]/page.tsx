@@ -385,14 +385,13 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
               <Trophy className="w-6 h-6 text-interested" />
               Championships
             </h2>
-            <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {championships.map((champ: any) => {
                 const champion = champ.current_champion
                 const champion2 = champ.current_champion_2
                 const champGroup = champ.champion_group
                 const groupMembers = champGroup?.promotion_group_members || []
 
-                // Collect all champion wrestlers for hero cards
                 const championWrestlers: any[] = []
                 if (champGroup) {
                   groupMembers.forEach((m: any) => { if (m.wrestlers) championWrestlers.push(m.wrestlers) })
@@ -402,28 +401,34 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 }
 
                 return (
-                  <div key={champ.id}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Crown className="w-4 h-4 text-interested" />
-                      <h3 className="font-bold text-interested">{champ.name}</h3>
-                      {champGroup && <span className="text-sm text-foreground-muted">— {champGroup.name}</span>}
+                  <div key={champ.id} className="card p-5 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
+                    <div className="text-sm font-semibold text-interested mb-3 flex items-center gap-1.5">
+                      <Crown className="w-4 h-4" />
+                      {champ.name}
+                      {champGroup && <span className="text-foreground-muted font-normal ml-1">— {champGroup.name}</span>}
                     </div>
+
                     {championWrestlers.length > 0 ? (
-                      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                        {championWrestlers.map((w: any) => (
-                          <ChampionHeroCard key={w.id} wrestler={w} />
-                        ))}
-                      </div>
+                      <>
+                        <div className="flex gap-2 mb-2">
+                          {championWrestlers.map((w: any) => (
+                            <ChampionHeroCard key={w.id} wrestler={w} />
+                          ))}
+                        </div>
+                        {champ.won_date && (
+                          <p className="text-xs text-foreground-muted">
+                            Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <div className="flex items-center gap-3 text-foreground-muted p-4 rounded-xl bg-background-tertiary border border-dashed border-border">
-                        <Trophy className="w-6 h-6 text-foreground-muted/30" />
+                      <div className="flex items-center gap-3 text-foreground-muted">
+                        <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center border-2 border-dashed border-border">
+                          <Trophy className="w-6 h-6 text-foreground-muted/30" />
+                        </div>
                         <span className="text-sm italic">Vacant</span>
                       </div>
-                    )}
-                    {champ.won_date && (
-                      <p className="text-xs text-foreground-muted mt-2">
-                        Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                      </p>
                     )}
                   </div>
                 )
@@ -580,9 +585,8 @@ function ChampionHeroCard({ wrestler }: { wrestler: any }) {
   const hasTheme = !!wrestler.hero_style
 
   return (
-    <Link href={`/wrestlers/${wrestler.slug}`} className="block group flex-shrink-0 w-[140px] sm:w-[160px]">
-      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ring-2 ring-yellow-500/60">
-        {/* Hero background */}
+    <Link href={`/wrestlers/${wrestler.slug}`} className="block group flex-shrink-0 w-[80px] sm:w-[90px]">
+      <div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-background-tertiary border-2 border-yellow-500/60">
         {hasTheme && (
           <div className="absolute inset-0 z-[0]">
             {wrestler.hero_style?.type === 'flag' ? (
@@ -604,28 +608,21 @@ function ChampionHeroCard({ wrestler }: { wrestler: any }) {
               alt={wrestler.name}
               fill
               className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
-              sizes="160px"
+              sizes="90px"
               unoptimized
             />
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <User className="w-12 h-12 text-foreground-muted/30" />
+            <User className="w-8 h-8 text-foreground-muted/30" />
           </div>
         )}
-        {/* Crown badge */}
-        <div className="absolute top-2 right-2 z-[3]">
-          <Crown className="w-4 h-4 text-yellow-400 drop-shadow-lg" />
+        <div className="absolute top-1 right-1 z-[3]">
+          <Crown className="w-3 h-3 text-yellow-400 drop-shadow-lg" />
         </div>
-        {/* Name + moniker */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 z-[3]">
-          {wrestler.moniker && (
-            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
-              &ldquo;{wrestler.moniker}&rdquo;
-            </span>
-          )}
-          <span className="text-sm font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg">
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 z-[3]">
+          <span className="text-[10px] font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg leading-tight">
             {wrestler.name}
           </span>
         </div>

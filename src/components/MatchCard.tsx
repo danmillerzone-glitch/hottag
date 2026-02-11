@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
-import { Swords, Trophy, User } from 'lucide-react'
+import { getHeroCSS } from '@/lib/hero-themes'
+import { Swords, Trophy, User, Crown } from 'lucide-react'
 
 interface Match {
   id: string
@@ -22,36 +23,68 @@ interface Match {
       name: string
       slug: string
       photo_url: string | null
+      render_url: string | null
+      moniker: string | null
+      hero_style: any
     }
   }[]
 }
 
-function WrestlerCard({ wrestler, championTitle }: { wrestler: { id: string; name: string; slug: string; photo_url: string | null }; championTitle?: string }) {
+function WrestlerHeroCard({ wrestler, championTitle }: { wrestler: any; championTitle?: string }) {
+  const imageUrl = wrestler.render_url || wrestler.photo_url
+  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+  const hasTheme = !!wrestler.hero_style
+  const isChamp = !!championTitle
+
   return (
-    <Link
-      href={`/wrestlers/${wrestler.slug}`}
-      className="flex flex-col items-center gap-2 group w-[100px]"
-    >
-      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-background flex items-center justify-center overflow-hidden border-2 ${championTitle ? 'border-yellow-500' : 'border-border'} group-hover:border-accent transition-colors`}>
-        {wrestler.photo_url ? (
-          <Image
-            src={wrestler.photo_url}
-            alt={wrestler.name}
-            width={80}
-            height={80}
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <User className="w-8 h-8 text-foreground-muted" />
+    <Link href={`/wrestlers/${wrestler.slug}`} className="block group w-[100px] sm:w-[120px]">
+      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary ${isChamp ? 'border-2 border-yellow-500/60' : ''}`}>
+        {hasTheme && (
+          <div className="absolute inset-0 z-[0]">
+            {wrestler.hero_style?.type === 'flag' ? (
+              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                {heroCSS.texture && (
+                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />
+                )}
+              </>
+            )}
+          </div>
         )}
-      </div>
-      <span className="text-sm font-medium text-center group-hover:text-accent transition-colors line-clamp-2">
-        {wrestler.name}
-      </span>
-      {championTitle && (
-        <div className="flex flex-col items-center -mt-1" title={championTitle}>
-          <span className="text-xs text-yellow-500 text-center leading-tight">{championTitle}</span>
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={wrestler.name}
+              fill
+              className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
+              sizes="120px"
+              unoptimized
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <User className="w-8 h-8 text-foreground-muted/30" />
+          </div>
+        )}
+        {isChamp && (
+          <div className="absolute top-1.5 right-1.5 z-[3]">
+            <Crown className="w-3.5 h-3.5 text-yellow-400 drop-shadow-lg" />
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-2 z-[3]">
+          <span className="text-xs font-bold text-white group-hover:text-accent transition-colors line-clamp-2 drop-shadow-lg">
+            {wrestler.name}
+          </span>
         </div>
+      </div>
+      {isChamp && (
+        <span className="block text-[10px] font-semibold text-yellow-400 text-center mt-1 line-clamp-1">
+          {championTitle}
+        </span>
       )}
     </Link>
   )
@@ -73,7 +106,7 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
         *,
         match_participants (
           *,
-          wrestlers (id, name, slug, photo_url)
+          wrestlers (id, name, slug, photo_url, render_url, moniker, hero_style)
         )
       `)
       .eq('event_id', eventId)
@@ -126,34 +159,32 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
                 )}
               </div>
 
-              {/* Participants with large images */}
+              {/* Participants with hero cards */}
               {hasTeams ? (
-                /* Team vs Team layout */
-                <div className="flex items-start justify-center gap-6 sm:gap-10">
-                  <div className="flex flex-wrap justify-end gap-4">
+                <div className="flex items-start justify-center gap-4 sm:gap-8">
+                  <div className="flex flex-wrap justify-end gap-3">
                     {team1.map((p) => (
-                      <WrestlerCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
+                      <WrestlerHeroCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                     ))}
                   </div>
                   
-                  <div className="flex-shrink-0 pt-6 sm:pt-8">
+                  <div className="flex-shrink-0 pt-8 sm:pt-10">
                     <span className="text-lg font-bold text-accent">VS</span>
                   </div>
                   
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-wrap gap-3">
                     {team2.map((p) => (
-                      <WrestlerCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
+                      <WrestlerHeroCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                     ))}
                   </div>
                 </div>
               ) : (
-                /* Multi-way / singles layout */
-                <div className="flex flex-wrap items-start justify-center gap-4">
+                <div className="flex flex-wrap items-start justify-center gap-3">
                   {participants.map((p, i) => (
-                    <div key={p.id} className="flex items-start gap-4">
-                      <WrestlerCard wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
+                    <div key={p.id} className="flex items-start gap-3">
+                      <WrestlerHeroCard wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
                       {i < participants.length - 1 && (
-                        <span className="text-sm font-bold text-accent pt-6 sm:pt-8">vs</span>
+                        <span className="text-sm font-bold text-accent pt-8 sm:pt-10">vs</span>
                       )}
                     </div>
                   ))}
