@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
-import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
+import { formatRoles } from '@/lib/supabase'
+import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import {
   Flame, ArrowRight, ArrowLeft, Users, Building2, Briefcase, Heart,
   Search, Loader2, Check, User, Plus, ChevronRight,
@@ -26,7 +27,6 @@ export default function OnboardingPage() {
   const [userType, setUserType] = useState<UserType | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // Fan selections
   const [selectedPromotions, setSelectedPromotions] = useState<string[]>([])
   const [selectedWrestlers, setSelectedWrestlers] = useState<string[]>([])
 
@@ -35,7 +35,6 @@ export default function OnboardingPage() {
     if (!user) { router.replace('/welcome'); return }
     if (onboardingCompleted) { router.replace('/'); return }
 
-    // Load saved progress
     supabase
       .from('user_profiles')
       .select('user_type, onboarding_step')
@@ -58,25 +57,20 @@ export default function OnboardingPage() {
     if (!user) return
     setSaving(true)
 
-    // Follow selected promotions
     for (const promoId of selectedPromotions) {
       await supabase.from('user_follows_promotion').upsert({
-        user_id: user.id,
-        promotion_id: promoId,
+        user_id: user.id, promotion_id: promoId,
       }, { onConflict: 'user_id,promotion_id' })
     }
 
-    // Follow selected wrestlers
     for (const wrestlerId of selectedWrestlers) {
       await supabase.from('user_follows_wrestler').upsert({
-        user_id: user.id,
-        wrestler_id: wrestlerId,
+        user_id: user.id, wrestler_id: wrestlerId,
       }, { onConflict: 'user_id,wrestler_id' })
     }
 
     await supabase.from('user_profiles').update({
-      onboarding_completed: true,
-      onboarding_step: 99,
+      onboarding_completed: true, onboarding_step: 99,
     }).eq('id', user.id)
 
     await refreshOnboarding()
@@ -91,8 +85,9 @@ export default function OnboardingPage() {
   }
 
   function handleBack() {
-    if (step === 1) { setStep(0); saveProgress(0) }
-    else if (step === 2) { setStep(1); saveProgress(1) }
+    const prev = step - 1
+    setStep(prev)
+    saveProgress(prev)
   }
 
   if (loading || onboardingLoading || !user) {
@@ -109,19 +104,13 @@ export default function OnboardingPage() {
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-background-tertiary">
         <div
           className="h-full bg-accent transition-all duration-500"
-          style={{
-            width: userType === 'fan'
-              ? `${((step) / 3) * 100}%`
-              : `${((step) / 2) * 100}%`
-          }}
+          style={{ width: `${(step / (userType === 'fan' ? 3 : 2)) * 100}%` }}
         />
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        {/* Step 0: Choose type */}
         {step === 0 && <StepChooseType onSelect={handleSelectType} />}
 
-        {/* Fan flow */}
         {step === 1 && userType === 'fan' && (
           <StepPickPromotions
             selected={selectedPromotions}
@@ -140,34 +129,14 @@ export default function OnboardingPage() {
           />
         )}
 
-        {/* Wrestler flow */}
         {step === 1 && userType === 'wrestler' && (
-          <StepClaimSearch
-            type="wrestler"
-            onComplete={completeOnboarding}
-            onBack={handleBack}
-            saving={saving}
-          />
+          <StepClaimSearch type="wrestler" onComplete={completeOnboarding} onBack={handleBack} saving={saving} />
         )}
-
-        {/* Promoter flow */}
         {step === 1 && userType === 'promoter' && (
-          <StepClaimSearch
-            type="promoter"
-            onComplete={completeOnboarding}
-            onBack={handleBack}
-            saving={saving}
-          />
+          <StepClaimSearch type="promoter" onComplete={completeOnboarding} onBack={handleBack} saving={saving} />
         )}
-
-        {/* Crew flow */}
         {step === 1 && userType === 'crew' && (
-          <StepClaimSearch
-            type="crew"
-            onComplete={completeOnboarding}
-            onBack={handleBack}
-            saving={saving}
-          />
+          <StepClaimSearch type="crew" onComplete={completeOnboarding} onBack={handleBack} saving={saving} />
         )}
       </div>
     </div>
@@ -210,7 +179,7 @@ function StepChooseType({ onSelect }: { onSelect: (type: UserType) => void }) {
 }
 
 // ============================================
-// STEP: PICK PROMOTIONS (Fan flow)
+// STEP: PICK PROMOTIONS (Curated + Search)
 // ============================================
 
 function StepPickPromotions({
@@ -221,71 +190,22 @@ function StepPickPromotions({
   onNext: () => void
   onBack: () => void
 }) {
-  const [nearbyPromotions, setNearbyPromotions] = useState<any[]>([])
-  const [allPromotions, setAllPromotions] = useState<Record<string, any[]>>({})
+  const [recommended, setRecommended] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [userState, setUserState] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     async function load() {
-      // Try to get user location via IP
-      let detectedState: string | null = null
-      let stateAbbrev: string | null = null
-      try {
-        const res = await fetch('https://ip-api.com/json/?fields=regionName,region,countryCode')
-        const geo = await res.json()
-        if (geo.regionName) {
-          detectedState = geo.regionName
-          stateAbbrev = geo.region || null // ip-api returns 2-letter state code in "region"
-          setUserState(detectedState)
-        }
-      } catch {}
-
-      // Fetch nearby promotions if we have a state
-      if (stateAbbrev || detectedState) {
-        // Try abbreviation first (DB stores "TX"), then full name as fallback
-        let nearby: any[] = []
-        if (stateAbbrev) {
-          const { data } = await supabase
-            .from('promotions')
-            .select('id, name, slug, logo_url, region, state, city')
-            .ilike('state', stateAbbrev)
-            .order('name')
-            .limit(20)
-          if (data && data.length > 0) nearby = data
-        }
-        // Fallback to full name match if abbreviation returned nothing
-        if (nearby.length === 0 && detectedState) {
-          const { data } = await supabase
-            .from('promotions')
-            .select('id, name, slug, logo_url, region, state, city')
-            .ilike('state', `%${detectedState}%`)
-            .order('name')
-            .limit(20)
-          if (data && data.length > 0) nearby = data
-        }
-        if (nearby.length > 0) setNearbyPromotions(nearby)
-      }
-
-      // Fetch all promotions grouped by region
-      const { data, error } = await supabase
+      // Load recommended promotions — verified first, then by follower count
+      const { data } = await supabase
         .from('promotions')
-        .select('id, name, slug, logo_url, region, state')
-        .order('name')
-        .limit(200)
+        .select('id, name, slug, logo_url, region, state, city')
+        .order('follower_count', { ascending: false })
+        .limit(50)
 
-      const grouped: Record<string, any[]> = {}
-      if (data) {
-        for (const p of data) {
-          const region = p.region || 'Other'
-          if (!grouped[region]) grouped[region] = []
-          grouped[region].push(p)
-        }
-      }
-      setAllPromotions(grouped)
+      setRecommended(data || [])
       setLoading(false)
     }
     load()
@@ -296,7 +216,7 @@ function StepPickPromotions({
     if (q.length < 2) { setSearchResults([]); return }
     const { data } = await supabase
       .from('promotions')
-      .select('id, name, slug, logo_url, region')
+      .select('id, name, slug, logo_url, region, state, city')
       .ilike('name', `%${q}%`)
       .limit(15)
     setSearchResults(data || [])
@@ -305,6 +225,8 @@ function StepPickPromotions({
   function toggle(id: string) {
     setSelected(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
   }
+
+  const displayList = search.length >= 2 ? searchResults : recommended
 
   return (
     <div>
@@ -327,70 +249,26 @@ function StepPickPromotions({
         />
       </div>
 
-      {/* Search results */}
-      {search.length >= 2 && searchResults.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold text-foreground-muted mb-3">Search Results</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {searchResults.map(p => (
-              <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
-            ))}
-          </div>
-        </div>
-      )}
-
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
-      ) : (
-        <div className="space-y-8">
-          {/* Nearby promotions */}
-          {nearbyPromotions.length > 0 && (
-            <div className="pb-6 mb-2 border-b border-border">
-              <h2 className="text-lg font-display font-bold mb-1">📍 Near You{userState ? ` — ${userState}` : ''}</h2>
-              <p className="text-sm text-foreground-muted mb-3">Promotions in your area</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {nearbyPromotions.map(p => (
-                  <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* All promotions by region (excluding nearby) */}
-          {Object.entries(allPromotions).map(([region, list]) => {
-            const nearbyIds = new Set(nearbyPromotions.map(p => p.id))
-            const filtered = list.filter(p => !nearbyIds.has(p.id))
-            if (filtered.length === 0) return null
-            return (
-              <div key={region}>
-                <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {filtered.map(p => (
-                    <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-
-          {/* Nothing at all */}
-          {Object.keys(allPromotions).length === 0 && nearbyPromotions.length === 0 && (
-            <div className="text-center py-8 text-foreground-muted">
-              <p>No promotions found. Use the search bar above to find specific promotions.</p>
-            </div>
-          )}
+      ) : displayList.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {displayList.map(p => (
+            <PromotionCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} />
+          ))}
         </div>
+      ) : search.length >= 2 ? (
+        <p className="text-center text-foreground-muted py-8">No promotions found for &ldquo;{search}&rdquo;</p>
+      ) : (
+        <p className="text-center text-foreground-muted py-8">No promotions available yet.</p>
       )}
 
-      {/* Continue button */}
+      {/* Bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <span className="text-sm text-foreground-muted">{selected.length} selected</span>
-          <button
-            onClick={onNext}
-            disabled={selected.length < 1}
-            className="btn btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-40"
-          >
+          <button onClick={onNext} disabled={selected.length < 1}
+            className="btn btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-40">
             Next <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -401,7 +279,50 @@ function StepPickPromotions({
 }
 
 // ============================================
-// STEP: PICK WRESTLERS (Fan flow)
+// PROMOTION CARD (4:5 with logo)
+// ============================================
+
+function PromotionCard({ item, selected, onToggle }: { item: any; selected: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`relative rounded-xl overflow-hidden border-2 transition-all ${
+        selected
+          ? 'border-accent bg-accent/10 ring-2 ring-accent/30'
+          : 'border-border bg-background-secondary hover:border-foreground-muted/30'
+      }`}
+    >
+      {selected && (
+        <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-accent flex items-center justify-center">
+          <Check className="w-3.5 h-3.5 text-white" />
+        </div>
+      )}
+
+      {/* 4:5 image area */}
+      <div className="relative aspect-[4/5] bg-background-tertiary">
+        {item.logo_url ? (
+          <Image src={item.logo_url} alt={item.name} fill className="object-cover" sizes="200px" unoptimized />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-foreground-muted/30" />
+          </div>
+        )}
+        {/* Bottom gradient */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        {/* Name overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <span className="text-sm font-bold text-white line-clamp-2 drop-shadow-lg">{item.name}</span>
+          {item.city && item.state && (
+            <span className="text-[10px] text-white/70 drop-shadow">{item.city}, {item.state}</span>
+          )}
+        </div>
+      </div>
+    </button>
+  )
+}
+
+// ============================================
+// STEP: PICK WRESTLERS (Hero cards)
 // ============================================
 
 function StepPickWrestlers({
@@ -413,7 +334,7 @@ function StepPickWrestlers({
   onBack: () => void
   saving: boolean
 }) {
-  const [wrestlers, setWrestlers] = useState<Record<string, any[]>>({})
+  const [wrestlers, setWrestlers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -421,27 +342,14 @@ function StepPickWrestlers({
 
   useEffect(() => {
     async function load() {
-      // Popular wrestlers (most followers, verified only)
-      const { data: popular } = await supabase
+      const { data } = await supabase
         .from('wrestlers')
-        .select('id, name, slug, photo_url, hometown')
+        .select('id, name, slug, photo_url, render_url, hometown, moniker, hero_style')
         .eq('verification_status', 'verified')
         .order('follower_count', { ascending: false })
-        .limit(24)
+        .limit(40)
 
-      // Top ranked (PWI ranked, verified only)
-      const { data: ranked } = await supabase
-        .from('wrestlers')
-        .select('id, name, slug, photo_url, hometown, pwi_ranking')
-        .eq('verification_status', 'verified')
-        .not('pwi_ranking', 'is', null)
-        .order('pwi_ranking', { ascending: true })
-        .limit(24)
-
-      const grouped: Record<string, any[]> = {}
-      if (popular && popular.length > 0) grouped['Popular'] = popular
-      if (ranked && ranked.length > 0) grouped['Top Ranked'] = ranked
-      setWrestlers(grouped)
+      setWrestlers(data || [])
       setLoading(false)
     }
     load()
@@ -452,7 +360,8 @@ function StepPickWrestlers({
     if (q.length < 2) { setSearchResults([]); return }
     const { data } = await supabase
       .from('wrestlers')
-      .select('id, name, slug, photo_url, hometown')
+      .select('id, name, slug, photo_url, render_url, hometown, moniker, hero_style')
+      .eq('verification_status', 'verified')
       .ilike('name', `%${q}%`)
       .limit(15)
     setSearchResults(data || [])
@@ -462,6 +371,8 @@ function StepPickWrestlers({
     setSelected(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
   }
 
+  const displayList = search.length >= 2 ? searchResults : wrestlers
+
   return (
     <div>
       <button onClick={onBack} className="flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-6">
@@ -469,7 +380,7 @@ function StepPickWrestlers({
       </button>
 
       <h1 className="text-3xl font-display font-black mb-2">Follow some wrestlers</h1>
-      <p className="text-foreground-muted mb-6">Pick at least 1. This helps us recommend events near you.</p>
+      <p className="text-foreground-muted mb-6">Pick at least 1. This helps us recommend events for you.</p>
 
       {/* Search */}
       <div className="relative mb-8">
@@ -483,51 +394,106 @@ function StepPickWrestlers({
         />
       </div>
 
-      {/* Search results */}
-      {search.length >= 2 && searchResults.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold text-foreground-muted mb-3">Search Results</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {searchResults.map(w => (
-              <SelectableCard key={w.id} item={w} selected={selected.includes(w.id)} onToggle={() => toggle(w.id)} type="wrestler" />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Categories */}
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
-      ) : (
-        <div className="space-y-8">
-          {Object.entries(wrestlers).map(([label, list]) => (
-            <div key={label}>
-              <h2 className="text-lg font-display font-bold mb-3">{label}</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {list.map(w => (
-                  <SelectableCard key={w.id} item={w} selected={selected.includes(w.id)} onToggle={() => toggle(w.id)} type="wrestler" />
-                ))}
-              </div>
-            </div>
+      ) : displayList.length > 0 ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          {displayList.map(w => (
+            <WrestlerHeroCard key={w.id} wrestler={w} selected={selected.includes(w.id)} onToggle={() => toggle(w.id)} />
           ))}
         </div>
+      ) : search.length >= 2 ? (
+        <p className="text-center text-foreground-muted py-8">No wrestlers found for &ldquo;{search}&rdquo;</p>
+      ) : (
+        <p className="text-center text-foreground-muted py-8">No verified wrestlers available yet.</p>
       )}
 
-      {/* Continue button */}
+      {/* Bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <span className="text-sm text-foreground-muted">{selected.length} selected</span>
-          <button
-            onClick={onComplete}
-            disabled={selected.length < 1 || saving}
-            className="btn btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-40"
-          >
+          <button onClick={onComplete} disabled={selected.length < 1 || saving}
+            className="btn btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-40">
             {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Finishing...</> : <>Let&apos;s Go <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
       </div>
       <div className="h-20" />
     </div>
+  )
+}
+
+// ============================================
+// WRESTLER HERO CARD (matches roster cards)
+// ============================================
+
+function WrestlerHeroCard({ wrestler, selected, onToggle }: { wrestler: any; selected: boolean; onToggle: () => void }) {
+  const imageUrl = wrestler.render_url || wrestler.photo_url
+  const heroCSS = getHeroCSS(wrestler.hero_style || null)
+  const hasTheme = !!wrestler.hero_style
+
+  return (
+    <button onClick={onToggle} className="relative block text-left">
+      <div className={`relative aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all ${
+        selected
+          ? 'border-accent ring-2 ring-accent/30'
+          : 'border-border hover:border-foreground-muted/30'
+      }`}>
+        {/* Check mark */}
+        {selected && (
+          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-accent flex items-center justify-center">
+            <Check className="w-3.5 h-3.5 text-white" />
+          </div>
+        )}
+
+        {/* Hero background */}
+        {hasTheme && (
+          <div className="absolute inset-0 z-[0]">
+            {wrestler.hero_style?.type === 'flag' ? (
+              <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                {heroCSS.texture && (
+                  <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Wrestler image */}
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={wrestler.name}
+              fill
+              className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} relative z-[1]`}
+              sizes="180px"
+              unoptimized
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-background-tertiary">
+            <User className="w-12 h-12 text-foreground-muted/30" />
+          </div>
+        )}
+
+        {/* Name + moniker */}
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 z-[3]">
+          {wrestler.moniker && (
+            <span className="text-[9px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
+              &ldquo;{wrestler.moniker}&rdquo;
+            </span>
+          )}
+          <span className="text-xs font-bold text-white line-clamp-2 drop-shadow-lg">
+            {wrestler.name}
+          </span>
+        </div>
+      </div>
+    </button>
   )
 }
 
@@ -592,13 +558,11 @@ function StepClaimSearch({
       <h1 className="text-3xl font-display font-black mb-2">{labels[type].title}</h1>
       <p className="text-foreground-muted mb-8">{labels[type].desc}</p>
 
-      {/* Search */}
       <div className="flex gap-2 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
           <input
-            type="text"
-            value={search}
+            type="text" value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
             placeholder={labels[type].placeholder}
@@ -610,12 +574,10 @@ function StepClaimSearch({
         </button>
       </div>
 
-      {/* Results */}
       {results.length > 0 && (
         <div className="space-y-2 mb-8">
           {results.map(item => (
-            <a
-              key={item.id}
+            <a key={item.id}
               href={`/${type === 'wrestler' ? 'wrestlers' : type === 'promoter' ? 'promotions' : 'crew'}/${item.slug}`}
               target="_blank"
               className="flex items-center gap-3 p-4 rounded-xl bg-background-secondary border border-border hover:border-accent/50 transition-colors"
@@ -640,25 +602,19 @@ function StepClaimSearch({
         </div>
       )}
 
-      {/* Not found */}
       {hasSearched && results.length === 0 && !searching && (
         <div className="text-center py-6 mb-6">
           <p className="text-foreground-muted mb-2">No {labels[type].notFound} found for &ldquo;{search}&rdquo;</p>
         </div>
       )}
 
-      {/* Request a page */}
       {hasSearched && !requestSent && (
         <div className="card p-6 mb-8">
           <h3 className="font-bold mb-3">Don&apos;t see yourself? Request a page.</h3>
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={requestName}
-              onChange={e => setRequestName(e.target.value)}
+            <input type="text" value={requestName} onChange={e => setRequestName(e.target.value)}
               placeholder={type === 'crew' ? 'e.g., Tim the Ref' : type === 'wrestler' ? 'e.g., John Smith' : 'e.g., Texas Championship Wrestling'}
-              className="flex-1 px-3 py-2.5 rounded-lg bg-background-tertiary border border-border focus:border-accent outline-none"
-            />
+              className="flex-1 px-3 py-2.5 rounded-lg bg-background-tertiary border border-border focus:border-accent outline-none" />
             <button onClick={handleRequest} disabled={!requestName.trim()} className="btn btn-secondary px-4">
               <Plus className="w-4 h-4 mr-1" /> Request
             </button>
@@ -676,7 +632,6 @@ function StepClaimSearch({
         </div>
       )}
 
-      {/* Continue anyway */}
       <div className="text-center">
         <button onClick={onComplete} disabled={saving} className="btn btn-primary px-8 py-3">
           {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Setting up...</> : 'Continue to Hot Tag'}
@@ -684,59 +639,5 @@ function StepClaimSearch({
         <p className="text-xs text-foreground-muted mt-3">You can always claim or request a page later</p>
       </div>
     </div>
-  )
-}
-
-// ============================================
-// SELECTABLE CARD COMPONENT
-// ============================================
-
-function SelectableCard({
-  item, selected, onToggle, type
-}: {
-  item: any
-  selected: boolean
-  onToggle: () => void
-  type: 'promotion' | 'wrestler'
-}) {
-  const imageUrl = item.logo_url || item.photo_url
-
-  return (
-    <button
-      onClick={onToggle}
-      className={`relative rounded-xl overflow-hidden border-2 transition-all ${
-        selected
-          ? 'border-accent bg-accent/10 ring-2 ring-accent/30'
-          : 'border-border bg-background-secondary hover:border-foreground-muted/30'
-      }`}
-    >
-      {/* Check mark */}
-      {selected && (
-        <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-          <Check className="w-3.5 h-3.5 text-white" />
-        </div>
-      )}
-
-      {/* Image */}
-      <div className={`relative ${type === 'promotion' ? 'aspect-[3/2]' : 'aspect-square'} bg-background-tertiary`}>
-        {imageUrl ? (
-          <Image src={imageUrl} alt={item.name} fill className="object-cover" sizes="150px" unoptimized />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            {type === 'promotion'
-              ? <Building2 className="w-8 h-8 text-foreground-muted" />
-              : <User className="w-8 h-8 text-foreground-muted" />
-            }
-          </div>
-        )}
-      </div>
-
-      {/* Name */}
-      <div className="p-2">
-        <p className="text-xs font-semibold truncate">{item.name}</p>
-        {item.region && <p className="text-[10px] text-foreground-muted">{item.region}</p>}
-        {item.hometown && <p className="text-[10px] text-foreground-muted truncate">{item.hometown}</p>}
-      </div>
-    </button>
   )
 }
