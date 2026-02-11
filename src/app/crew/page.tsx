@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
 import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
 import { User, Search, ChevronDown, Briefcase, Shield } from 'lucide-react'
+import RequestPageButton from '@/components/RequestPageButton'
 
 export default function CrewPage() {
   const [professionals, setProfessionals] = useState<any[]>([])
@@ -42,9 +43,12 @@ export default function CrewPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-display font-black">Crew</h1>
-          <p className="text-foreground-muted mt-1">The people behind the scenes making wrestling happen</p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-display font-black">Crew</h1>
+            <p className="text-foreground-muted mt-1">The people behind the scenes making wrestling happen</p>
+          </div>
+          <RequestPageButton />
         </div>
 
         {/* Filters */}
