@@ -221,23 +221,46 @@ function StepPickPromotions({
   onNext: () => void
   onBack: () => void
 }) {
-  const [promotions, setPromotions] = useState<Record<string, any[]>>({})
+  const [nearbyPromotions, setNearbyPromotions] = useState<any[]>([])
+  const [allPromotions, setAllPromotions] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
+  const [userState, setUserState] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     async function load() {
-      const grouped: Record<string, any[]> = {}
+      // Try to get user location via IP
+      let detectedState: string | null = null
+      try {
+        const res = await fetch('https://ip-api.com/json/?fields=regionName,countryCode')
+        const geo = await res.json()
+        if (geo.regionName) {
+          detectedState = geo.regionName
+          setUserState(detectedState)
+        }
+      } catch {}
 
-      // Load all promotions grouped by region
-      const { data } = await supabase
+      // Fetch nearby promotions if we have a state
+      if (detectedState) {
+        const { data: nearby } = await supabase
+          .from('promotions')
+          .select('id, name, slug, logo_url, region, state, city')
+          .ilike('state', `%${detectedState}%`)
+          .order('name')
+          .limit(20)
+        if (nearby && nearby.length > 0) setNearbyPromotions(nearby)
+      }
+
+      // Fetch all promotions grouped by region
+      const { data, error } = await supabase
         .from('promotions')
-        .select('id, name, slug, logo_url, region')
-        .order('follower_count', { ascending: false })
-        .limit(100)
+        .select('id, name, slug, logo_url, region, state')
+        .order('name')
+        .limit(200)
 
+      const grouped: Record<string, any[]> = {}
       if (data) {
         for (const p of data) {
           const region = p.region || 'Other'
@@ -245,8 +268,7 @@ function StepPickPromotions({
           grouped[region].push(p)
         }
       }
-
-      setPromotions(grouped)
+      setAllPromotions(grouped)
       setLoading(false)
     }
     load()
@@ -300,12 +322,24 @@ function StepPickPromotions({
         </div>
       )}
 
-      {/* Grouped by region */}
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(promotions).map(([region, list]) => (
+          {/* Nearby promotions */}
+          {nearbyPromotions.length > 0 && (
+            <div>
+              <h2 className="text-lg font-display font-bold mb-3">📍 Near You{userState ? ` — ${userState}` : ''}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {nearbyPromotions.map(p => (
+                  <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All promotions by region */}
+          {Object.entries(allPromotions).map(([region, list]) => (
             <div key={region}>
               <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -315,6 +349,13 @@ function StepPickPromotions({
               </div>
             </div>
           ))}
+
+          {/* Nothing at all */}
+          {Object.keys(allPromotions).length === 0 && nearbyPromotions.length === 0 && (
+            <div className="text-center py-8 text-foreground-muted">
+              <p>No promotions found. Use the search bar above to find specific promotions.</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -331,7 +372,7 @@ function StepPickPromotions({
           </button>
         </div>
       </div>
-      <div className="h-20" /> {/* spacer for fixed bottom bar */}
+      <div className="h-20" />
     </div>
   )
 }
