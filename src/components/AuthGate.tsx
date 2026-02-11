@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
   '/auth/callback',
   '/privacy',
   '/terms',
+  '/vegas-weekend',
 ]
 
 // Routes that are public for SEO/sharing (individual pages)

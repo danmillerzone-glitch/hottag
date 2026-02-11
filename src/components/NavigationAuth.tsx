@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { 
   Flame, Calendar, Map, Users, Building2, Search,
-  User, LogOut, Loader2, Shield, Home, X, Briefcase
+  User, LogOut, Loader2, Shield, Home, X, Briefcase, Star
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -18,6 +18,17 @@ const navItems = [
   { href: '/promotions', label: 'Promotions', icon: Building2 },
 ]
 
+// Show Vegas Weekend nav item until end of April 19, 2026
+const VEGAS_WEEKEND_END = new Date('2026-04-20T06:00:00Z') // April 20 6AM UTC = April 19 11PM PT
+
+function useShowVegasWeekend() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    setShow(new Date() < VEGAS_WEEKEND_END)
+  }, [])
+  return show
+}
+
 export default function Navigation() {
   const pathname = usePathname()
   const { user, loading, signOut } = useAuth()
@@ -28,6 +39,7 @@ export default function Navigation() {
   const [hasProfessional, setHasProfessional] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const showVegas = useShowVegasWeekend()
 
   useEffect(() => {
     if (!user) {
@@ -121,6 +133,19 @@ export default function Navigation() {
                   </Link>
                 )
               })}
+              {showVegas && (
+                <Link
+                  href="/vegas-weekend"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
+                    pathname === '/vegas-weekend'
+                      ? 'bg-yellow-500/15 text-yellow-400'
+                      : 'text-yellow-400 hover:bg-yellow-500/10'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  Vegas Weekend
+                </Link>
+              )}
             </nav>
 
             <div className="flex items-center gap-3">
@@ -198,9 +223,24 @@ export default function Navigation() {
             <Flame className="w-6 h-6 text-accent" />
             <span className="text-lg font-display font-bold">Hot Tag</span>
           </Link>
-          <Link href="/search" className="p-2 rounded-lg text-foreground-muted hover:text-foreground">
-            <Search className="w-5 h-5" />
-          </Link>
+          <div className="flex items-center gap-2">
+            {showVegas && (
+              <Link
+                href="/vegas-weekend"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                  pathname === '/vegas-weekend'
+                    ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                }`}
+              >
+                <Star className="w-3 h-3" />
+                Vegas
+              </Link>
+            )}
+            <Link href="/search" className="p-2 rounded-lg text-foreground-muted hover:text-foreground">
+              <Search className="w-5 h-5" />
+            </Link>
+          </div>
         </div>
       </header>
 
