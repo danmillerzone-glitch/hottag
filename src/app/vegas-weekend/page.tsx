@@ -100,25 +100,25 @@ export default function VegasWeekendPage() {
               priority
               unoptimized
             />
-            <div className="absolute inset-0 bg-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
           </>
         )}
         {!pageHero?.image_url && (
           <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/30 via-background to-background" />
         )}
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-semibold mb-6">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 text-sm font-semibold mb-6 backdrop-blur-sm">
             <Star className="w-4 h-4" />
             April 15–19, 2026
           </div>
-          <h1 className="text-4xl sm:text-5xl font-display font-bold mb-4">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}>
             <span className="text-yellow-400">Vegas</span> Weekend
           </h1>
-          <p className="text-foreground-muted text-lg max-w-2xl mx-auto">
+          <p className="text-white/80 text-lg max-w-2xl mx-auto" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
             The biggest weekend in independent wrestling descends on Las Vegas.
             Dozens of events, hundreds of wrestlers, one unforgettable weekend.
           </p>
-          <div className="flex items-center justify-center gap-6 mt-6 text-sm text-foreground-muted">
+          <div className="flex items-center justify-center gap-6 mt-6 text-sm text-white/70" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-yellow-400" />
               {events.length} Events
@@ -163,20 +163,20 @@ export default function VegasWeekendPage() {
                           className="object-cover"
                           unoptimized
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/80 to-black/20" />
                       </div>
                     )}
-                    <div className={`p-6 ${collective.image_url ? '-mt-16 relative z-10' : ''}`}>
+                    <div className={`p-6 ${collective.image_url ? '-mt-12 relative z-10' : ''}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h2 className="text-2xl font-display font-bold text-yellow-400 mb-2">
+                          <h2 className="text-2xl font-display font-bold text-yellow-400 mb-2 drop-shadow-lg">
                             {collective.name}
                           </h2>
                           <p className="text-foreground-muted text-sm leading-relaxed max-w-xl">
                             {collective.description}
                           </p>
                         </div>
-                        <span className="text-sm text-foreground-muted whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm font-semibold text-yellow-400/80 whitespace-nowrap flex-shrink-0 bg-yellow-500/10 px-2.5 py-1 rounded-full">
                           {collective.events.length} shows
                         </span>
                       </div>
