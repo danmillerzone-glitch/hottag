@@ -2968,7 +2968,7 @@ function VegasWeekendTab() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     const [eventsRes, collectivesRes] = await Promise.all([
       supabase.from('events')
         .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
@@ -2986,7 +2986,7 @@ function VegasWeekendTab() {
   const searchEvents = async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return }
     setSearching(true)
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     const { data } = await supabase.from('events')
       .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
       .ilike('name', `%${q}%`)
@@ -3004,21 +3004,21 @@ function VegasWeekendTab() {
   }, [searchQuery])
 
   const toggleVegasWeekend = async (eventId: string, current: boolean) => {
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     await supabase.from('events').update({ vegas_weekend: !current, ...(!current ? {} : { vegas_collective: null }) }).eq('id', eventId)
     loadData()
     if (searchQuery.length >= 2) searchEvents(searchQuery)
   }
 
   const setCollective = async (eventId: string, collectiveKey: string | null) => {
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     await supabase.from('events').update({ vegas_collective: collectiveKey }).eq('id', eventId)
     loadData()
   }
 
   const uploadCollectiveImage = async (collectiveKey: string, file: File) => {
     setUploading(collectiveKey)
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     const ext = file.name.split('.').pop()
     const path = `vegas-weekend/${collectiveKey}.${ext}`
     
@@ -3041,7 +3041,7 @@ function VegasWeekendTab() {
   }
 
   const updateCollective = async (key: string, field: string, value: string) => {
-    const supabase = createClient()
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
     await supabase.from('vegas_weekend_collectives').update({ [field]: value }).eq('key', key)
     loadData()
   }
