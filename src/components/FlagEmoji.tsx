@@ -3,7 +3,7 @@
 
 function emojiToTwemojiUrl(emoji: string): string {
   // Convert emoji to its code point(s) for Twemoji URL
-  const codePoints = [...emoji]
+  const codePoints = Array.from(emoji)
     .map(char => char.codePointAt(0)?.toString(16))
     .filter(Boolean)
     .join('-')
