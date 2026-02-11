@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
-import Navigation from '@/components/NavigationAuth'
-import AnnouncementBanner from '@/components/AnnouncementBanner'
-import Footer from '@/components/Footer'
+import LayoutShell from '@/components/LayoutShell'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -49,12 +47,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-foreground min-h-screen">
         <AuthProvider>
-          <Navigation />
-          <AnnouncementBanner />
-          <main className="pb-20 md:pb-0">
-            {children}
-          </main>
-          <Footer />
+          <LayoutShell>{children}</LayoutShell>
         </AuthProvider>
       </body>
     </html>

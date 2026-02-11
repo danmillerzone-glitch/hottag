@@ -38,7 +38,6 @@ export default function SignInPage() {
       setLoading(false)
     } else {
       router.push('/')
-      router.refresh()
     }
   }
 
