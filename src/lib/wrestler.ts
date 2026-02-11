@@ -229,6 +229,7 @@ export async function updateWrestlerProfile(wrestlerId: string, updates: {
   render_url?: string | null
   countries_wrestled?: string[]
   signature_moves?: string[] | null
+  wrestling_style?: string[] | null
   bluesky_handle?: string | null
   patreon_url?: string | null
   hero_style?: { type: string; value: string; accent?: string } | null
