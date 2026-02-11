@@ -109,13 +109,13 @@ export default function EventsPage() {
       }))
       setEvents(mappedEvents)
       
-      // Get unique states for dropdown (from current results)
+      // Get unique US states for dropdown (from current results)
       if ((!selectedRegion || selectedRegion === 'usa') && !selectedState) {
         const stateSet = new Set<string>()
         data.forEach((e: any) => {
-          if (e.state) stateSet.add(e.state)
+          if (e.state && US_STATES[e.state]) stateSet.add(e.state)
         })
-        setAvailableStates(Array.from(stateSet).sort())
+        setAvailableStates(Array.from(stateSet).sort((a, b) => (US_STATES[a] || a).localeCompare(US_STATES[b] || b)))
       }
     }
     

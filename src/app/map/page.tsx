@@ -100,9 +100,14 @@ export default function MapPage() {
     if (!map.current || events.length === 0 || markersAdded.current) return
     markersAdded.current = true
 
+    // Group events by proximity — round to 3 decimal places (~111m)
+    // This merges pins at the same venue with slightly different coordinates
+    // or different venue names at the same physical location
     const locationGroups = new Map<string, any[]>()
     events.forEach(event => {
-      const key = `${event.latitude},${event.longitude}`
+      const roundedLat = Math.round(event.latitude * 1000) / 1000
+      const roundedLng = Math.round(event.longitude * 1000) / 1000
+      const key = `${roundedLat},${roundedLng}`
       if (!locationGroups.has(key)) locationGroups.set(key, [])
       locationGroups.get(key)!.push(event)
     })
@@ -115,10 +120,13 @@ export default function MapPage() {
       el.className = 'event-marker'
       el.innerHTML = `<div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm shadow-lg cursor-pointer hover:scale-110 transition-transform">${locationEvents.length > 1 ? locationEvents.length : ''}</div>`
 
+      const venueNames = Array.from(new Set(locationEvents.map(e => e.venue_name).filter(Boolean)))
+      const venueLabel = venueNames.length === 1 ? venueNames[0] : formatLocation(event.city, event.state)
+
       const popupContent = locationEvents.length > 1
         ? `<div class="p-4 max-w-xs">
-            <h3 class="font-bold text-foreground mb-2">${locationEvents.length} Events</h3>
-            <p class="text-foreground-muted text-sm mb-3">${formatLocation(event.city, event.state)}</p>
+            <h3 class="font-bold text-foreground mb-1">${locationEvents.length} Events</h3>
+            <p class="text-foreground-muted text-sm mb-3">${venueLabel}</p>
             <div class="space-y-2 max-h-48 overflow-y-auto">
               ${locationEvents.map(e => `<a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors"><div class="font-medium text-sm text-foreground">${e.name}</div><div class="text-xs text-accent">${formatEventDate(e.event_date)}</div></a>`).join('')}
             </div></div>`
