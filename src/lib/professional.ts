@@ -58,6 +58,54 @@ export async function claimWithCode(professionalId: string, code: string) {
   if (error) throw error
 }
 
+export async function getExistingProfessionalClaim(professionalId: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from('professional_claims')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('professional_id', professionalId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error checking professional claim:', error)
+    return null
+  }
+  return data
+}
+
+export async function redeemProfessionalClaimCode(code: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Find the professional with this claim code
+  const { data: pro } = await supabase
+    .from('professionals')
+    .select('id, name, claim_code')
+    .eq('claim_code', code)
+    .maybeSingle()
+
+  if (!pro) throw new Error('Invalid claim code')
+
+  const { error } = await supabase
+    .from('professionals')
+    .update({
+      claimed_by: user.id,
+      claim_code: null,
+      verification_status: 'verified',
+    })
+    .eq('id', pro.id)
+
+  if (error) throw error
+  return { success: true, professional_id: pro.id, professional_name: pro.name }
+}
+
 // ============================================
 // DASHBOARD
 // ============================================

@@ -113,13 +113,6 @@ export default function ProfessionalDashboardPage() {
     setSaving(false)
   }
 
-  async function handlePhotoUpload(url: string) {
-    if (!professional) return
-    const supabase = createClient()
-    await supabase.from('professionals').update({ photo_url: url }).eq('id', professional.id)
-    setProfessional({ ...professional, photo_url: url })
-  }
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
   }
@@ -149,7 +142,21 @@ export default function ProfessionalDashboardPage() {
                   <div className="w-full h-full flex items-center justify-center"><User className="w-10 h-10 text-foreground-muted" /></div>
                 )}
               </div>
-              <ImageCropUploader bucket="wrestler-photos" path={`pro-${professional.id}`} onUpload={handlePhotoUpload} label="Upload Photo" />
+              <ImageCropUploader
+                currentUrl={professional.photo_url}
+                shape="square"
+                size={96}
+                onUpload={async (file) => {
+                  const supabase = createClient()
+                  const fileName = `pro-${professional.id}-${Date.now()}.jpg`
+                  const { error } = await supabase.storage.from('wrestler-photos').upload(fileName, file, { upsert: true })
+                  if (error) throw error
+                  const { data: { publicUrl } } = supabase.storage.from('wrestler-photos').getPublicUrl(fileName)
+                  await supabase.from('professionals').update({ photo_url: publicUrl }).eq('id', professional.id)
+                  setProfessional({ ...professional, photo_url: publicUrl })
+                  return publicUrl
+                }}
+              />
             </div>
           </section>
 
