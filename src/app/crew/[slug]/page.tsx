@@ -10,7 +10,7 @@ import ShareButton from '@/components/ShareButton'
 import QRCodeButton from '@/components/QRCodeButton'
 import FollowProfessionalButton from '@/components/FollowProfessionalButton'
 import ClaimProfessionalButton from '@/components/ClaimProfessionalButton'
-import { ROLE_LABELS } from '@/lib/supabase'
+import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
 
 const supabase = createServerClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,8 +49,8 @@ export async function generateMetadata({ params }: CrewPageProps) {
   if (!pro) return { title: 'Not Found | Hot Tag' }
 
   return {
-    title: `${pro.name} - ${ROLE_LABELS[pro.role] || pro.role} | Hot Tag`,
-    description: `${pro.name} is a ${ROLE_LABELS[pro.role] || pro.role}${pro.residence ? ` based in ${pro.residence}` : ''}`,
+    title: `${pro.name} - ${formatRoles(pro.role)} | Hot Tag`,
+    description: `${pro.name} is a ${formatRoles(pro.role)}${pro.residence ? ` based in ${pro.residence}` : ''}`,
   }
 }
 
@@ -99,6 +99,17 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
 
   const worksWith = worksWithRaw?.map((w: any) => w.promotions).filter(Boolean) || []
 
+  // Fetch linked wrestler profile
+  let linkedWrestler = null
+  if (pro.linked_wrestler_id) {
+    const { data } = await supabase
+      .from('wrestlers')
+      .select('id, name, slug, photo_url')
+      .eq('id', pro.linked_wrestler_id)
+      .single()
+    linkedWrestler = data
+  }
+
   // Build social links
   const socialIcons: { href: string; icon: any }[] = []
   if (pro.twitter_handle) socialIcons.push({ href: `https://x.com/${pro.twitter_handle}`, icon: XIcon })
@@ -127,7 +138,7 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
               {/* Role badge */}
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent text-sm font-semibold mb-2">
                 <Briefcase className="w-3.5 h-3.5" />
-                {ROLE_LABELS[pro.role] || pro.role}
+                {formatRoles(pro.role)}
               </span>
 
               {pro.moniker && (
@@ -219,6 +230,23 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
         {/* Merch */}
         {merchItems && merchItems.length > 0 && (
           <MerchGallery items={merchItems} />
+        )}
+
+        {/* Linked Wrestler Profile */}
+        {linkedWrestler && (
+          <div>
+            <h2 className="text-lg font-display font-bold mb-3">Also Competes As</h2>
+            <Link href={`/wrestlers/${linkedWrestler.slug}`}
+              className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-background-tertiary border border-border hover:border-accent/50 transition-colors group">
+              {linkedWrestler.photo_url ? (
+                <Image src={linkedWrestler.photo_url} alt={linkedWrestler.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover" unoptimized />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center"><User className="w-5 h-5 text-foreground-muted" /></div>
+              )}
+              <span className="font-semibold group-hover:text-accent transition-colors">{linkedWrestler.name}</span>
+              <span className="text-xs text-foreground-muted">→ Wrestler Profile</span>
+            </Link>
+          </div>
         )}
 
         {/* Claim button */}

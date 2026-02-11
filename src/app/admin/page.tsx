@@ -33,7 +33,7 @@ import {
   verifyProfessional, unverifyProfessional, getPendingProfessionalClaims, getAllProfessionalClaims,
   approveProfessionalClaim, rejectProfessionalClaim,
 } from '@/lib/admin'
-import { ROLE_LABELS, PROFESSIONAL_ROLES } from '@/lib/supabase'
+import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
   Building2, Calendar, Search, Trash2, ExternalLink,
@@ -708,7 +708,7 @@ function CrewTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <Link href={`/crew/${p.slug}`} target="_blank" className="font-semibold text-accent hover:underline">{p.name}</Link>
-                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">{ROLE_LABELS[p.role] || p.role}</span>
+                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">{formatRoles(p.role)}</span>
                   {p.verification_status === 'verified' && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Verified</span>}
                 </div>
                 <p className="text-sm text-foreground-muted">{p.claimed_by ? 'Claimed' : 'Unclaimed'}</p>
@@ -730,7 +730,7 @@ function CrewTab() {
 
 function CreateCrewModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
   const [name, setName] = useState('')
-  const [role, setRole] = useState('other')
+  const [roles, setRoles] = useState<string[]>(['other'])
   const [saving, setSaving] = useState(false)
 
   async function handleCreate() {
@@ -739,7 +739,7 @@ function CreateCrewModal({ onClose, onCreated }: { onClose: () => void, onCreate
     try {
       const supabase = (await import('@/lib/supabase-browser')).createClient()
       const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      const { error } = await supabase.from('professionals').insert({ name: name.trim(), slug, role })
+      const { error } = await supabase.from('professionals').insert({ name: name.trim(), slug, role: roles })
       if (error) throw error
       onCreated()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -758,10 +758,17 @@ function CreateCrewModal({ onClose, onCreated }: { onClose: () => void, onCreate
           <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Role</label>
-          <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent">
-            {PROFESSIONAL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
+          <label className="block text-sm font-medium mb-1">Roles</label>
+          <div className="flex flex-wrap gap-2">
+            {PROFESSIONAL_ROLES.map(r => (
+              <label key={r} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+                roles.includes(r) ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-background-tertiary text-foreground-muted'
+              }`}>
+                <input type="checkbox" checked={roles.includes(r)} onChange={() => setRoles(roles.includes(r) ? roles.filter(x => x !== r) : [...roles, r])} className="hidden" />
+                {ROLE_LABELS[r]}
+              </label>
+            ))}
+          </div>
         </div>
         <button onClick={handleCreate} disabled={saving || !name.trim()} className="btn btn-primary w-full">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Create
@@ -774,20 +781,60 @@ function CreateCrewModal({ onClose, onCreated }: { onClose: () => void, onCreate
 function EditCrewModal({ professional, onClose, onSaved }: { professional: any, onClose: () => void, onSaved: () => void }) {
   const [form, setForm] = useState({
     name: professional.name || '',
-    role: professional.role || 'other',
+    roles: Array.isArray(professional.role) ? professional.role : [professional.role || 'other'],
     moniker: professional.moniker || '',
     bio: professional.bio || '',
     hometown: professional.hometown || '',
     residence: professional.residence || '',
   })
   const [saving, setSaving] = useState(false)
+  const [linkQuery, setLinkQuery] = useState('')
+  const [linkResults, setLinkResults] = useState<any[]>([])
+  const [linkedWrestlerId, setLinkedWrestlerId] = useState(professional.linked_wrestler_id || null)
+  const [linkedWrestlerName, setLinkedWrestlerName] = useState('')
+
+  useEffect(() => {
+    if (professional.linked_wrestler_id) {
+      (async () => {
+        const supabase = (await import('@/lib/supabase-browser')).createClient()
+        const { data } = await supabase.from('wrestlers').select('name').eq('id', professional.linked_wrestler_id).single()
+        if (data) setLinkedWrestlerName(data.name)
+      })()
+    }
+  }, [professional.linked_wrestler_id])
+
+  async function searchWrestlerToLink() {
+    if (!linkQuery.trim()) return
+    const data = await searchWrestlersAdmin(linkQuery)
+    setLinkResults(data)
+  }
+
+  async function handleLink(wrestlerId: string, wrestlerName: string) {
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    await supabase.from('professionals').update({ linked_wrestler_id: wrestlerId }).eq('id', professional.id)
+    await supabase.from('wrestlers').update({ linked_professional_id: professional.id }).eq('id', wrestlerId)
+    setLinkedWrestlerId(wrestlerId)
+    setLinkedWrestlerName(wrestlerName)
+    setLinkResults([])
+    setLinkQuery('')
+  }
+
+  async function handleUnlink() {
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    if (linkedWrestlerId) {
+      await supabase.from('wrestlers').update({ linked_professional_id: null }).eq('id', linkedWrestlerId)
+    }
+    await supabase.from('professionals').update({ linked_wrestler_id: null }).eq('id', professional.id)
+    setLinkedWrestlerId(null)
+    setLinkedWrestlerName('')
+  }
 
   async function handleSave() {
     setSaving(true)
     try {
       await updateProfessionalAdmin(professional.id, {
         name: form.name,
-        role: form.role,
+        role: form.roles,
         moniker: form.moniker || null,
         bio: form.bio || null,
         hometown: form.hometown || null,
@@ -805,16 +852,21 @@ function EditCrewModal({ professional, onClose, onSaved }: { professional: any, 
         <button onClick={onClose} className="p-1"><X className="w-5 h-5" /></button>
       </div>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Role</label>
-            <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent">
-              {PROFESSIONAL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-            </select>
+        <div>
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Roles</label>
+          <div className="flex flex-wrap gap-2">
+            {PROFESSIONAL_ROLES.map(r => (
+              <label key={r} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+                form.roles.includes(r) ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-background-tertiary text-foreground-muted'
+              }`}>
+                <input type="checkbox" checked={form.roles.includes(r)} onChange={() => setForm({ ...form, roles: form.roles.includes(r) ? form.roles.filter((x: string) => x !== r) : [...form.roles, r] })} className="hidden" />
+                {ROLE_LABELS[r]}
+              </label>
+            ))}
           </div>
         </div>
         <div>
@@ -834,6 +886,35 @@ function EditCrewModal({ professional, onClose, onSaved }: { professional: any, 
         <div>
           <label className="block text-sm font-medium mb-1">Bio</label>
           <textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-lg bg-background-tertiary border border-border outline-none focus:border-accent resize-y" />
+        </div>
+
+        {/* Linked Wrestler */}
+        <div className="border-t border-border pt-4">
+          <label className="block text-sm font-medium mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Linked Wrestler Profile</label>
+          {linkedWrestlerId ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-accent font-semibold">{linkedWrestlerName || 'Linked'}</span>
+              <button onClick={handleUnlink} className="text-xs text-red-400 hover:underline">Unlink</button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-2 mb-2">
+                <input type="text" value={linkQuery} onChange={e => setLinkQuery(e.target.value)} placeholder="Search wrestler to link..."
+                  onKeyDown={e => e.key === 'Enter' && searchWrestlerToLink()}
+                  className="flex-1 px-3 py-2 rounded-lg bg-background-tertiary border border-border text-sm outline-none focus:border-accent" />
+                <button onClick={searchWrestlerToLink} className="btn btn-secondary text-xs"><Search className="w-3 h-3 mr-1" /> Search</button>
+              </div>
+              {linkResults.length > 0 && (
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {linkResults.map(w => (
+                    <button key={w.id} onClick={() => handleLink(w.id, w.name)}
+                      className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-accent/10 text-sm">{w.name}</button>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-foreground-muted mt-1">Link this crew member to their wrestler profile for cross-referencing.</p>
+            </div>
+          )}
         </div>
 
         <ClaimCodeSection type="professionals" id={professional.id} currentCode={professional.claim_code} claimedBy={professional.claimed_by} />

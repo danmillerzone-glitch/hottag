@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
-import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap } from 'lucide-react'
+import { supabase, formatRoles } from '@/lib/supabase'
+import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap, Briefcase } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -147,6 +147,17 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const today = new Date().toISOString().split('T')[0]
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
+
+  // Fetch linked crew profile
+  let linkedProfessional: any = null
+  if (wrestler.linked_professional_id) {
+    const { data } = await supabase
+      .from('professionals')
+      .select('id, name, slug, role, photo_url')
+      .eq('id', wrestler.linked_professional_id)
+      .single()
+    linkedProfessional = data
+  }
 
   const hasRender = !!wrestler.render_url
   const hasPhoto = !!wrestler.photo_url
@@ -619,6 +630,20 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           {/* Merch Gallery - Mobile */}
           {merchItems && merchItems.length > 0 && (
             <MerchGallery items={merchItems} />
+          )}
+          {/* Linked Crew Profile */}
+          {linkedProfessional && (
+            <div>
+              <h2 className="text-lg font-display font-bold mb-3">Also On Crew</h2>
+              <Link href={`/crew/${linkedProfessional.slug}`}
+                className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-background-tertiary border border-border hover:border-accent/50 transition-colors group">
+                <Briefcase className="w-5 h-5 text-accent" />
+                <div>
+                  <span className="font-semibold group-hover:text-accent transition-colors">{linkedProfessional.name}</span>
+                  <span className="text-xs text-foreground-muted ml-2">{formatRoles(linkedProfessional.role)}</span>
+                </div>
+              </Link>
+            </div>
           )}
           {wrestler.verification_status !== 'verified' && (
             <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />

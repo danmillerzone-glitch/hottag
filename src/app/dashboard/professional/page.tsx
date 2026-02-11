@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getProfessionalDashboard, updateProfessional } from '@/lib/professional'
 import { createClient } from '@/lib/supabase-browser'
-import { PROFESSIONAL_ROLES, ROLE_LABELS } from '@/lib/supabase'
+import { PROFESSIONAL_ROLES, ROLE_LABELS, formatRoles } from '@/lib/supabase'
 import ImageCropUploader from '@/components/ImageCropUploader'
 import VideoManager from '@/components/VideoManager'
 import MerchManager from '@/components/MerchManager'
@@ -38,7 +38,7 @@ export default function ProfessionalDashboardPage() {
 
   // Form state
   const [name, setName] = useState('')
-  const [role, setRole] = useState('other')
+  const [roles, setRoles] = useState<string[]>(['other'])
   const [moniker, setMoniker] = useState('')
   const [bio, setBio] = useState('')
   const [hometown, setHometown] = useState('')
@@ -65,7 +65,7 @@ export default function ProfessionalDashboardPage() {
     const p = data.professional
     setProfessional(p)
     setName(p.name || '')
-    setRole(p.role || 'other')
+    setRoles(Array.isArray(p.role) ? p.role : [p.role || 'other'])
     setMoniker(p.moniker || '')
     setBio(p.bio || '')
     setHometown(p.hometown || '')
@@ -89,7 +89,7 @@ export default function ProfessionalDashboardPage() {
     try {
       const updated = await updateProfessional(professional.id, {
         name: name || professional.name,
-        role,
+        role: roles,
         moniker: moniker || null,
         bio: bio || null,
         hometown: hometown || null,
@@ -126,7 +126,7 @@ export default function ProfessionalDashboardPage() {
           <Link href="/dashboard" className="p-2 rounded-lg hover:bg-background-secondary"><ArrowLeft className="w-5 h-5" /></Link>
           <div>
             <h1 className="text-2xl font-display font-bold">Edit Profile</h1>
-            <p className="text-sm text-foreground-muted">{professional.name} • {ROLE_LABELS[professional.role]}</p>
+            <p className="text-sm text-foreground-muted">{professional.name} • {formatRoles(professional.role)}</p>
           </div>
         </div>
 
@@ -170,13 +170,19 @@ export default function ProfessionalDashboardPage() {
                   className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Role</label>
-                <select value={role} onChange={e => setRole(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent outline-none">
+                <label className="block text-sm font-medium mb-1.5">Roles</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PROFESSIONAL_ROLES.map(r => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    <label key={r} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                      roles.includes(r) ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-background-tertiary text-foreground-muted hover:text-foreground'
+                    }`}>
+                      <input type="checkbox" checked={roles.includes(r)} onChange={() => {
+                        setRoles(roles.includes(r) ? roles.filter(x => x !== r) : [...roles, r])
+                      }} className="hidden" />
+                      <span className="text-sm">{ROLE_LABELS[r]}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Tagline <span className="text-foreground-muted font-normal">(optional)</span></label>

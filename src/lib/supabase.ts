@@ -96,7 +96,7 @@ export interface Professional {
   id: string
   name: string
   slug: string
-  role: string
+  role: string[]
   moniker: string | null
   bio: string | null
   hometown: string | null
@@ -116,7 +116,13 @@ export interface Professional {
   claim_code: string | null
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
+  linked_wrestler_id: string | null
   created_at: string
+}
+
+export function formatRoles(roles: string | string[]): string {
+  const arr = Array.isArray(roles) ? roles : [roles]
+  return arr.map(r => ROLE_LABELS[r] || r).join(' / ')
 }
 
 export interface Event {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { ROLE_LABELS } from '@/lib/supabase'
+import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
 import { User, Search, ChevronDown, Briefcase, Shield } from 'lucide-react'
 
 export default function CrewPage() {
@@ -27,7 +27,7 @@ export default function CrewPage() {
       .limit(200)
 
     if (roleFilter) {
-      query = query.eq('role', roleFilter)
+      query = query.contains('role', [roleFilter])
     }
 
     const { data } = await query
@@ -118,7 +118,7 @@ export default function CrewPage() {
                     </div>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                    <span className="text-xs text-accent font-semibold">{ROLE_LABELS[pro.role] || pro.role}</span>
+                    <span className="text-xs text-accent font-semibold">{formatRoles(pro.role)}</span>
                   </div>
                 </div>
                 <h3 className="font-semibold text-sm group-hover:text-accent transition-colors truncate">{pro.name}</h3>
