@@ -227,20 +227,25 @@ function StepPickPromotions({
   const [searchResults, setSearchResults] = useState<any[]>([])
   const supabase = createClient()
 
-  const regions = ['South', 'Northeast', 'Midwest', 'West', 'International']
-
   useEffect(() => {
     async function load() {
       const grouped: Record<string, any[]> = {}
-      for (const region of regions) {
-        const { data } = await supabase
-          .from('promotions')
-          .select('id, name, slug, logo_url, region')
-          .eq('region', region)
-          .order('follower_count', { ascending: false })
-          .limit(20)
-        if (data && data.length > 0) grouped[region] = data
+
+      // Load all promotions grouped by region
+      const { data } = await supabase
+        .from('promotions')
+        .select('id, name, slug, logo_url, region')
+        .order('follower_count', { ascending: false })
+        .limit(100)
+
+      if (data) {
+        for (const p of data) {
+          const region = p.region || 'Other'
+          if (!grouped[region]) grouped[region] = []
+          grouped[region].push(p)
+        }
       }
+
       setPromotions(grouped)
       setLoading(false)
     }
@@ -300,17 +305,15 @@ function StepPickPromotions({
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
       ) : (
         <div className="space-y-8">
-          {regions.map(region => (
-            promotions[region] && promotions[region].length > 0 && (
-              <div key={region}>
-                <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {promotions[region].map(p => (
-                    <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
-                  ))}
-                </div>
+          {Object.entries(promotions).map(([region, list]) => (
+            <div key={region}>
+              <h2 className="text-lg font-display font-bold mb-3">{region}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {list.map(p => (
+                  <SelectableCard key={p.id} item={p} selected={selected.includes(p.id)} onToggle={() => toggle(p.id)} type="promotion" />
+                ))}
               </div>
-            )
+            </div>
           ))}
         </div>
       )}
@@ -354,17 +357,19 @@ function StepPickWrestlers({
 
   useEffect(() => {
     async function load() {
-      // Popular wrestlers (most followers)
+      // Popular wrestlers (most followers, verified only)
       const { data: popular } = await supabase
         .from('wrestlers')
         .select('id, name, slug, photo_url, hometown')
+        .eq('verification_status', 'verified')
         .order('follower_count', { ascending: false })
         .limit(24)
 
-      // Recently active (appeared at events)
+      // Top ranked (PWI ranked, verified only)
       const { data: ranked } = await supabase
         .from('wrestlers')
         .select('id, name, slug, photo_url, hometown, pwi_ranking')
+        .eq('verification_status', 'verified')
         .not('pwi_ranking', 'is', null)
         .order('pwi_ranking', { ascending: true })
         .limit(24)

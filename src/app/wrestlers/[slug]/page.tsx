@@ -5,6 +5,7 @@ import { supabase, formatRoles } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap, Briefcase } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
+import FlagEmoji from '@/components/FlagEmoji'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
 import ClaimWrestlerButton from '@/components/ClaimWrestlerButton'
 import ShareButton from '@/components/ShareButton'
@@ -251,7 +252,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
                     {wrestler.countries_wrestled.map((code: string) => (
-                      <span key={code} className="text-2xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
+                      <FlagEmoji key={code} emoji={getFlag(code)} size={28} title={getCountryName(code)} />
                     ))}
                   </div>
                 )}
@@ -403,7 +404,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {wrestler.countries_wrestled && wrestler.countries_wrestled.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {wrestler.countries_wrestled.map((code: string) => (
-                      <span key={code} className="text-xl cursor-default" title={getCountryName(code)}>{getFlag(code)}</span>
+                      <FlagEmoji key={code} emoji={getFlag(code)} size={24} title={getCountryName(code)} />
                     ))}
                   </div>
                 )}
