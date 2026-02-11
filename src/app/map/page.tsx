@@ -135,8 +135,8 @@ export default function MapPage() {
       const event = locationEvents[0]
 
       // Use the most urgent event in the group to determine marker style
-      const urgencies = locationEvents.map(e => getUrgency(e.event_date))
-      const priority = ['week', 'month', 'soon', 'later']
+      const urgencies = locationEvents.map((e: any) => getUrgency(e.event_date))
+      const priority: ('week' | 'month' | 'soon' | 'later')[] = ['week', 'month', 'soon', 'later']
       const bestUrgency = priority.find(p => urgencies.includes(p)) || 'later'
       const config = urgencyConfig[bestUrgency as keyof typeof urgencyConfig]
 
