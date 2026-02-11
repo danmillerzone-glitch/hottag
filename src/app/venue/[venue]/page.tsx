@@ -17,7 +17,7 @@ async function getEventsByVenue(venueSlug: string) {
   
   // Search for events with this venue (case insensitive)
   const { data: events, error } = await supabase
-    .from('events_with_counts')
+    .from('events')
     .select(`
       *,
       promotions (

@@ -39,7 +39,7 @@ async function getEventsByLocation(location: string) {
   const isState = STATE_ABBREVS.includes(upperLocation)
   
   let query = supabase
-    .from('events_with_counts')
+    .from('events')
     .select(`
       *,
       promotions (

@@ -169,7 +169,7 @@ export async function getUpcomingEvents(limit = 20, offset = 0) {
   const today = new Date().toISOString().split('T')[0]
   
   const { data, error } = await supabase
-    .from('events_with_counts')
+    .from('events')
     .select(`
       *,
       promotions (
@@ -190,11 +190,10 @@ export async function getUpcomingEvents(limit = 20, offset = 0) {
     return []
   }
 
-  // Map real counts to the expected field names
   return data.map((e: any) => ({
     ...e,
-    attending_count: e.real_attending_count || 0,
-    interested_count: e.real_interested_count || 0
+    attending_count: e.attending_count || 0,
+    interested_count: e.interested_count || 0
   })) as EventWithPromotion[]
 }
 
@@ -229,7 +228,7 @@ export async function getEventsByLocation(
 
 export async function getEvent(idOrSlug: string) {
   const { data, error } = await supabase
-    .from('events_with_counts')
+    .from('events')
     .select(`
       *,
       promotions (
@@ -255,11 +254,10 @@ export async function getEvent(idOrSlug: string) {
     return null
   }
 
-  // Map real counts
   return {
     ...data,
-    attending_count: data.real_attending_count || 0,
-    interested_count: data.real_interested_count || 0
+    attending_count: data.attending_count || 0,
+    interested_count: data.interested_count || 0
   } as EventWithPromotion
 }
 
