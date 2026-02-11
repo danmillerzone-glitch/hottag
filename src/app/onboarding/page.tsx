@@ -536,11 +536,19 @@ function StepClaimSearch({
     if (!search.trim()) return
     setSearching(true)
     setHasSearched(true)
-    const { data } = await supabase
+    const selectCols = type === 'wrestler'
+      ? 'id, name, slug, photo_url'
+      : type === 'promoter'
+      ? 'id, name, slug, logo_url'
+      : 'id, name, slug, photo_url, role'
+
+    const { data, error } = await supabase
       .from(table)
-      .select('id, name, slug' + (type === 'crew' ? ', role' : '') + (type !== 'crew' ? ', logo_url' : ', photo_url'))
+      .select(selectCols)
       .ilike('name', `%${search}%`)
       .limit(10)
+
+    if (error) console.error('Search error:', error)
     setResults(data || [])
     setSearching(false)
   }
