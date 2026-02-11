@@ -195,7 +195,7 @@ export default function MapPage() {
           <List className="w-4 h-4" /> {showList ? 'Hide List' : 'Show List'}
         </button>
       </div>
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+      <div className="absolute bottom-10 left-4 z-10 flex flex-col gap-2">
         <div className="px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm">
           <span className="text-accent font-bold">{events.length}</span>{' '}
           <span className="text-foreground-muted">events on map</span>
