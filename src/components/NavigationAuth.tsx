@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { 
   Flame, Calendar, Map, Users, Building2, Search,
-  User, LogOut, Loader2, Shield, Home, X
+  User, LogOut, Loader2, Shield, Home, X, Briefcase
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/map', label: 'Map', icon: Map },
   { href: '/wrestlers', label: 'Wrestlers', icon: Users },
+  { href: '/crew', label: 'Crew', icon: Briefcase },
   { href: '/promotions', label: 'Promotions', icon: Building2 },
 ]
 
@@ -24,6 +25,7 @@ export default function Navigation() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [hasPromotion, setHasPromotion] = useState(false)
   const [hasWrestler, setHasWrestler] = useState(false)
+  const [hasProfessional, setHasProfessional] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -31,6 +33,7 @@ export default function Navigation() {
     if (!user) {
       setHasPromotion(false)
       setHasWrestler(false)
+      setHasProfessional(false)
       setIsAdmin(false)
       return
     }
@@ -49,6 +52,13 @@ export default function Navigation() {
       .eq('claimed_by', user.id)
       .limit(1)
       .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
+
+    supabase
+      .from('professionals')
+      .select('id')
+      .eq('claimed_by', user.id)
+      .limit(1)
+      .then(({ data }) => setHasProfessional(!!(data && data.length > 0)))
 
     supabase
       .from('admin_users')
@@ -149,13 +159,19 @@ export default function Navigation() {
                           <span className="text-accent font-medium">Wrestler Dashboard</span>
                         </Link>
                       )}
+                      {hasProfessional && (
+                        <Link href="/dashboard/professional" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors" onClick={() => setShowDropdown(false)}>
+                          <Briefcase className="w-4 h-4 text-accent" />
+                          <span className="text-accent font-medium">Crew Dashboard</span>
+                        </Link>
+                      )}
                       {isAdmin && (
                         <Link href="/admin" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors" onClick={() => setShowDropdown(false)}>
                           <Shield className="w-4 h-4 text-yellow-400" />
                           <span className="text-yellow-400 font-medium">Admin Panel</span>
                         </Link>
                       )}
-                      {(hasPromotion || hasWrestler || isAdmin) && <div className="border-t border-border my-1" />}
+                      {(hasPromotion || hasWrestler || hasProfessional || isAdmin) && <div className="border-t border-border my-1" />}
                       <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors" onClick={() => setShowDropdown(false)}>
                         <User className="w-4 h-4" /> Profile
                       </Link>
@@ -283,6 +299,13 @@ export default function Navigation() {
                     <span className="text-accent font-medium">Wrestler Dashboard</span>
                   </Link>
                 )}
+                {hasProfessional && (
+                  <Link href="/dashboard/professional" onClick={() => setShowMobileMenu(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-background-tertiary transition-colors">
+                    <Briefcase className="w-5 h-5 text-accent" />
+                    <span className="text-accent font-medium">Crew Dashboard</span>
+                  </Link>
+                )}
                 {isAdmin && (
                   <Link href="/admin" onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-background-tertiary transition-colors">
@@ -290,7 +313,7 @@ export default function Navigation() {
                     <span className="text-yellow-400 font-medium">Admin Panel</span>
                   </Link>
                 )}
-                {(hasPromotion || hasWrestler || isAdmin) && <div className="border-t border-border my-2" />}
+                {(hasPromotion || hasWrestler || hasProfessional || isAdmin) && <div className="border-t border-border my-2" />}
                 <Link href="/profile" onClick={() => setShowMobileMenu(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-background-tertiary transition-colors">
                   <User className="w-5 h-5" />

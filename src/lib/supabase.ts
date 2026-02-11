@@ -71,6 +71,54 @@ export interface Wrestler {
   created_at: string
 }
 
+export const PROFESSIONAL_ROLES = [
+  'referee', 'photographer', 'videographer', 'graphic_designer',
+  'ring_announcer', 'commentator', 'manager_valet', 'producer',
+  'trainer', 'dj_music', 'ring_crew', 'other'
+] as const
+
+export const ROLE_LABELS: Record<string, string> = {
+  referee: 'Referee',
+  photographer: 'Photographer',
+  videographer: 'Videographer',
+  graphic_designer: 'Graphic Designer',
+  ring_announcer: 'Ring Announcer',
+  commentator: 'Commentator',
+  manager_valet: 'Manager / Valet',
+  producer: 'Producer',
+  trainer: 'Trainer',
+  dj_music: 'DJ / Music',
+  ring_crew: 'Ring Crew',
+  other: 'Other',
+}
+
+export interface Professional {
+  id: string
+  name: string
+  slug: string
+  role: string
+  moniker: string | null
+  bio: string | null
+  hometown: string | null
+  residence: string | null
+  photo_url: string | null
+  website: string | null
+  booking_email: string | null
+  twitter_handle: string | null
+  instagram_handle: string | null
+  tiktok_handle: string | null
+  youtube_url: string | null
+  facebook_url: string | null
+  bluesky_handle: string | null
+  patreon_url: string | null
+  video_section_title: string | null
+  claimed_by: string | null
+  claim_code: string | null
+  verification_status: 'unverified' | 'pending' | 'verified'
+  follower_count: number
+  created_at: string
+}
+
 export interface Event {
   id: string
   name: string

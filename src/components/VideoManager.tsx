@@ -14,19 +14,20 @@ interface Video {
 interface VideoManagerProps {
   wrestlerId?: string
   promotionId?: string
+  professionalId?: string
   sectionTitle?: string
   onSectionTitleChange?: (title: string) => void
 }
 
-export default function VideoManager({ wrestlerId, promotionId, sectionTitle, onSectionTitleChange }: VideoManagerProps) {
+export default function VideoManager({ wrestlerId, promotionId, professionalId, sectionTitle, onSectionTitleChange }: VideoManagerProps) {
   const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({ title: '', url: '' })
 
-  const fkColumn = wrestlerId ? 'wrestler_id' : 'promotion_id'
-  const fkValue = wrestlerId || promotionId || ''
+  const fkColumn = wrestlerId ? 'wrestler_id' : promotionId ? 'promotion_id' : 'professional_id'
+  const fkValue = wrestlerId || promotionId || professionalId || ''
 
   useEffect(() => {
     loadVideos()

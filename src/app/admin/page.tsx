@@ -2256,6 +2256,32 @@ function PageRequestsTab() {
             return
           }
         }
+      } else if (req.type === 'crew') {
+        const { data: existing } = await supabase
+          .from('professionals')
+          .select('id')
+          .ilike('name', req.name.trim())
+          .maybeSingle()
+
+        if (existing) {
+          alert(`Crew member "${req.name}" already exists. The user can claim the existing page.`)
+        } else {
+          const { error: createErr } = await supabase
+            .from('professionals')
+            .insert({
+              name: req.name.trim(),
+              slug,
+              role: 'other',
+              verification_status: 'unverified',
+            })
+            .select('id')
+            .single()
+
+          if (createErr) {
+            alert(`Error creating crew member: ${createErr.message}`)
+            return
+          }
+        }
       }
     }
 

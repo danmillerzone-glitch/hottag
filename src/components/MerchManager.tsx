@@ -16,19 +16,20 @@ interface MerchItem {
 interface MerchManagerProps {
   wrestlerId?: string
   promotionId?: string
+  professionalId?: string
 }
 
-export default function MerchManager({ wrestlerId, promotionId }: MerchManagerProps) {
+export default function MerchManager({ wrestlerId, promotionId, professionalId }: MerchManagerProps) {
   const [items, setItems] = useState<MerchItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({ title: '', link_url: '', price: '', image_url: '' })
 
-  const table = wrestlerId ? 'wrestler_merch_items' : 'promotion_merch_items'
-  const fkColumn = wrestlerId ? 'wrestler_id' : 'promotion_id'
-  const fkValue = wrestlerId || promotionId || ''
-  const storageBucket = wrestlerId ? 'wrestler-photos' : 'promotion-logos'
+  const table = wrestlerId ? 'wrestler_merch_items' : promotionId ? 'promotion_merch_items' : 'professional_merch_items'
+  const fkColumn = wrestlerId ? 'wrestler_id' : promotionId ? 'promotion_id' : 'professional_id'
+  const fkValue = wrestlerId || promotionId || professionalId || ''
+  const storageBucket = 'wrestler-photos'
 
   useEffect(() => {
     loadItems()

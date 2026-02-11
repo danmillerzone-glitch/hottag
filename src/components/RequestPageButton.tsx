@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
-import { Plus, X, Loader2, Check, User, Building2 } from 'lucide-react'
+import { Plus, X, Loader2, Check, User, Building2, Briefcase } from 'lucide-react'
 
 export default function RequestPageButton() {
   const { user } = useAuth()
   const [showModal, setShowModal] = useState(false)
-  const [type, setType] = useState<'wrestler' | 'promotion'>('wrestler')
+  const [type, setType] = useState<'wrestler' | 'promotion' | 'crew'>('wrestler')
   const [name, setName] = useState('')
   const [details, setDetails] = useState('')
   const [socialLinks, setSocialLinks] = useState('')
@@ -95,6 +95,17 @@ export default function RequestPageButton() {
                       Wrestler
                     </button>
                     <button
+                      onClick={() => setType('crew')}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                        type === 'crew'
+                          ? 'border-accent bg-accent/10 text-accent'
+                          : 'border-border bg-background-tertiary text-foreground-muted hover:text-foreground'
+                      }`}
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      Crew
+                    </button>
+                    <button
                       onClick={() => setType('promotion')}
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
                         type === 'promotion'
@@ -111,7 +122,7 @@ export default function RequestPageButton() {
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    {type === 'wrestler' ? 'Wrestler Name' : 'Promotion Name'} <span className="text-red-400">*</span>
+                    {type === 'wrestler' ? 'Wrestler Name' : type === 'crew' ? 'Name' : 'Promotion Name'} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
