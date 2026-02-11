@@ -100,9 +100,27 @@ export default function MapPage() {
     if (!map.current || events.length === 0 || markersAdded.current) return
     markersAdded.current = true
 
+    const now = new Date()
+    const msPerDay = 86400000
+
+    function getUrgency(eventDate: string) {
+      const date = new Date(eventDate + 'T12:00:00')
+      const daysAway = Math.floor((date.getTime() - now.getTime()) / msPerDay)
+      if (daysAway <= 7) return 'week'       // This week
+      if (daysAway <= 30) return 'month'      // This month
+      if (daysAway <= 60) return 'soon'       // 1-2 months
+      return 'later'                           // 2+ months
+    }
+
+    // Urgency config: size (px), opacity, pulse animation
+    const urgencyConfig = {
+      week:  { size: 36, opacity: 1.0,  pulse: true  },
+      month: { size: 28, opacity: 0.85, pulse: false },
+      soon:  { size: 22, opacity: 0.65, pulse: false },
+      later: { size: 16, opacity: 0.45, pulse: false },
+    }
+
     // Group events by proximity — round to 3 decimal places (~111m)
-    // This merges pins at the same venue with slightly different coordinates
-    // or different venue names at the same physical location
     const locationGroups = new Map<string, any[]>()
     events.forEach(event => {
       const roundedLat = Math.round(event.latitude * 1000) / 1000
@@ -116,11 +134,28 @@ export default function MapPage() {
       const [lat, lng] = key.split(',').map(Number)
       const event = locationEvents[0]
 
+      // Use the most urgent event in the group to determine marker style
+      const urgencies = locationEvents.map(e => getUrgency(e.event_date))
+      const priority = ['week', 'month', 'soon', 'later']
+      const bestUrgency = priority.find(p => urgencies.includes(p)) || 'later'
+      const config = urgencyConfig[bestUrgency as keyof typeof urgencyConfig]
+
       const el = document.createElement('div')
       el.className = 'event-marker'
-      el.innerHTML = `<div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm shadow-lg cursor-pointer hover:scale-110 transition-transform">${locationEvents.length > 1 ? locationEvents.length : ''}</div>`
 
-      const venueNames = Array.from(new Set(locationEvents.map(e => e.venue_name).filter(Boolean)))
+      const count = locationEvents.length > 1 ? locationEvents.length : ''
+      const fontSize = config.size < 24 ? '10px' : '12px'
+
+      el.innerHTML = `
+        <div class="marker-dot ${config.pulse ? 'marker-pulse' : ''}" style="
+          width: ${config.size}px;
+          height: ${config.size}px;
+          opacity: ${config.opacity};
+          font-size: ${fontSize};
+        ">${count}</div>
+      `
+
+      const venueNames = Array.from(new Set(locationEvents.map((e: any) => e.venue_name).filter(Boolean)))
       const venueLabel = venueNames.length === 1 ? venueNames[0] : formatLocation(event.city, event.state)
 
       const popupContent = locationEvents.length > 1
@@ -128,7 +163,7 @@ export default function MapPage() {
             <h3 class="font-bold text-foreground mb-1">${locationEvents.length} Events</h3>
             <p class="text-foreground-muted text-sm mb-3">${venueLabel}</p>
             <div class="space-y-2 max-h-48 overflow-y-auto">
-              ${locationEvents.map(e => `<a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors"><div class="font-medium text-sm text-foreground">${e.name}</div><div class="text-xs text-accent">${formatEventDate(e.event_date)}</div></a>`).join('')}
+              ${locationEvents.map((e: any) => `<a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors"><div class="font-medium text-sm text-foreground">${e.name}</div><div class="text-xs text-accent">${formatEventDate(e.event_date)}</div></a>`).join('')}
             </div></div>`
         : `<div class="p-4 max-w-xs">
             ${event.promotions ? `<div class="text-accent text-xs font-medium mb-1">${event.promotions.name}</div>` : ''}
@@ -160,10 +195,27 @@ export default function MapPage() {
           <List className="w-4 h-4" /> {showList ? 'Hide List' : 'Show List'}
         </button>
       </div>
-      <div className="absolute bottom-4 left-4 z-10">
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
         <div className="px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm">
           <span className="text-accent font-bold">{events.length}</span>{' '}
           <span className="text-foreground-muted">events on map</span>
+        </div>
+        {/* Legend */}
+        <div className="px-4 py-3 bg-background-secondary/95 backdrop-blur rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
+              <span className="text-[11px] text-foreground-muted">This week</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-accent opacity-80" />
+              <span className="text-[11px] text-foreground-muted">This month</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-accent opacity-50" />
+              <span className="text-[11px] text-foreground-muted">Later</span>
+            </div>
+          </div>
         </div>
       </div>
       {showList && (
@@ -186,6 +238,39 @@ export default function MapPage() {
       )}
       <style jsx global>{`
         .event-marker { cursor: pointer; }
+        .marker-dot {
+          border-radius: 50%;
+          background: #ff6b35;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 700;
+          box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+        .marker-dot:hover {
+          transform: scale(1.2);
+        }
+        .marker-pulse {
+          animation: markerPulse 2s ease-in-out infinite;
+          box-shadow: 0 0 12px rgba(255, 107, 53, 0.6);
+        }
+        @keyframes markerPulse {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(255, 107, 53, 0.5);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.8), 0 0 40px rgba(255, 107, 53, 0.3);
+            transform: scale(1.1);
+          }
+        }
+        .marker-pulse:hover {
+          animation: none;
+          transform: scale(1.2);
+        }
         .mapboxgl-popup-content { background: #1c2228 !important; border-radius: 12px !important; padding: 0 !important; color: #fff !important; }
         .mapboxgl-popup-tip { border-top-color: #1c2228 !important; }
         .mapboxgl-popup-close-button { color: #99aabb !important; font-size: 20px !important; padding: 8px 12px !important; }
