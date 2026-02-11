@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
-import { EventCard, EventCardSkeleton } from '@/components/EventCard'
+import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import { Calendar, ChevronDown, X, MapPin, Globe } from 'lucide-react'
 
 // Regions for filtering
@@ -334,9 +334,9 @@ export default function EventsPage() {
             {[1, 2].map((month) => (
               <div key={month}>
                 <div className="h-6 w-40 skeleton mb-4" />
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <EventCardSkeleton key={i} />
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <PosterEventCardSkeleton key={i} />
                   ))}
                 </div>
               </div>
@@ -363,9 +363,9 @@ export default function EventsPage() {
                 <h2 className="text-xl font-display font-semibold mb-4 text-foreground-muted sticky top-14 md:top-16 bg-background py-2 z-10">
                   {month}
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {monthEvents.map((event: any) => (
-                    <EventCard key={event.id} event={event} />
+                    <PosterEventCard key={event.id} event={event} />
                   ))}
                 </div>
               </div>
