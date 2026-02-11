@@ -63,7 +63,7 @@ export default function OnboardingPage() {
       await supabase.from('user_follows_promotion').upsert({
         user_id: user.id,
         promotion_id: promoId,
-      }, { onConflict: 'user_id,promotion_id' }).catch(() => {})
+      }, { onConflict: 'user_id,promotion_id' })
     }
 
     // Follow selected wrestlers
@@ -71,7 +71,7 @@ export default function OnboardingPage() {
       await supabase.from('user_follows_wrestler').upsert({
         user_id: user.id,
         wrestler_id: wrestlerId,
-      }, { onConflict: 'user_id,wrestler_id' }).catch(() => {})
+      }, { onConflict: 'user_id,wrestler_id' })
     }
 
     await supabase.from('user_profiles').update({
