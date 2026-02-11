@@ -122,13 +122,13 @@ export default function RequestPageButton() {
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    {type === 'wrestler' ? 'Wrestler Name' : type === 'crew' ? 'Name' : 'Promotion Name'} <span className="text-red-400">*</span>
+                    {type === 'wrestler' ? 'Wrestler Name' : type === 'crew' ? 'Crew Name' : 'Promotion Name'} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={type === 'wrestler' ? 'e.g., John Smith' : 'e.g., Texas Championship Wrestling'}
+                    placeholder={type === 'wrestler' ? 'e.g., John Smith' : type === 'crew' ? 'e.g., Tim the Ref' : 'e.g., Texas Championship Wrestling'}
                     className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent outline-none transition-colors text-sm"
                   />
                 </div>
