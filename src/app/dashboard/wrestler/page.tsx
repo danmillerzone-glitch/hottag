@@ -16,6 +16,7 @@ import {
   Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X, Plus,
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
+import { WRESTLING_STYLES, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import ImageCropUploader from '@/components/ImageCropUploader'
 import HeroThemePicker from '@/components/HeroThemePicker'
 import MerchManager from '@/components/MerchManager'
@@ -77,6 +78,7 @@ export default function WrestlerDashboardPage() {
   const [videoSectionTitle, setVideoSectionTitle] = useState('')
   const [countriesWrestled, setCountriesWrestled] = useState<string[]>([])
   const [signatureMoves, setSignatureMoves] = useState<string[]>([])
+  const [wrestlingStyle, setWrestlingStyle] = useState<string[]>([])
   const [newMove, setNewMove] = useState('')
   const [countrySearch, setCountrySearch] = useState('')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
@@ -125,6 +127,7 @@ export default function WrestlerDashboardPage() {
       setVideoSectionTitle(data.wrestler.video_section_title || '')
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
+      setWrestlingStyle(data.wrestler.wrestling_style || [])
     } else {
       const userClaims = await getUserWrestlerClaims()
       setClaims(userClaims)
@@ -162,6 +165,7 @@ export default function WrestlerDashboardPage() {
         video_section_title: videoSectionTitle || null,
         countries_wrestled: countriesWrestled,
         signature_moves: signatureMoves.length > 0 ? signatureMoves : null,
+        wrestling_style: wrestlingStyle.length > 0 ? wrestlingStyle : null,
       })
       setDashboardData({ ...dashboardData, wrestler: updated })
       setSaved(true)
@@ -600,10 +604,34 @@ export default function WrestlerDashboardPage() {
                 </button>
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Wrestling Style</label>
+              <div className="flex flex-wrap gap-2">
+                {WRESTLING_STYLES.map(style => (
+                  <button
+                    key={style}
+                    type="button"
+                    onClick={() => {
+                      if (wrestlingStyle.includes(style)) {
+                        setWrestlingStyle(wrestlingStyle.filter(s => s !== style))
+                      } else {
+                        setWrestlingStyle([...wrestlingStyle, style])
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      wrestlingStyle.includes(style)
+                        ? 'bg-accent/10 text-accent border-accent/30'
+                        : 'bg-background-tertiary text-foreground-muted border-border hover:border-foreground-muted'
+                    }`}
+                  >
+                    {WRESTLING_STYLE_LABELS[style]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
-
-        {/* Social Links */}
         <section className="card p-6">
           <div className="flex items-center gap-2 mb-5">
             <Globe className="w-5 h-5 text-accent" />

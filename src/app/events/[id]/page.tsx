@@ -290,30 +290,36 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            {event.ticket_url && !event.is_sold_out && (
-              <a
-                href={event.ticket_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary"
-              >
-                <Ticket className="w-4 h-4 mr-2" />
-                Get Tickets
-                <ExternalLink className="w-3 h-3 ml-2" />
-              </a>
-            )}
-            {couponCode && (
-              <CouponCodeButton code={couponCode} label={couponLabel || undefined} />
-            )}
-            <StreamingLinks eventId={event.id} />
-            <div className="ml-auto flex items-center gap-2">
-              <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} />
-              <ShareButton
-                title={event.name}
-                text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
-                url={`https://www.hottag.app/events/${event.id}`}
-              />
+          <div className="mb-8 space-y-3">
+            {/* Primary actions row */}
+            <div className="flex gap-2">
+              {event.ticket_url && !event.is_sold_out && (
+                <a
+                  href={event.ticket_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary flex-1 justify-center"
+                >
+                  <Ticket className="w-4 h-4 mr-2" />
+                  Get Tickets
+                  <ExternalLink className="w-3 h-3 ml-2" />
+                </a>
+              )}
+              {couponCode && (
+                <CouponCodeButton code={couponCode} label={couponLabel || undefined} />
+              )}
+            </div>
+            {/* Secondary actions row */}
+            <div className="flex items-center gap-2">
+              <StreamingLinks eventId={event.id} />
+              <div className="ml-auto flex items-center gap-2">
+                <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} />
+                <ShareButton
+                  title={event.name}
+                  text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
+                  url={`https://www.hottag.app/events/${event.id}`}
+                />
+              </div>
             </div>
           </div>
 

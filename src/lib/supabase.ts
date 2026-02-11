@@ -68,19 +68,43 @@ export interface Wrestler {
   verification_status: 'unverified' | 'pending' | 'verified'
   follower_count: number
   upcoming_events_count: number
+  wrestling_style: string[] | null
   created_at: string
 }
 
+export const WRESTLING_STYLES = [
+  'brawler', 'grappler', 'luchador', 'strong_style', 'high_flyer',
+  'technical', 'hybrid', 'powerhouse', 'hardcore', 'submission_specialist',
+  'comedy', 'deathmatch'
+] as const
+
+export const WRESTLING_STYLE_LABELS: Record<string, string> = {
+  brawler: 'Brawler',
+  grappler: 'Grappler',
+  luchador: 'Luchador',
+  strong_style: 'Strong Style',
+  high_flyer: 'High Flyer',
+  technical: 'Technical',
+  hybrid: 'Hybrid',
+  powerhouse: 'Powerhouse',
+  hardcore: 'Hardcore',
+  submission_specialist: 'Submission Specialist',
+  comedy: 'Comedy',
+  deathmatch: 'Deathmatch',
+}
+
 export const PROFESSIONAL_ROLES = [
-  'referee', 'photographer', 'videographer', 'graphic_designer',
-  'ring_announcer', 'commentator', 'manager_valet', 'producer',
-  'trainer', 'dj_music', 'ring_crew', 'other'
+  'referee', 'photographer', 'videographer', 'video_editor', 'camera_operator',
+  'graphic_designer', 'ring_announcer', 'commentator', 'manager_valet',
+  'producer', 'trainer', 'dj_music', 'ring_crew', 'other'
 ] as const
 
 export const ROLE_LABELS: Record<string, string> = {
   referee: 'Referee',
   photographer: 'Photographer',
   videographer: 'Videographer',
+  video_editor: 'Video Editor',
+  camera_operator: 'Camera Operator',
   graphic_designer: 'Graphic Designer',
   ring_announcer: 'Ring Announcer',
   commentator: 'Commentator',

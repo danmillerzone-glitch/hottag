@@ -51,10 +51,25 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [checking, setChecking] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const adminChecked = useRef(false)
+
+  // Restore tab from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '')
+    if (hash) setActiveTab(hash as Tab)
+  }, [])
+
+  // Persist tab to URL hash
+  const switchTab = (tab: Tab) => {
+    setActiveTab(tab)
+    window.location.hash = tab
+  }
 
   useEffect(() => {
     if (authLoading) return
     if (!user) { router.push('/signin'); return }
+    if (adminChecked.current) return
+    adminChecked.current = true
     checkIsAdmin().then((admin) => {
       setIsAdmin(admin)
       setChecking(false)
@@ -112,7 +127,7 @@ export default function AdminPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => switchTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'bg-accent text-white'

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase, formatRoles } from '@/lib/supabase'
+import { supabase, formatRoles, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap, Briefcase } from 'lucide-react'
 import { formatEventDateFull } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
@@ -236,6 +236,17 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     ))}
                   </div>
                 </div>
+
+                {/* Wrestling Style */}
+                {wrestler.wrestling_style && wrestler.wrestling_style.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {wrestler.wrestling_style.map((style: string, i: number) => (
+                      <span key={i} className="px-2.5 py-1 rounded-md bg-yellow-500/10 text-yellow-400 text-xs font-semibold border border-yellow-500/20">
+                        {WRESTLING_STYLE_LABELS[style] || style}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Signature Moves */}
                 {wrestler.signature_moves && wrestler.signature_moves.length > 0 && (

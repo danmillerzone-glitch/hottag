@@ -5,6 +5,14 @@ import { useAuth } from '@/lib/auth-context'
 import { submitProfessionalClaim, getExistingProfessionalClaim, redeemProfessionalClaimCode } from '@/lib/professional'
 import { Shield, ShieldCheck, Clock, X, Loader2, Key } from 'lucide-react'
 
+function AutoRedirect({ to, delay }: { to: string; delay: number }) {
+  useEffect(() => {
+    const timer = setTimeout(() => { window.location.href = to }, delay)
+    return () => clearTimeout(timer)
+  }, [to, delay])
+  return null
+}
+
 interface ClaimProfessionalButtonProps {
   professionalId: string
   professionalName: string
@@ -149,9 +157,10 @@ export default function ClaimProfessionalButton({
                 <div className="w-16 h-16 rounded-full bg-attending/20 flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-8 h-8 text-attending" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Profile Claimed!</h3>
-                <p className="text-foreground-muted mb-6">You now have full access to your professional dashboard.</p>
-                <button onClick={() => window.location.href = '/dashboard/professional'} className="btn btn-primary">Go to Dashboard</button>
+                <h3 className="text-lg font-semibold mb-2">Page Claimed Successfully!</h3>
+                <p className="text-foreground-muted mb-4">Redirecting to your crew dashboard...</p>
+                <Loader2 className="w-5 h-5 animate-spin text-accent mx-auto" />
+                <AutoRedirect to="/dashboard/professional" delay={2000} />
               </div>
             ) : success ? (
               <div className="p-6 text-center">

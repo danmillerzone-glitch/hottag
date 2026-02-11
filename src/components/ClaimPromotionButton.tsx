@@ -5,6 +5,14 @@ import { useAuth } from '@/lib/auth-context'
 import { submitPromotionClaim, getExistingClaim, redeemPromotionClaimCode } from '@/lib/promoter'
 import { Shield, ShieldCheck, Clock, X, Loader2, Key } from 'lucide-react'
 
+function AutoRedirect({ to, delay }: { to: string; delay: number }) {
+  useEffect(() => {
+    const timer = setTimeout(() => { window.location.href = to }, delay)
+    return () => clearTimeout(timer)
+  }, [to, delay])
+  return null
+}
+
 interface ClaimPromotionButtonProps {
   promotionId: string
   promotionName: string
@@ -143,9 +151,10 @@ export default function ClaimPromotionButton({
                 <div className="w-16 h-16 rounded-full bg-attending/20 flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-8 h-8 text-attending" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Promotion Claimed!</h3>
-                <p className="text-foreground-muted mb-6">You now have full access to your promoter dashboard.</p>
-                <button onClick={() => window.location.href = '/dashboard'} className="btn btn-primary">Go to Dashboard</button>
+                <h3 className="text-lg font-semibold mb-2">Page Claimed Successfully!</h3>
+                <p className="text-foreground-muted mb-4">Redirecting to your promoter dashboard...</p>
+                <Loader2 className="w-5 h-5 animate-spin text-accent mx-auto" />
+                <AutoRedirect to="/dashboard" delay={2000} />
               </div>
             ) : success ? (
               <div className="p-6 text-center">

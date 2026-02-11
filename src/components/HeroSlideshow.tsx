@@ -27,7 +27,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
     if (!multi) return
     const timer = setInterval(() => {
       setCurrent(prev => (prev + 1) % images.length)
-    }, 5000)
+    }, 6000)
     return () => clearInterval(timer)
   }, [images.length, multi])
 

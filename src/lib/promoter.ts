@@ -666,6 +666,64 @@ export async function removeAnnouncedTalent(talentId: string) {
 }
 
 // ============================================
+// ANNOUNCED CREW
+// ============================================
+
+export async function getAnnouncedCrew(eventId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('event_announced_crew')
+    .select('id, professional_id, announcement_note, sort_order, professionals (id, name, slug, photo_url, role)')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function searchProfessionals(query: string, limit = 10) {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('professionals')
+    .select('id, name, slug, photo_url, role')
+    .ilike('name', `%${query}%`)
+    .limit(limit)
+  return data || []
+}
+
+export async function addAnnouncedCrew(data: { event_id: string; professional_id: string; sort_order?: number }) {
+  const supabase = createClient()
+  const { data: result, error } = await supabase
+    .from('event_announced_crew')
+    .insert(data)
+    .select('id, professional_id, announcement_note, sort_order, professionals (id, name, slug, photo_url, role)')
+    .single()
+
+  if (error) throw error
+  return result
+}
+
+export async function updateAnnouncedCrew(crewId: string, updates: { announcement_note?: string | null; sort_order?: number }) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_announced_crew')
+    .update(updates)
+    .eq('id', crewId)
+
+  if (error) throw error
+}
+
+export async function removeAnnouncedCrew(crewId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_announced_crew')
+    .delete()
+    .eq('id', crewId)
+
+  if (error) throw error
+}
+
+// ============================================
 // EVENT CRUD (Create / Delete)
 // ============================================
 

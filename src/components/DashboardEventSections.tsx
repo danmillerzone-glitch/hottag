@@ -6,12 +6,14 @@ import {
   updateEvent, getEventMatches, createMatch, deleteMatch, updateMatch, addMatchParticipant, removeMatchParticipant,
   searchWrestlers, uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
   getAnnouncedTalent, addAnnouncedTalent, removeAnnouncedTalent, updateAnnouncedTalent,
+  getAnnouncedCrew, addAnnouncedCrew, removeAnnouncedCrew, updateAnnouncedCrew, searchProfessionals,
   type EventMatch, type StreamingLink, type AnnouncedTalent,
 } from '@/lib/promoter'
+import { ROLE_LABELS } from '@/lib/supabase'
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
   ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
-  ChevronUp, ChevronDown,
+  ChevronUp, ChevronDown, Briefcase,
 } from 'lucide-react'
 
 // ============================================
@@ -859,5 +861,143 @@ function WrestlerSearchBox({ onSelect, onClose, excludeIds }: { onSelect: (id: s
         </div>
       )}
     </div>
+  )
+}
+
+// ============================================
+// ANNOUNCED CREW SECTION
+// ============================================
+
+export function AnnouncedCrewSection({ eventId }: { eventId: string }) {
+  const [crew, setCrew] = useState<any[]>([])
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    getAnnouncedCrew(eventId).then(data => { setCrew(data); setLoaded(true) }).catch(() => setLoaded(true))
+  }, [eventId])
+
+  const handleSearch = useCallback(async (query: string) => {
+    if (query.length < 2) { setSearchResults([]); return }
+    setSearching(true)
+    const results = await searchProfessionals(query)
+    const existingIds = crew.map(c => c.professional_id)
+    setSearchResults(results.filter((p: any) => !existingIds.includes(p.id)))
+    setSearching(false)
+  }, [crew])
+
+  useEffect(() => {
+    const timer = setTimeout(() => handleSearch(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, handleSearch])
+
+  const handleAdd = async (professionalId: string) => {
+    try {
+      const added = await addAnnouncedCrew({ event_id: eventId, professional_id: professionalId, sort_order: crew.length })
+      setCrew([...crew, added])
+      setSearchQuery(''); setSearchResults([])
+    } catch (err: any) {
+      if (err?.code !== '23505') console.error('Error adding crew:', err)
+    }
+  }
+
+  const handleRemove = async (crewId: string) => {
+    try { await removeAnnouncedCrew(crewId); setCrew(crew.filter(c => c.id !== crewId)) }
+    catch (err) { console.error('Error removing crew:', err) }
+  }
+
+  if (!loaded) return null
+
+  return (
+    <section className="card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-purple-400" />
+          <h2 className="text-lg font-display font-bold">Announced Crew</h2>
+          <span className="text-sm text-foreground-muted">({crew.length})</span>
+        </div>
+        <button onClick={() => setShowSearch(!showSearch)} className="btn btn-secondary text-sm">
+          <Plus className="w-4 h-4 mr-1.5" /> Add Crew
+        </button>
+      </div>
+
+      <p className="text-sm text-foreground-muted mb-4">
+        Add crew members like commentators, referees, and ring announcers appearing at this event.
+      </p>
+
+      {showSearch && (
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search crew by name..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-background-tertiary border border-border text-sm outline-none focus:border-accent"
+              autoFocus
+            />
+          </div>
+          {searchResults.length > 0 && (
+            <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+              {searchResults.map((p: any) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleAdd(p.id)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-background-tertiary text-left transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {p.photo_url ? (
+                      <Image src={p.photo_url} alt={p.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
+                    ) : (
+                      <Briefcase className="w-4 h-4 text-foreground-muted" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">{p.name}</div>
+                    <div className="text-xs text-purple-400">{p.role?.map((r: string) => ROLE_LABELS[r] || r).join(' / ')}</div>
+                  </div>
+                  <Plus className="w-4 h-4 text-accent ml-auto" />
+                </button>
+              ))}
+            </div>
+          )}
+          {searching && <div className="text-sm text-foreground-muted mt-2">Searching...</div>}
+          {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+            <div className="text-sm text-foreground-muted mt-2">No crew members found</div>
+          )}
+        </div>
+      )}
+
+      {crew.length > 0 ? (
+        <div className="space-y-2">
+          {crew.map((c: any) => (
+            <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary">
+              <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center overflow-hidden flex-shrink-0">
+                {c.professionals?.photo_url ? (
+                  <Image src={c.professionals.photo_url} alt={c.professionals.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                ) : (
+                  <Briefcase className="w-5 h-5 text-foreground-muted" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm truncate">{c.professionals?.name}</div>
+                <div className="text-xs text-purple-400">{c.professionals?.role?.map((r: string) => ROLE_LABELS[r] || r).join(' / ')}</div>
+              </div>
+              <button onClick={() => handleRemove(c.id)} className="p-1.5 rounded hover:bg-background transition-colors text-foreground-muted hover:text-red-400">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-6 text-foreground-muted text-sm">
+          No crew announced yet
+        </div>
+      )}
+    </section>
   )
 }
