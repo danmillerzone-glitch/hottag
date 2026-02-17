@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
@@ -17,8 +17,8 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
   const [canScrollRight, setCanScrollRight] = useState(false)
   const rafRef = useRef<number>(0)
 
-  function checkScroll() {
-    // Debounce via rAF to avoid setState on every scroll pixel
+  // Stable ref — prevents listener re-attachment on every render
+  const checkScroll = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
     rafRef.current = requestAnimationFrame(() => {
       const el = scrollRef.current
@@ -28,7 +28,7 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
       setCanScrollLeft(prev => prev !== left ? left : prev)
       setCanScrollRight(prev => prev !== right ? right : prev)
     })
-  }
+  }, [])
 
   useEffect(() => {
     checkScroll()
@@ -36,10 +36,11 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
     if (el) el.addEventListener('scroll', checkScroll, { passive: true })
     window.addEventListener('resize', checkScroll)
     return () => {
+      cancelAnimationFrame(rafRef.current)
       if (el) el.removeEventListener('scroll', checkScroll)
       window.removeEventListener('resize', checkScroll)
     }
-  }, [events, loading])
+  }, [events, loading, checkScroll])
 
   function scroll(dir: 'left' | 'right') {
     const el = scrollRef.current

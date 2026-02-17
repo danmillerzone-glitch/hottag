@@ -96,7 +96,6 @@ export default function MerchGallery({ items }: { items: MerchItem[] }) {
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                 sizes="240px"
-                unoptimized
               />
             </div>
             <div className="p-3">

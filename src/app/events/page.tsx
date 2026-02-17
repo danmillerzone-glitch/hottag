@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
@@ -45,12 +45,15 @@ export default function EventsPage() {
   const [availableStates, setAvailableStates] = useState<string[]>([])
   
   const supabase = createClient()
+  const fetchIdRef = useRef(0)
 
   useEffect(() => {
     fetchEvents()
   }, [selectedRegion, selectedState, timeFilter])
 
   async function fetchEvents() {
+    // Stale-response guard: if filters change mid-flight, discard the old response
+    const fetchId = ++fetchIdRef.current
     setLoading(true)
     
     const today = new Date()
@@ -97,7 +100,10 @@ export default function EventsPage() {
     }
     
     const { data, error } = await query
-    
+
+    // Discard if a newer fetch was triggered while this one was in-flight
+    if (fetchId !== fetchIdRef.current) return
+
     if (error) {
       console.error('Error fetching events:', error)
       setEvents([])
@@ -122,14 +128,17 @@ export default function EventsPage() {
     setLoading(false)
   }
 
-  // Group events by month
-  const byMonth: Record<string, any[]> = {}
-  events.forEach((event) => {
-    const date = new Date(event.event_date + 'T00:00:00')
-    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-    if (!byMonth[monthKey]) byMonth[monthKey] = []
-    byMonth[monthKey].push(event)
-  })
+  // Memoize month grouping — avoids re-computation on filter dropdown toggles
+  const byMonth = useMemo(() => {
+    const grouped: Record<string, any[]> = {}
+    events.forEach((event) => {
+      const date = new Date(event.event_date + 'T00:00:00')
+      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+      if (!grouped[monthKey]) grouped[monthKey] = []
+      grouped[monthKey].push(event)
+    })
+    return grouped
+  }, [events])
 
   const getStateName = (abbrev: string) => {
     return US_STATES[abbrev] || abbrev

@@ -112,7 +112,7 @@ export default function CrewPage() {
               <Link key={pro.id} href={`/crew/${pro.slug}`} className="group block">
                 <div className="relative aspect-square rounded-xl overflow-hidden bg-background-tertiary mb-2">
                   {pro.photo_url ? (
-                    <Image src={pro.photo_url} alt={pro.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="200px" unoptimized />
+                    <Image src={pro.photo_url} alt={pro.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="200px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center"><User className="w-12 h-12 text-foreground-muted" /></div>
                   )}

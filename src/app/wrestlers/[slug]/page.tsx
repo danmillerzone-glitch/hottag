@@ -126,39 +126,37 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   if (!wrestler) notFound()
 
-  const events = await getWrestlerEvents(wrestler.id)
-  const followerCount = await getFollowerCount(wrestler.id)
-  const championships = await getWrestlerChampionships(wrestler.id)
-  const groups = await getWrestlerGroups(wrestler.id)
-  const wrestlerPromotions = await getWrestlerPromotions(wrestler.id)
+  // Fire all independent queries in parallel (~200-500ms faster)
+  const [events, followerCount, championships, groups, wrestlerPromotions, { data: merchItems }, { data: profileVideos }, linkedProfessionalRes] = await Promise.all([
+    getWrestlerEvents(wrestler.id),
+    getFollowerCount(wrestler.id),
+    getWrestlerChampionships(wrestler.id),
+    getWrestlerGroups(wrestler.id),
+    getWrestlerPromotions(wrestler.id),
+    supabase
+      .from('wrestler_merch_items')
+      .select('id, title, image_url, link_url, price')
+      .eq('wrestler_id', wrestler.id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('profile_videos')
+      .select('id, title, url')
+      .eq('wrestler_id', wrestler.id)
+      .order('sort_order', { ascending: true }),
+    wrestler.linked_professional_id
+      ? supabase
+          .from('professionals')
+          .select('id, name, slug, role, photo_url')
+          .eq('id', wrestler.linked_professional_id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ])
 
-  // Fetch merch items
-  const { data: merchItems } = await supabase
-    .from('wrestler_merch_items')
-    .select('id, title, image_url, link_url, price')
-    .eq('wrestler_id', wrestler.id)
-    .order('sort_order', { ascending: true })
-
-  const { data: profileVideos } = await supabase
-    .from('profile_videos')
-    .select('id, title, url')
-    .eq('wrestler_id', wrestler.id)
-    .order('sort_order', { ascending: true })
+  const linkedProfessional = linkedProfessionalRes.data
 
   const today = new Date().toISOString().split('T')[0]
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
-
-  // Fetch linked crew profile
-  let linkedProfessional: any = null
-  if (wrestler.linked_professional_id) {
-    const { data } = await supabase
-      .from('professionals')
-      .select('id, name, slug, role, photo_url')
-      .eq('id', wrestler.linked_professional_id)
-      .single()
-    linkedProfessional = data
-  }
 
   const hasRender = !!wrestler.render_url
   const hasPhoto = !!wrestler.photo_url

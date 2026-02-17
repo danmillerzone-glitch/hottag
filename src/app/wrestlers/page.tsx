@@ -191,7 +191,6 @@ function WrestlerHeroCard({ wrestler }: { wrestler: WrestlerCard }) {
               fill
               className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
               sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 180px"
-              unoptimized
             />
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
           </>

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Users, Ticket } from 'lucide-react'
@@ -9,7 +10,8 @@ interface PosterEventCardProps {
   event: any
 }
 
-export default function PosterEventCard({ event }: PosterEventCardProps) {
+// Memoized to prevent re-renders when parent state changes (carousels render 10+ of these)
+const PosterEventCard = memo(function PosterEventCard({ event }: PosterEventCardProps) {
   const promotion = event.promotions
   const hasPoster = !!event.poster_url
   const hasLogo = !!promotion?.logo_url
@@ -37,7 +39,7 @@ export default function PosterEventCard({ event }: PosterEventCardProps) {
               width={140}
               height={140}
               className="object-contain opacity-40"
-              unoptimized
+              sizes="140px"
             />
           </div>
         ) : (
@@ -76,7 +78,7 @@ export default function PosterEventCard({ event }: PosterEventCardProps) {
                   width={24}
                   height={24}
                   className="object-contain rounded-sm flex-shrink-0"
-                  unoptimized
+                  sizes="24px"
                 />
               )}
               <span className="text-xs font-semibold text-white/80 uppercase tracking-wider truncate">
@@ -120,7 +122,9 @@ export default function PosterEventCard({ event }: PosterEventCardProps) {
       </div>
     </Link>
   )
-}
+})
+
+export default PosterEventCard
 
 export function PosterEventCardSkeleton() {
   return (

@@ -47,7 +47,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
             fill
             className="object-cover"
             priority={i === 0}
-            unoptimized
+            sizes="100vw"
           />
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />

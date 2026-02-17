@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, User, Users } from 'lucide-react'
@@ -24,7 +24,11 @@ export default function RosterCarousel({ roster }: { roster: RosterMember[] }) {
   const [showAll, setShowAll] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const sorted = [...roster].sort((a, b) => (a.wrestlers?.name || '').localeCompare(b.wrestlers?.name || ''))
+  // Memoize sort — avoids re-sorting on showAll toggle
+  const sorted = useMemo(
+    () => [...roster].sort((a, b) => (a.wrestlers?.name || '').localeCompare(b.wrestlers?.name || '')),
+    [roster]
+  )
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return
@@ -112,7 +116,7 @@ function RosterCard({ member }: { member: RosterMember }) {
               alt={w.name}
               fill
               className={`${w.render_url ? 'object-contain object-bottom' : 'object-cover'} group-hover:scale-105 transition-transform duration-300 relative z-[1]`}
-              unoptimized
+              sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, 180px"
             />
             {/* Bottom gradient for name readability */}
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />

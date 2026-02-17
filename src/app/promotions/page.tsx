@@ -84,7 +84,7 @@ async function PromotionsList() {
                         width={64}
                         height={64}
                         className="object-contain"
-                        unoptimized
+                        sizes="64px"
                       />
                     ) : (
                       <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">

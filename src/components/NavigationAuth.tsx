@@ -51,33 +51,18 @@ export default function Navigation() {
     }
     const supabase = createClient()
 
-    supabase
-      .from('promotions')
-      .select('id')
-      .eq('claimed_by', user.id)
-      .limit(1)
-      .then(({ data }) => setHasPromotion(!!(data && data.length > 0)))
-
-    supabase
-      .from('wrestlers')
-      .select('id')
-      .eq('claimed_by', user.id)
-      .limit(1)
-      .then(({ data }) => setHasWrestler(!!(data && data.length > 0)))
-
-    supabase
-      .from('professionals')
-      .select('id')
-      .eq('claimed_by', user.id)
-      .limit(1)
-      .then(({ data }) => setHasProfessional(!!(data && data.length > 0)))
-
-    supabase
-      .from('admin_users')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .then(({ data }) => setIsAdmin(!!(data && data.length > 0)))
+    // Fire all role-check queries in parallel instead of sequentially
+    Promise.all([
+      supabase.from('promotions').select('id').eq('claimed_by', user.id).limit(1),
+      supabase.from('wrestlers').select('id').eq('claimed_by', user.id).limit(1),
+      supabase.from('professionals').select('id').eq('claimed_by', user.id).limit(1),
+      supabase.from('admin_users').select('user_id').eq('user_id', user.id).limit(1),
+    ]).then(([promoRes, wrestlerRes, professionalRes, adminRes]) => {
+      setHasPromotion(!!(promoRes.data && promoRes.data.length > 0))
+      setHasWrestler(!!(wrestlerRes.data && wrestlerRes.data.length > 0))
+      setHasProfessional(!!(professionalRes.data && professionalRes.data.length > 0))
+      setIsAdmin(!!(adminRes.data && adminRes.data.length > 0))
+    })
   }, [user])
 
   // Close desktop dropdown on outside click
