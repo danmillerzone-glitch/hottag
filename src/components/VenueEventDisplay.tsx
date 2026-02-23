@@ -2,7 +2,7 @@ import { VENUE_AMENITY_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-consta
 import { 
   Users, UtensilsCrossed, Beer, Car, Accessibility, Armchair, 
   Building2, ShoppingBag, CreditCard, ShieldAlert, Tag,
-  Baby, Ban, Cigarette, Handshake, Banknote, Search,
+  Baby, Ban, Cigarette, HandMetal, Banknote, Search,
   ParkingCircle, TreePine, Home
 } from 'lucide-react'
 
@@ -55,7 +55,7 @@ const AMENITY_DISPLAY: Record<string, { label: string; icon: any; color: string 
   venue_indoor_outdoor: { label: 'Indoor / Outdoor', icon: TreePine, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
   // Amenities
   merch_area: { label: 'Merch Area', icon: ShoppingBag, color: 'text-accent bg-accent/10 border-accent/20' },
-  meet_and_greet: { label: 'Meet & Greet', icon: Handshake, color: 'text-accent bg-accent/10 border-accent/20' },
+  meet_and_greet: { label: 'Meet & Greet', icon: HandMetal, color: 'text-accent bg-accent/10 border-accent/20' },
   atm_onsite: { label: 'ATM On-Site', icon: Banknote, color: 'text-foreground-muted bg-background-tertiary border-border' },
   restrooms: { label: 'Restrooms', icon: Building2, color: 'text-foreground-muted bg-background-tertiary border-border' },
   // Payment
