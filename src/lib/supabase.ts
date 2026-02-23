@@ -180,6 +180,8 @@ export interface Event {
   streaming_url: string | null
   coupon_code: string | null
   coupon_label: string | null
+  venue_amenities: Record<string, any> | null
+  event_tags: string[] | null
   created_at: string
   // Joined fields
   promotion?: Promotion
