@@ -24,47 +24,49 @@ const AMENITY_ICONS: Record<string, any> = {
 }
 
 // Individual amenity display config with icons
+const GRAY_PILL = 'text-foreground-muted bg-background-tertiary border-border'
+
 const AMENITY_DISPLAY: Record<string, { label: string; icon: any; color: string }> = {
   // Age
-  all_ages: { label: 'All Ages', icon: Baby, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
-  eighteen_plus: { label: '18+', icon: Users, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  twenty_one_plus: { label: '21+', icon: Users, color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  all_ages: { label: 'All Ages', icon: Baby, color: GRAY_PILL },
+  eighteen_plus: { label: '18+', icon: Users, color: GRAY_PILL },
+  twenty_one_plus: { label: '21+', icon: Users, color: GRAY_PILL },
   // Food & Drink
-  food_available: { label: 'Food Available', icon: UtensilsCrossed, color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-  alcohol_available: { label: 'Alcohol Available', icon: Beer, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  byob: { label: 'BYOB', icon: Beer, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  no_outside_food: { label: 'No Outside Food/Drink', icon: Ban, color: 'text-foreground-muted bg-background-tertiary border-border' },
+  food_available: { label: 'Food Available', icon: UtensilsCrossed, color: GRAY_PILL },
+  alcohol_available: { label: 'Alcohol Available', icon: Beer, color: GRAY_PILL },
+  byob: { label: 'BYOB', icon: Beer, color: GRAY_PILL },
+  no_outside_food: { label: 'No Outside Food/Drink', icon: Ban, color: GRAY_PILL },
   // Parking
-  parking_free_onsite: { label: 'Free Parking', icon: ParkingCircle, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
-  parking_paid_onsite: { label: 'Paid Parking', icon: ParkingCircle, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  parking_street: { label: 'Street Parking', icon: Car, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  parking_garage_nearby: { label: 'Garage Nearby', icon: Building2, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  parking_limited: { label: 'Limited Parking', icon: Car, color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  parking_free_onsite: { label: 'Free Parking', icon: ParkingCircle, color: GRAY_PILL },
+  parking_paid_onsite: { label: 'Paid Parking', icon: ParkingCircle, color: GRAY_PILL },
+  parking_street: { label: 'Street Parking', icon: Car, color: GRAY_PILL },
+  parking_garage_nearby: { label: 'Garage Nearby', icon: Building2, color: GRAY_PILL },
+  parking_limited: { label: 'Limited Parking', icon: Car, color: GRAY_PILL },
   // Accessibility
-  wheelchair_accessible: { label: 'Wheelchair Accessible', icon: Accessibility, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  ada_seating: { label: 'ADA Seating', icon: Accessibility, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  wheelchair_accessible: { label: 'Wheelchair Accessible', icon: Accessibility, color: GRAY_PILL },
+  ada_seating: { label: 'ADA Seating', icon: Accessibility, color: GRAY_PILL },
   // Seating
-  seating_ga_standing: { label: 'General Admission', icon: Users, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  seating_assigned: { label: 'Assigned Seating', icon: Armchair, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  seating_folding_chairs: { label: 'Folding Chairs', icon: Armchair, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  seating_bleachers: { label: 'Bleachers', icon: Armchair, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  seating_standing_only: { label: 'Standing Only', icon: Users, color: 'text-foreground-muted bg-background-tertiary border-border' },
+  seating_ga_standing: { label: 'General Admission', icon: Users, color: GRAY_PILL },
+  seating_assigned: { label: 'Assigned Seating', icon: Armchair, color: GRAY_PILL },
+  seating_folding_chairs: { label: 'Folding Chairs', icon: Armchair, color: GRAY_PILL },
+  seating_bleachers: { label: 'Bleachers', icon: Armchair, color: GRAY_PILL },
+  seating_standing_only: { label: 'Standing Only', icon: Users, color: GRAY_PILL },
   // Venue Type
-  venue_indoor: { label: 'Indoor', icon: Home, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  venue_outdoor: { label: 'Outdoor', icon: TreePine, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
-  venue_indoor_outdoor: { label: 'Indoor / Outdoor', icon: TreePine, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
+  venue_indoor: { label: 'Indoor', icon: Home, color: GRAY_PILL },
+  venue_outdoor: { label: 'Outdoor', icon: TreePine, color: GRAY_PILL },
+  venue_indoor_outdoor: { label: 'Indoor / Outdoor', icon: TreePine, color: GRAY_PILL },
   // Amenities
-  merch_area: { label: 'Merch Area', icon: ShoppingBag, color: 'text-accent bg-accent/10 border-accent/20' },
-  meet_and_greet: { label: 'Meet & Greet', icon: HandMetal, color: 'text-accent bg-accent/10 border-accent/20' },
-  atm_onsite: { label: 'ATM On-Site', icon: Banknote, color: 'text-foreground-muted bg-background-tertiary border-border' },
-  restrooms: { label: 'Restrooms', icon: Building2, color: 'text-foreground-muted bg-background-tertiary border-border' },
+  merch_area: { label: 'Merch Area', icon: ShoppingBag, color: GRAY_PILL },
+  meet_and_greet: { label: 'Meet & Greet', icon: HandMetal, color: GRAY_PILL },
+  atm_onsite: { label: 'ATM On-Site', icon: Banknote, color: GRAY_PILL },
+  restrooms: { label: 'Restrooms', icon: Building2, color: GRAY_PILL },
   // Payment
-  cash_only: { label: 'Cash Only', icon: Banknote, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  card_accepted: { label: 'Card / Tap Accepted', icon: CreditCard, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
+  cash_only: { label: 'Cash Only', icon: Banknote, color: GRAY_PILL },
+  card_accepted: { label: 'Card / Tap Accepted', icon: CreditCard, color: GRAY_PILL },
   // Policies
-  no_reentry: { label: 'No Re-Entry', icon: Ban, color: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  bag_search: { label: 'Bag Search', icon: Search, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  no_smoking: { label: 'No Smoking', icon: Cigarette, color: 'text-foreground-muted bg-background-tertiary border-border' },
+  no_reentry: { label: 'No Re-Entry', icon: Ban, color: GRAY_PILL },
+  bag_search: { label: 'Bag Search', icon: Search, color: GRAY_PILL },
+  no_smoking: { label: 'No Smoking', icon: Cigarette, color: GRAY_PILL },
 }
 
 interface VenueAmenitiesDisplayProps {
@@ -119,36 +121,39 @@ export function VenueAmenitiesDisplay({ amenities }: VenueAmenitiesDisplayProps)
 // =============================================
 
 // Color mapping for tag groups
+const GRAY_TAG = 'text-foreground-muted bg-background-tertiary border-border'
+const RED_TAG = 'text-red-400 bg-red-500/10 border-red-500/20'
+
 const TAG_GROUP_COLORS: Record<string, string> = {
-  // Event Style — red/orange
-  deathmatch: 'text-red-400 bg-red-500/10 border-red-500/20',
-  strong_style: 'text-red-400 bg-red-500/10 border-red-500/20',
-  lucha_libre: 'text-red-400 bg-red-500/10 border-red-500/20',
-  hardcore: 'text-red-400 bg-red-500/10 border-red-500/20',
-  comedy: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-  // Roster — purple
-  all_women: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  intergender: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  student_showcase: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  micro_wrestling: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  // Format — blue
-  tournament: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  supercard: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  tv_taping: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  ppv_ippv: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  anniversary_show: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  debut_show: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  // Special — accent
-  fan_fest: 'text-accent bg-accent/10 border-accent/20',
-  meet_and_greet: 'text-accent bg-accent/10 border-accent/20',
-  watch_party: 'text-accent bg-accent/10 border-accent/20',
-  fundraiser_charity: 'text-green-400 bg-green-500/10 border-green-500/20',
-  // Vibe — varies
-  family_friendly: 'text-green-400 bg-green-500/10 border-green-500/20',
-  parental_discretion: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-  extreme_adults_only: 'text-red-400 bg-red-500/10 border-red-500/20',
-  live_music: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
-  themed_event: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+  // Event Style
+  deathmatch: RED_TAG,
+  strong_style: GRAY_TAG,
+  lucha_libre: GRAY_TAG,
+  hardcore: GRAY_TAG,
+  comedy: GRAY_TAG,
+  // Roster
+  all_women: GRAY_TAG,
+  intergender: GRAY_TAG,
+  student_showcase: GRAY_TAG,
+  micro_wrestling: GRAY_TAG,
+  // Format
+  tournament: GRAY_TAG,
+  supercard: GRAY_TAG,
+  tv_taping: GRAY_TAG,
+  ppv_ippv: GRAY_TAG,
+  anniversary_show: GRAY_TAG,
+  debut_show: GRAY_TAG,
+  // Special
+  fan_fest: GRAY_TAG,
+  meet_and_greet: GRAY_TAG,
+  watch_party: GRAY_TAG,
+  fundraiser_charity: GRAY_TAG,
+  // Vibe
+  family_friendly: GRAY_TAG,
+  parental_discretion: GRAY_TAG,
+  extreme_adults_only: RED_TAG,
+  live_music: GRAY_TAG,
+  themed_event: GRAY_TAG,
 }
 
 interface EventTagsDisplayProps {
