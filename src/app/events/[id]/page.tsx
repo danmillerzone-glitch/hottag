@@ -34,6 +34,7 @@ import QRCodeButton from '@/components/QRCodeButton'
 import MatchCard from '@/components/MatchCard'
 import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
+import { VenueAmenitiesDisplay, EventTagsDisplay } from '@/components/VenueEventDisplay'
 import CouponCodeButton from '@/components/CouponCodeButton'
 
 // Force dynamic rendering - no caching
@@ -336,6 +337,16 @@ export default async function EventPage({ params }: EventPageProps) {
                 {event.description}
               </p>
             </div>
+          )}
+
+          {/* Event Tags */}
+          {event.event_tags && event.event_tags.length > 0 && (
+            <EventTagsDisplay tags={event.event_tags} />
+          )}
+
+          {/* Venue Info */}
+          {event.venue_amenities && Object.values(event.venue_amenities).some((v: any) => v) && (
+            <VenueAmenitiesDisplay amenities={event.venue_amenities} />
           )}
 
           {/* Match Card (from promoter-managed matches) */}
