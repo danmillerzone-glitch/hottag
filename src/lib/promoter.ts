@@ -279,6 +279,8 @@ export async function updateEvent(eventId: string, updates: {
   state?: string | null
   coupon_code?: string | null
   coupon_label?: string | null
+  venue_amenities?: Record<string, any> | null
+  event_tags?: string[] | null
 }) {
   const supabase = createClient()
 
@@ -741,6 +743,8 @@ export async function createEvent(data: {
   description?: string
   ticket_url?: string
   is_free?: boolean
+  venue_amenities?: Record<string, any>
+  event_tags?: string[]
 }) {
   const supabase = createClient()
 

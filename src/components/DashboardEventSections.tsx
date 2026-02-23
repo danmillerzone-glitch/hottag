@@ -13,7 +13,7 @@ import { ROLE_LABELS } from '@/lib/supabase'
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
   ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
-  ChevronUp, ChevronDown, Briefcase,
+  ChevronUp, ChevronDown, Briefcase, Building2, Tag,
 } from 'lucide-react'
 
 // ============================================
@@ -291,6 +291,193 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
           </button>
         </div>
       </div>
+    </section>
+  )
+}
+
+// ============================================
+// VENUE INFO SECTION
+// ============================================
+
+import { VENUE_AMENITY_GROUPS } from '@/lib/venue-event-constants'
+
+export function VenueInfoSection({ event, onUpdate }: { event: any; onUpdate: (e: any) => void }) {
+  const [amenities, setAmenities] = useState<Record<string, any>>(event.venue_amenities || {})
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [expanded, setExpanded] = useState(true)
+
+  const toggleCheckbox = (key: string) => {
+    setAmenities({ ...amenities, [key]: !amenities[key] })
+  }
+
+  const setRadio = (key: string, value: string) => {
+    setAmenities({ ...amenities, [key]: amenities[key] === value ? null : value })
+  }
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false)
+    try {
+      const updated = await updateEvent(event.id, { venue_amenities: amenities })
+      onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
+    } catch (err) { console.error('Error saving venue info:', err) }
+    setSaving(false)
+  }
+
+  return (
+    <section className="card p-6">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-accent" />
+          <h2 className="text-lg font-display font-bold">Venue Info</h2>
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+      </button>
+      <p className="text-sm text-foreground-muted mt-1 mb-4">Help fans know what to expect at the venue.</p>
+
+      {expanded && (
+        <div className="space-y-5">
+          {VENUE_AMENITY_GROUPS.map((group) => (
+            <div key={group.label}>
+              <div className="text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                {group.label}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {group.type === 'radio' && 'key' in group ? (
+                  group.options.map((opt) => {
+                    const isActive = amenities[group.key] === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setRadio(group.key, opt.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          isActive
+                            ? 'bg-accent/15 text-accent border-accent/40'
+                            : 'bg-background-tertiary text-foreground-muted border-border hover:border-foreground-muted/30'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })
+                ) : (
+                  'options' in group && group.options.map((opt) => {
+                    const key = (opt as { key: string; label: string }).key
+                    const label = (opt as { key: string; label: string }).label
+                    const isActive = !!amenities[key]
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleCheckbox(key)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          isActive
+                            ? 'bg-accent/15 text-accent border-accent/40'
+                            : 'bg-background-tertiary text-foreground-muted border-border hover:border-foreground-muted/30'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end pt-2">
+            <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">
+              {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving...</> : saved ? <><Check className="w-4 h-4 mr-1.5" /> Saved!</> : <><Save className="w-4 h-4 mr-1.5" /> Save Venue Info</>}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+// ============================================
+// EVENT TAGS SECTION
+// ============================================
+
+import { EVENT_TAG_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-constants'
+
+export function EventTagsSection({ event, onUpdate }: { event: any; onUpdate: (e: any) => void }) {
+  const [tags, setTags] = useState<string[]>(event.event_tags || [])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [expanded, setExpanded] = useState(true)
+
+  const toggleTag = (tag: string) => {
+    if (tags.includes(tag)) {
+      setTags(tags.filter(t => t !== tag))
+    } else {
+      setTags([...tags, tag])
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false)
+    try {
+      const updated = await updateEvent(event.id, { event_tags: tags })
+      onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
+    } catch (err) { console.error('Error saving event tags:', err) }
+    setSaving(false)
+  }
+
+  return (
+    <section className="card p-6">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <Tag className="w-5 h-5 text-purple-400" />
+          <h2 className="text-lg font-display font-bold">Event Tags</h2>
+          {tags.length > 0 && <span className="text-sm text-foreground-muted">({tags.length})</span>}
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+      </button>
+      <p className="text-sm text-foreground-muted mt-1 mb-4">Tag your event to help fans find the right shows.</p>
+
+      {expanded && (
+        <div className="space-y-5">
+          {EVENT_TAG_GROUPS.map((group) => (
+            <div key={group.label}>
+              <div className="text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                {group.label}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {group.tags.map((tag) => {
+                  const isActive = tags.includes(tag)
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        isActive
+                          ? 'bg-purple-500/15 text-purple-400 border-purple-500/40'
+                          : 'bg-background-tertiary text-foreground-muted border-border hover:border-foreground-muted/30'
+                      }`}
+                    >
+                      {EVENT_TAG_LABELS[tag] || tag}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end pt-2">
+            <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">
+              {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving...</> : saved ? <><Check className="w-4 h-4 mr-1.5" /> Saved!</> : <><Save className="w-4 h-4 mr-1.5" /> Save Tags</>}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

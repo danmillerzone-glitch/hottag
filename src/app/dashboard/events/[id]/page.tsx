@@ -12,6 +12,7 @@ import { Loader2, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react'
 import { formatEventDateFull, formatLocation } from '@/lib/utils'
 import {
   TicketsSection, StreamingLinksSection, EventDetailsSection,
+  VenueInfoSection, EventTagsSection,
   PosterSection, AnnouncedTalentSection, AnnouncedCrewSection, MatchCardSection,
 } from '@/components/DashboardEventSections'
 
@@ -105,6 +106,8 @@ export default function ManageEventPage() {
         <TicketsSection event={event} onUpdate={setEvent} />
         <StreamingLinksSection eventId={eventId} links={streamingLinks} onUpdate={setStreamingLinks} />
         <EventDetailsSection event={event} onUpdate={setEvent} />
+        <VenueInfoSection event={event} onUpdate={setEvent} />
+        <EventTagsSection event={event} onUpdate={setEvent} />
         <PosterSection event={event} eventId={eventId} onUpdate={setEvent} />
         <AnnouncedTalentSection eventId={eventId} talent={announcedTalent} onUpdate={setAnnouncedTalent} />
         <AnnouncedCrewSection eventId={eventId} />
