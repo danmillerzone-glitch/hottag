@@ -120,22 +120,19 @@ export function VenueAmenitiesDisplay({ amenities }: VenueAmenitiesDisplayProps)
 
 // Color mapping for tag groups
 const TAG_GROUP_COLORS: Record<string, string> = {
-  // Match Style — red/orange
+  // Event Style — red/orange
   deathmatch: 'text-red-400 bg-red-500/10 border-red-500/20',
   strong_style: 'text-red-400 bg-red-500/10 border-red-500/20',
   lucha_libre: 'text-red-400 bg-red-500/10 border-red-500/20',
   hardcore: 'text-red-400 bg-red-500/10 border-red-500/20',
   comedy: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-  submission_only: 'text-red-400 bg-red-500/10 border-red-500/20',
   // Roster — purple
   all_women: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
   intergender: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
   student_showcase: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
   micro_wrestling: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  all_ages_talent: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
   // Format — blue
   tournament: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  battle_royal: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   supercard: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   tv_taping: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   ppv_ippv: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
@@ -146,11 +143,9 @@ const TAG_GROUP_COLORS: Record<string, string> = {
   meet_and_greet: 'text-accent bg-accent/10 border-accent/20',
   watch_party: 'text-accent bg-accent/10 border-accent/20',
   fundraiser_charity: 'text-green-400 bg-green-500/10 border-green-500/20',
-  double_header: 'text-accent bg-accent/10 border-accent/20',
-  outdoor_special: 'text-green-400 bg-green-500/10 border-green-500/20',
   // Vibe — varies
   family_friendly: 'text-green-400 bg-green-500/10 border-green-500/20',
-  eighteen_plus_content: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+  parental_discretion: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
   extreme_adults_only: 'text-red-400 bg-red-500/10 border-red-500/20',
   live_music: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
   themed_event: 'text-pink-400 bg-pink-500/10 border-pink-500/20',

@@ -96,35 +96,32 @@ export const VENUE_AMENITY_GROUPS = [
 // --- EVENT TAGS ---
 
 export const EVENT_TAGS = [
-  // Match Style
-  'deathmatch', 'strong_style', 'lucha_libre', 'hardcore', 'comedy', 'submission_only',
+  // Event Style
+  'deathmatch', 'strong_style', 'lucha_libre', 'hardcore', 'comedy',
   // Roster
-  'all_women', 'intergender', 'student_showcase', 'micro_wrestling', 'all_ages_talent',
+  'all_women', 'intergender', 'student_showcase', 'micro_wrestling',
   // Format
-  'tournament', 'battle_royal', 'supercard', 'tv_taping', 'ppv_ippv', 'anniversary_show', 'debut_show',
+  'tournament', 'supercard', 'tv_taping', 'ppv_ippv', 'anniversary_show', 'debut_show',
   // Special
-  'fan_fest', 'meet_and_greet', 'watch_party', 'fundraiser_charity', 'double_header', 'outdoor_special',
+  'fan_fest', 'meet_and_greet', 'watch_party', 'fundraiser_charity',
   // Vibe
-  'family_friendly', 'eighteen_plus_content', 'extreme_adults_only', 'live_music', 'themed_event',
+  'family_friendly', 'parental_discretion', 'extreme_adults_only', 'live_music', 'themed_event',
 ] as const
 
 export const EVENT_TAG_LABELS: Record<string, string> = {
-  // Match Style
+  // Event Style
   deathmatch: 'Deathmatch',
   strong_style: 'Strong Style',
   lucha_libre: 'Lucha Libre',
   hardcore: 'Hardcore',
   comedy: 'Comedy',
-  submission_only: 'Submission Only',
   // Roster
   all_women: 'All Women',
   intergender: 'Intergender',
   student_showcase: 'Student Showcase',
   micro_wrestling: 'Micro Wrestling',
-  all_ages_talent: 'All Ages Talent',
   // Format
   tournament: 'Tournament',
-  battle_royal: 'Battle Royal / Rumble',
   supercard: 'Supercard',
   tv_taping: 'TV Taping',
   ppv_ippv: 'PPV / iPPV',
@@ -135,20 +132,18 @@ export const EVENT_TAG_LABELS: Record<string, string> = {
   meet_and_greet: 'Meet & Greet',
   watch_party: 'Watch Party',
   fundraiser_charity: 'Fundraiser / Charity',
-  double_header: 'Double Header',
-  outdoor_special: 'Outdoor Special',
   // Vibe
   family_friendly: 'Family Friendly',
-  eighteen_plus_content: '18+ Content',
+  parental_discretion: 'Parental Discretion',
   extreme_adults_only: 'Extreme / Adults Only',
   live_music: 'Live Music + Wrestling',
   themed_event: 'Themed Event',
 }
 
 export const EVENT_TAG_GROUPS = [
-  { label: 'Match Style', tags: ['deathmatch', 'strong_style', 'lucha_libre', 'hardcore', 'comedy', 'submission_only'] },
-  { label: 'Roster', tags: ['all_women', 'intergender', 'student_showcase', 'micro_wrestling', 'all_ages_talent'] },
-  { label: 'Format', tags: ['tournament', 'battle_royal', 'supercard', 'tv_taping', 'ppv_ippv', 'anniversary_show', 'debut_show'] },
-  { label: 'Special', tags: ['fan_fest', 'meet_and_greet', 'watch_party', 'fundraiser_charity', 'double_header', 'outdoor_special'] },
-  { label: 'Vibe', tags: ['family_friendly', 'eighteen_plus_content', 'extreme_adults_only', 'live_music', 'themed_event'] },
+  { label: 'Event Style', tags: ['deathmatch', 'strong_style', 'lucha_libre', 'hardcore', 'comedy'] },
+  { label: 'Roster', tags: ['all_women', 'intergender', 'student_showcase', 'micro_wrestling'] },
+  { label: 'Format', tags: ['tournament', 'supercard', 'tv_taping', 'ppv_ippv', 'anniversary_show', 'debut_show'] },
+  { label: 'Special', tags: ['fan_fest', 'meet_and_greet', 'watch_party', 'fundraiser_charity'] },
+  { label: 'Vibe', tags: ['family_friendly', 'parental_discretion', 'extreme_adults_only', 'live_music', 'themed_event'] },
 ] as const
