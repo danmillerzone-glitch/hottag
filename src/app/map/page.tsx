@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { formatEventDate, formatLocation } from '@/lib/utils'
+import { formatEventDate, formatLocation, getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, List, X } from 'lucide-react'
 import Link from 'next/link'
 
@@ -24,7 +24,7 @@ export default function MapPage() {
   useEffect(() => {
     async function fetchEvents() {
       const supabase = (await import('@/lib/supabase-browser')).createClient()
-      const today = new Date().toISOString().split('T')[0]
+      const today = getTodayHawaii()
       const { data, error } = await supabase
         .from('events')
         .select(`

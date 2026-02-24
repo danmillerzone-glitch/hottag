@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 
 // ============================================
 // TYPES
@@ -216,7 +217,7 @@ export async function getPromoterDashboardData(): Promise<PromoterDashboardData 
   const promotion = await getPromoterPromotion()
   if (!promotion) return null
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
 
   // Fetch upcoming events with streaming link count
   const { data: upcoming } = await supabase
@@ -226,14 +227,14 @@ export async function getPromoterDashboardData(): Promise<PromoterDashboardData 
     .gte('event_date', today)
     .order('event_date', { ascending: true })
 
-  // Fetch past events (last 20)
+  // Fetch past events (last 3)
   const { data: past } = await supabase
     .from('events')
     .select('*')
     .eq('promotion_id', promotion.id)
     .lt('event_date', today)
     .order('event_date', { ascending: false })
-    .limit(20)
+    .limit(3)
 
   // Follower count
   const { count: followerCount } = await supabase

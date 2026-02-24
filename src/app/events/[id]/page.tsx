@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getEvent, getEventWrestlers } from '@/lib/supabase'
+import { getTodayHawaii } from '@/lib/utils'
 import { getHeroCSS } from '@/lib/hero-themes'
 import { 
   Calendar, 
@@ -119,7 +120,7 @@ export default async function EventPage({ params }: EventPageProps) {
   }
 
   // Fetch related events: same promotion or same city, upcoming, not this event
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   let relatedEvents: any[] = []
 
   // Same promotion events

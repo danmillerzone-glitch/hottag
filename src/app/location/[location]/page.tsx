@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, Users, ChevronLeft } from 'lucide-react'
 import EventCard from '@/components/EventCard'
 
@@ -32,7 +33,7 @@ const STATE_ABBREVS = Object.keys(STATE_NAMES)
 
 async function getEventsByLocation(location: string) {
   const decodedLocation = decodeURIComponent(location).replace(/-/g, ' ')
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   
   // Check if it's a state abbreviation
   const upperLocation = decodedLocation.toUpperCase()

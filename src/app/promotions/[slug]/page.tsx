@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase, ROLE_LABELS } from '@/lib/supabase'
+import { getTodayHawaii } from '@/lib/utils'
 import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield, Briefcase } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
@@ -208,7 +209,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   ])
   
   // Split events into upcoming and past (compare dates only, not time)
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
 
@@ -637,7 +638,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
               Past Events ({pastEvents.length})
             </h2>
             <div className="space-y-3 opacity-60">
-              {pastEvents.slice(0, 10).map((event: any) => (
+              {pastEvents.slice(0, 3).map((event: any) => (
                 <Link
                   key={event.id}
                   href={`/events/${event.id}`}

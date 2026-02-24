@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import Link from 'next/link'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
@@ -41,7 +42,7 @@ export default function HomePage() {
 
   async function fetchData() {
     setLoading(true)
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayHawaii()
 
     // Fire independent queries in parallel
     const upcomingPromise = supabase
@@ -154,7 +155,7 @@ export default function HomePage() {
         if (eventData) {
           const statusMap = new Map(attending.map((a: any) => [a.event_id, a.status]))
           const myEventsList = eventData
-            .filter((e: any) => new Date(e.event_date) >= new Date())
+            .filter((e: any) => e.event_date >= getTodayHawaii())
             .map((e: any) => ({
               ...e,
               attendance_status: statusMap.get(e.id),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { 
@@ -62,7 +63,7 @@ function SearchContent() {
           promotions (name)
         `)
         .ilike('name', searchTerm)
-        .gte('event_date', new Date().toISOString().split('T')[0])
+        .gte('event_date', getTodayHawaii())
         .order('event_date', { ascending: true })
         .limit(20)
 

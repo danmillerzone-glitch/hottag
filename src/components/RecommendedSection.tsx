@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
 import { Sparkles, ChevronRight } from 'lucide-react'
@@ -24,7 +25,7 @@ export default function RecommendedSection() {
 
   async function fetchRecommendations() {
     setLoading(true)
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayHawaii()
     const eventCols = `*, promotions (id, name, slug, logo_url)`
 
     // Fire first two queries in parallel

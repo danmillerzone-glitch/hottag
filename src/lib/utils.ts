@@ -2,6 +2,14 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, formatDistanceToNow, isToday, isTomorrow, isThisWeek } from 'date-fns'
 
+/**
+ * Returns today's date as YYYY-MM-DD in Hawaii time (HST, UTC-10).
+ * Events stay "upcoming" until midnight Hawaii time — the latest US timezone.
+ */
+export function getTodayHawaii(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+}
+
 // Classname utility
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

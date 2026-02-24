@@ -401,7 +401,7 @@ export default function DashboardPage() {
               Past Events
             </h2>
             <div className="space-y-2 opacity-60">
-              {pastEvents.slice(0, 5).map((event: any) => (
+              {pastEvents.slice(0, 3).map((event: any) => (
                 <Link
                   key={event.id}
                   href={`/dashboard/events/${event.id}`}

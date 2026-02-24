@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getTodayHawaii } from '@/lib/utils'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -193,7 +194,7 @@ export interface EventWithPromotion extends Event {
 
 // API Functions
 export async function getUpcomingEvents(limit = 20, offset = 0) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   
   const { data, error } = await supabase
     .from('events')
@@ -350,7 +351,7 @@ export async function getPromotion(slug: string) {
 }
 
 export async function getPromotionEvents(promotionId: string, limit = 20) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   
   const { data, error } = await supabase
     .from('events')

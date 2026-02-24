@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
 import { MapPin, Navigation, ChevronRight, ChevronDown } from 'lucide-react'
@@ -64,7 +65,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
 
   async function fetchNearbyEvents(coords: { lat: number; lng: number }, radiusMiles: number) {
     setLoading(true)
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayHawaii()
 
     const { data } = await supabase
       .from('events')

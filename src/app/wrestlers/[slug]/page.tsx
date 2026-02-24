@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { supabase, formatRoles, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Zap, Briefcase } from 'lucide-react'
-import { formatEventDateFull } from '@/lib/utils'
+import { formatEventDateFull, getTodayHawaii } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
 import FlagEmoji from '@/components/FlagEmoji'
 import FollowWrestlerButton from '@/components/FollowWrestlerButton'
@@ -154,7 +154,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
   const linkedProfessional = linkedProfessionalRes.data
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
 
@@ -710,7 +710,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             <div>
               <h2 className="text-2xl font-display font-bold mb-6 text-foreground-muted">Past Events ({pastEvents.length})</h2>
               <div className="space-y-3 opacity-60">
-                {pastEvents.slice(0, 10).map((event: any) => (
+                {pastEvents.slice(0, 3).map((event: any) => (
                   <Link key={event.id} href={`/events/${event.id}`} className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
                     <div className="flex-shrink-0 w-16 text-center">
                       <div className="text-foreground-muted font-bold">{new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>

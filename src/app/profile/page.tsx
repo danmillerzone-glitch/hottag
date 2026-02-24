@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -145,12 +146,11 @@ export default function ProfilePage() {
   const goingEvents = attendingEvents.filter(e => e.status === 'attending')
   const interestedEvents = attendingEvents.filter(e => e.status === 'interested')
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayStr = getTodayHawaii()
 
-  const upcomingGoing = goingEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') >= today)
-  const upcomingInterested = interestedEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') >= today)
-  const pastEvents = attendingEvents.filter(e => new Date(e.events.event_date + 'T23:59:59') < today)
+  const upcomingGoing = goingEvents.filter(e => e.events.event_date >= todayStr)
+  const upcomingInterested = interestedEvents.filter(e => e.events.event_date >= todayStr)
+  const pastEvents = attendingEvents.filter(e => e.events.event_date < todayStr)
 
   return (
     <div className="min-h-screen">
@@ -325,6 +325,7 @@ export default function ProfilePage() {
             <div className="space-y-3">
               {pastEvents
                 .sort((a, b) => new Date(b.events.event_date).getTime() - new Date(a.events.event_date).getTime())
+                .slice(0, 3)
                 .map((item) => (
                 <Link
                   key={item.id}

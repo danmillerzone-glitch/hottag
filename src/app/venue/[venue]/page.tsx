@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, Building2, ExternalLink, ChevronLeft } from 'lucide-react'
 import EventCard from '@/components/EventCard'
 
@@ -13,7 +14,7 @@ interface VenuePageProps {
 
 async function getEventsByVenue(venueSlug: string) {
   const venueName = decodeURIComponent(venueSlug).replace(/-/g, ' ')
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   
   // Search for events with this venue (case insensitive)
   const { data: events, error } = await supabase

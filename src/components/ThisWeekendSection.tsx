@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
 import { Zap, ChevronRight } from 'lucide-react'
@@ -18,41 +19,31 @@ export default function ThisWeekendSection() {
   }, [])
 
   async function fetchWeekendEvents() {
-    const now = new Date()
-    const dayOfWeek = now.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+    const todayStr = getTodayHawaii()
+    const todayDate = new Date(todayStr + 'T12:00:00')
+    const dayOfWeek = todayDate.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
 
-    let startDate: Date
     let endDate: Date
 
     // If it's Thursday-Sunday, show "This Weekend" (Thu-Sun)
     // If it's Mon-Wed, show "This Week" (today through Sunday)
     if (dayOfWeek >= 4 || dayOfWeek === 0) {
       // Thu-Sun: show through end of Sunday
-      startDate = new Date(now)
-      startDate.setHours(0, 0, 0, 0)
-      
-      // Find next Sunday
-      endDate = new Date(now)
+      endDate = new Date(todayDate)
       if (dayOfWeek === 0) {
         // Already Sunday, show today
-        endDate.setHours(23, 59, 59, 999)
       } else {
         endDate.setDate(endDate.getDate() + (7 - dayOfWeek))
-        endDate.setHours(23, 59, 59, 999)
       }
       setLabel('This Weekend')
     } else {
       // Mon-Wed: show through upcoming Sunday
-      startDate = new Date(now)
-      startDate.setHours(0, 0, 0, 0)
-      
-      endDate = new Date(now)
+      endDate = new Date(todayDate)
       endDate.setDate(endDate.getDate() + (7 - dayOfWeek))
-      endDate.setHours(23, 59, 59, 999)
       setLabel('This Week')
     }
 
-    const startStr = startDate.toISOString().split('T')[0]
+    const startStr = todayStr
     const endStr = endDate.toISOString().split('T')[0]
 
     const { data } = await supabase

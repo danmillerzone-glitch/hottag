@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 
 // ============================================
 // TYPES
@@ -141,7 +142,7 @@ export async function getWrestlerDashboardData(): Promise<WrestlerDashboardData 
     .eq('wrestler_id', wrestler.id)
 
   // Get upcoming events from all sources
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayHawaii()
   
   const { data: ewData } = await supabase
     .from('event_wrestlers')

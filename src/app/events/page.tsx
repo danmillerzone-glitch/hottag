@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import { Calendar, ChevronDown, X, MapPin, Globe } from 'lucide-react'
 
@@ -56,24 +57,25 @@ export default function EventsPage() {
     const fetchId = ++fetchIdRef.current
     setLoading(true)
     
-    const today = new Date()
+    const todayStr = getTodayHawaii()
+    const todayDate = new Date(todayStr + 'T12:00:00')
     let endDate: Date | null = null
-    
+
     if (timeFilter === 'week') {
-      endDate = new Date(today)
+      endDate = new Date(todayDate)
       endDate.setDate(endDate.getDate() + 7)
     } else if (timeFilter === 'month') {
-      endDate = new Date(today)
+      endDate = new Date(todayDate)
       endDate.setMonth(endDate.getMonth() + 1)
     }
-    
+
     let query = supabase
       .from('events')
       .select(`
-        *, 
+        *,
         promotions (id, name, slug, logo_url)
       `)
-      .gte('event_date', today.toISOString().split('T')[0])
+      .gte('event_date', todayStr)
       .eq('status', 'upcoming')
       .order('event_date', { ascending: true })
       .limit(200)
