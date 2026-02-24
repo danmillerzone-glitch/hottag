@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
-import { Zap, ChevronRight } from 'lucide-react'
+import { CalendarClock, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ThisWeekendSection() {
@@ -73,7 +73,7 @@ export default function ThisWeekendSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2">
-            <Zap className="w-6 h-6 text-purple-400" />
+            <CalendarClock className="w-6 h-6 text-purple-400" />
             {label}
           </h2>
           <Link href="/events" className="text-accent hover:text-accent-hover font-medium text-sm flex items-center">
