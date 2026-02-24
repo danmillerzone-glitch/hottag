@@ -16,7 +16,7 @@ import {
   searchEvents, searchPromotions, searchWrestlersAdmin,
   deleteEvent, deleteWrestler, deletePromotion, updateEventStatus,
   getAnnouncements, createAnnouncement, toggleAnnouncement, deleteAnnouncement,
-  getHomepageNews, createHomepageNewsItem, toggleHomepageNewsItem, deleteHomepageNewsItem,
+  getHomepageNews, createHomepageNewsItem, updateHomepageNewsItem, toggleHomepageNewsItem, deleteHomepageNewsItem,
   banUser, unbanUser, getBannedUsers,
   updateWrestlerAdmin, updatePromotionAdmin, updateEventAdmin,
   getWrestlerFull, getPromotionFull, getEventFull,
@@ -143,25 +143,36 @@ export default function AdminPage() {
           })}
         </div>
 
-        {activeTab === 'overview' && <OverviewTab />}
-        {activeTab === 'promo-claims' && <PromoClaimsTab />}
-        {activeTab === 'wrestler-claims' && <WrestlerClaimsTab />}
-        {activeTab === 'crew-claims' && <CrewClaimsTab />}
-        {activeTab === 'events' && <EventsTab />}
-        {activeTab === 'promotions' && <PromotionsTab />}
-        {activeTab === 'wrestlers' && <WrestlersTab />}
-        {activeTab === 'crew' && <CrewTab />}
-        {activeTab === 'announcements' && <AnnouncementsTab />}
-        {activeTab === 'news' && <NewsFeedTab />}
-        {activeTab === 'users' && <UsersTab />}
-        {activeTab === 'merge' && <MergeTab />}
-        {activeTab === 'import' && <ImportTab />}
-        {activeTab === 'requests' && <PageRequestsTab />}
-        {activeTab === 'hero' && <HeroSlidesTab />}
-        {activeTab === 'vegas' && <VegasWeekendTab />}
+        <LazyTab active={activeTab === 'overview'}><OverviewTab /></LazyTab>
+        <LazyTab active={activeTab === 'promo-claims'}><PromoClaimsTab /></LazyTab>
+        <LazyTab active={activeTab === 'wrestler-claims'}><WrestlerClaimsTab /></LazyTab>
+        <LazyTab active={activeTab === 'crew-claims'}><CrewClaimsTab /></LazyTab>
+        <LazyTab active={activeTab === 'events'}><EventsTab /></LazyTab>
+        <LazyTab active={activeTab === 'promotions'}><PromotionsTab /></LazyTab>
+        <LazyTab active={activeTab === 'wrestlers'}><WrestlersTab /></LazyTab>
+        <LazyTab active={activeTab === 'crew'}><CrewTab /></LazyTab>
+        <LazyTab active={activeTab === 'announcements'}><AnnouncementsTab /></LazyTab>
+        <LazyTab active={activeTab === 'news'}><NewsFeedTab /></LazyTab>
+        <LazyTab active={activeTab === 'users'}><UsersTab /></LazyTab>
+        <LazyTab active={activeTab === 'merge'}><MergeTab /></LazyTab>
+        <LazyTab active={activeTab === 'import'}><ImportTab /></LazyTab>
+        <LazyTab active={activeTab === 'requests'}><PageRequestsTab /></LazyTab>
+        <LazyTab active={activeTab === 'hero'}><HeroSlidesTab /></LazyTab>
+        <LazyTab active={activeTab === 'vegas'}><VegasWeekendTab /></LazyTab>
       </div>
     </div>
   )
+}
+
+// ============================================
+// LAZY TAB WRAPPER (mount on first visit, keep alive with CSS hidden)
+// ============================================
+
+function LazyTab({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const [hasBeenActive, setHasBeenActive] = useState(active)
+  useEffect(() => { if (active) setHasBeenActive(true) }, [active])
+  if (!hasBeenActive) return null
+  return <div className={active ? '' : 'hidden'}>{children}</div>
 }
 
 // ============================================
@@ -1181,6 +1192,7 @@ function NewsFeedTab() {
   const [newsItems, setNewsItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingItem, setEditingItem] = useState<any>(null)
   const [form, setForm] = useState({
     title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: ''
   })
@@ -1242,7 +1254,7 @@ function NewsFeedTab() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Body (optional)</label>
-            <input type="text" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} className="w-full input-field" placeholder="Optional details..." />
+            <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} className="w-full input-field" rows={3} placeholder="Optional details about this news story..." />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1262,6 +1274,11 @@ function NewsFeedTab() {
             <div>
               <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
               <input type="text" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full input-field" placeholder="https://..." />
+              {form.image_url && (
+                <div className="mt-2 rounded-lg overflow-hidden bg-background-tertiary inline-block">
+                  <img src={form.image_url} alt="Preview" className="max-h-24 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
@@ -1283,8 +1300,13 @@ function NewsFeedTab() {
         <div className="space-y-2">
           {newsItems.map((item) => (
             <div key={item.id} className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+              {item.image_url && (
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-background-tertiary flex-shrink-0">
+                  <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                     item.type === 'title_change' ? 'bg-yellow-500/20 text-yellow-400'
                     : item.type === 'new_event' ? 'bg-green-500/20 text-green-400'
@@ -1300,23 +1322,21 @@ function NewsFeedTab() {
                   </span>
                 </div>
                 <p className="text-sm font-medium">{item.title}</p>
-                {item.body && <p className="text-xs text-foreground-muted">{item.body}</p>}
-                {item.link_url && <p className="text-xs text-accent">{item.link_url}</p>}
+                {item.body && <p className="text-xs text-foreground-muted mt-0.5">{item.body}</p>}
+                {item.link_url && <p className="text-xs text-accent mt-0.5 truncate">{item.link_url}</p>}
                 <p className="text-xs text-foreground-muted/60 mt-1">
                   {new Date(item.created_at).toLocaleDateString()}
                   {item.expires_at ? ` · Expires ${new Date(item.expires_at).toLocaleDateString()}` : ''}
                 </p>
               </div>
-              {item.image_url && (
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-background-tertiary flex-shrink-0">
-                  <img src={item.image_url} alt="" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button onClick={() => setEditingItem(item)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit">
+                  <Edit3 className="w-4 h-4" />
+                </button>
                 <button onClick={() => handleToggle(item.id, item.is_active)} className="p-2 hover:bg-background-tertiary rounded transition-colors" title={item.is_active ? 'Deactivate' : 'Activate'}>
                   {item.is_active ? <EyeOff className="w-4 h-4 text-foreground-muted" /> : <Eye className="w-4 h-4 text-green-400" />}
                 </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors">
+                <button onClick={() => handleDelete(item.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors" title="Delete">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -1324,7 +1344,86 @@ function NewsFeedTab() {
           ))}
         </div>
       )}
+
+      {editingItem && (
+        <EditNewsItemModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={() => { setEditingItem(null); loadNews() }}
+        />
+      )}
     </div>
+  )
+}
+
+function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () => void, onSaved: () => void }) {
+  const [form, setForm] = useState({
+    title: item.title || '',
+    body: item.body || '',
+    type: item.type || 'announcement',
+    image_url: item.image_url || '',
+    link_url: item.link_url || '',
+    expires_at: item.expires_at ? new Date(item.expires_at).toISOString().slice(0, 16) : '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!form.title.trim()) return
+    setSaving(true)
+    try {
+      await updateHomepageNewsItem(item.id, {
+        title: form.title,
+        body: form.body || null,
+        type: form.type,
+        image_url: form.image_url || null,
+        link_url: form.link_url || null,
+        expires_at: form.expires_at || null,
+      })
+      onSaved()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  return (
+    <Modal title="Edit News Item" onClose={onClose}>
+      <div className="space-y-4">
+        <FieldRow label="Title *">
+          <input className="w-full input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+        </FieldRow>
+        <FieldRow label="Body">
+          <textarea className="w-full input-field" rows={3} value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Optional details..." />
+        </FieldRow>
+        <div className="grid grid-cols-2 gap-4">
+          <FieldRow label="Type">
+            <select className="w-full input-field" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+              <option value="announcement">Announcement</option>
+              <option value="title_change">Title Change</option>
+              <option value="new_event">New Event</option>
+            </select>
+          </FieldRow>
+          <FieldRow label="Expires">
+            <input type="datetime-local" className="w-full input-field" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} />
+          </FieldRow>
+        </div>
+        <FieldRow label="Image URL">
+          <input className="w-full input-field" value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+          {form.image_url && (
+            <div className="mt-2 rounded-lg overflow-hidden bg-background-tertiary inline-block">
+              <img src={form.image_url} alt="Preview" className="max-h-32 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            </div>
+          )}
+        </FieldRow>
+        <FieldRow label="Link URL">
+          <input className="w-full input-field" value={form.link_url} onChange={e => setForm({ ...form, link_url: e.target.value })} placeholder="/wrestlers/john-doe or https://..." />
+        </FieldRow>
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}
+          </button>
+          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

@@ -530,24 +530,27 @@ export async function createHomepageNewsItem(item: {
   related_championship_id?: string
   expires_at?: string | null
 }) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from('homepage_news')
-    .insert({ ...item, is_auto: false })
-    .select()
-    .single()
+  const result = await adminApi({
+    action: 'insert',
+    table: 'homepage_news',
+    data: { ...item, is_auto: false },
+  })
+  return result.data
+}
 
-  if (error) throw error
-  return data
+export async function updateHomepageNewsItem(id: string, updates: {
+  title?: string
+  body?: string | null
+  type?: string
+  image_url?: string | null
+  link_url?: string | null
+  expires_at?: string | null
+}) {
+  await adminApi({ action: 'update', table: 'homepage_news', id, data: updates })
 }
 
 export async function toggleHomepageNewsItem(id: string, isActive: boolean) {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from('homepage_news')
-    .update({ is_active: isActive })
-    .eq('id', id)
-  if (error) throw error
+  await adminApi({ action: 'update', table: 'homepage_news', id, data: { is_active: isActive } })
 }
 
 export async function deleteHomepageNewsItem(id: string) {
