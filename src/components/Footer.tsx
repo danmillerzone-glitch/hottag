@@ -18,6 +18,14 @@ export default function Footer() {
               Privacy Policy
             </Link>
             <a
+              href="https://www.patreon.com/HotTagApp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground-muted hover:text-foreground transition-colors"
+            >
+              Patreon
+            </a>
+            <a
               href="https://x.com/HotTagApp"
               target="_blank"
               rel="noopener noreferrer"

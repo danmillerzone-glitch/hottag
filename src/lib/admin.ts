@@ -1,6 +1,21 @@
 import { createClient } from '@/lib/supabase-browser'
 
 // ============================================
+// ADMIN API HELPER (uses service role key via API route)
+// ============================================
+
+async function adminApi(body: { action: string; table: string; id?: string; data?: any; filter?: any }) {
+  const res = await fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || 'Admin operation failed')
+  return json
+}
+
+// ============================================
 // ADMIN CHECK
 // ============================================
 
@@ -219,21 +234,15 @@ export async function searchWrestlersAdmin(query: string, limit = 20) {
 }
 
 export async function deleteEvent(eventId: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('events').delete().eq('id', eventId)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'events', id: eventId })
 }
 
 export async function deleteWrestler(wrestlerId: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('wrestlers').delete().eq('id', wrestlerId)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'wrestlers', id: wrestlerId })
 }
 
 export async function deletePromotion(promotionId: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('promotions').delete().eq('id', promotionId)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'promotions', id: promotionId })
 }
 
 export async function getPromotionChampionshipsAdmin(promotionId: string) {
@@ -252,9 +261,7 @@ export async function getPromotionChampionshipsAdmin(promotionId: string) {
 }
 
 export async function deleteChampionshipAdmin(championshipId: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('promotion_championships').delete().eq('id', championshipId)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'promotion_championships', id: championshipId })
 }
 
 export async function createChampionshipAdmin(data: {
@@ -477,9 +484,7 @@ export async function toggleAnnouncement(id: string, isActive: boolean) {
 }
 
 export async function deleteAnnouncement(id: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('site_announcements').delete().eq('id', id)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'site_announcements', id })
 }
 
 // ============================================
@@ -546,9 +551,7 @@ export async function toggleHomepageNewsItem(id: string, isActive: boolean) {
 }
 
 export async function deleteHomepageNewsItem(id: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('homepage_news').delete().eq('id', id)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'homepage_news', id })
 }
 
 // ============================================
@@ -876,9 +879,7 @@ export async function updateGroupAdmin(groupId: string, updates: { name?: string
 }
 
 export async function deleteGroupAdmin(groupId: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('promotion_groups').delete().eq('id', groupId)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'promotion_groups', id: groupId })
 }
 
 export async function addGroupMemberAdmin(groupId: string, wrestlerId: string) {
@@ -928,9 +929,7 @@ export async function updateProfessionalAdmin(id: string, updates: Record<string
 }
 
 export async function deleteProfessional(id: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('professionals').delete().eq('id', id)
-  if (error) throw error
+  await adminApi({ action: 'delete', table: 'professionals', id })
 }
 
 export async function verifyProfessional(id: string) {
