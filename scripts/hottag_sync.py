@@ -326,10 +326,18 @@ def load_events(events):
     logger.info(f"  {len(promos)} promotions in DB")
 
     logger.info("Fetching existing event IDs...")
-    existing = set(
-        e['cagematch_id'] for e in db_get("events?select=cagematch_id&not.cagematch_id.is.null")
-        if e.get('cagematch_id')
-    )
+    existing = set()
+    offset = 0
+    while True:
+        batch = db_get(f"events?select=cagematch_id&not.cagematch_id.is.null&limit=1000&offset={offset}")
+        if not batch:
+            break
+        for e in batch:
+            if e.get('cagematch_id'):
+                existing.add(str(e['cagematch_id']))
+        if len(batch) < 1000:
+            break
+        offset += 1000
     logger.info(f"  {len(existing)} existing events")
 
     created = skipped = errors = new_promos = 0
@@ -339,7 +347,7 @@ def load_events(events):
         if (i + 1) % 100 == 0:
             logger.info(f"  Loading {i+1}/{len(events)}...")
 
-        if event.get('cagematch_id') and event['cagematch_id'] in existing:
+        if event.get('cagematch_id') and str(event['cagematch_id']) in existing:
             skipped += 1
             continue
 
