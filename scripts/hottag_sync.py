@@ -291,21 +291,32 @@ def scrape_events(max_days=120):
 # ============================================
 
 def db_get(endpoint):
-    resp = requests.get(f"{SUPABASE_URL}/rest/v1/{endpoint}", headers=DB_HEADERS)
-    return resp.json() if resp.status_code == 200 else []
+    try:
+        resp = requests.get(f"{SUPABASE_URL}/rest/v1/{endpoint}", headers=DB_HEADERS, timeout=30)
+        return resp.json() if resp.status_code == 200 else []
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"db_get error: {e}")
+        return []
 
 
 def db_post(table, data):
     headers = {**DB_HEADERS, "Prefer": "return=representation"}
-    resp = requests.post(f"{SUPABASE_URL}/rest/v1/{table}", headers=headers, json=data)
-    if resp.status_code == 201:
-        return resp.json()[0]
+    try:
+        resp = requests.post(f"{SUPABASE_URL}/rest/v1/{table}", headers=headers, json=data, timeout=30)
+        if resp.status_code == 201:
+            return resp.json()[0]
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"db_post error ({table}): {e}")
     return None
 
 
 def db_patch(table, filter_str, data):
-    resp = requests.patch(f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}", headers=DB_HEADERS, json=data)
-    return resp.status_code == 204
+    try:
+        resp = requests.patch(f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}", headers=DB_HEADERS, json=data, timeout=30)
+        return resp.status_code == 204
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"db_patch error ({table}): {e}")
+        return False
 
 
 def load_events(events):
@@ -379,6 +390,19 @@ def load_events(events):
             new_event_ids.append(result['id'])
             if event.get('cagematch_id'):
                 existing.add(event['cagematch_id'])
+
+            # Create homepage news item for new event
+            news_title = f"New show: {event['name']}"
+            if promo_name:
+                news_title = f"{promo_name} announces {event['name']}"
+            db_post("homepage_news", {
+                "type": "new_event",
+                "title": news_title,
+                "link_url": f"/events/{result['id']}",
+                "related_event_id": result['id'],
+                "related_promotion_id": promo_id,
+                "is_auto": True,
+            })
         else:
             errors += 1
 
@@ -693,6 +717,20 @@ def sync_championships():
                     })
                     if result:
                         total_updated += 1
+
+                        # Create homepage news for new championship
+                        if champ_1_id and len(title['champions']) >= 1:
+                            w = find_wrestler_by_name(title['champions'][0])
+                            champ_link = f"/wrestlers/{w['slug']}" if w else None
+                            db_post("homepage_news", {
+                                "type": "title_change",
+                                "title": f"{title['champions'][0]} holds the {title['name']}!",
+                                "link_url": champ_link,
+                                "related_wrestler_id": champ_1_id,
+                                "related_promotion_id": promo['id'],
+                                "related_championship_id": result['id'],
+                                "is_auto": True,
+                            })
 
             processed += 1
         except Exception as e:

@@ -93,6 +93,24 @@ export function formatAttendance(attending: number, interested: number): string 
   return `${attending} attending · ${interested} interested`
 }
 
+// Relative time formatting (e.g., "2h ago", "Yesterday", "3 days ago")
+export function formatRelativeTime(dateString: string): string {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHr = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 // Number formatting
 export function formatNumber(num: number): string {
   if (num >= 1000000) {

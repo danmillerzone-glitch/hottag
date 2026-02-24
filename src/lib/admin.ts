@@ -483,6 +483,75 @@ export async function deleteAnnouncement(id: string) {
 }
 
 // ============================================
+// HOMEPAGE NEWS FEED
+// ============================================
+
+export async function getHomepageNews() {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('homepage_news')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function getActiveHomepageNews() {
+  const supabase = createClient()
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('homepage_news')
+    .select('*')
+    .eq('is_active', true)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order('created_at', { ascending: false })
+    .limit(8)
+
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function createHomepageNewsItem(item: {
+  type: string
+  title: string
+  body?: string
+  image_url?: string
+  link_url?: string
+  related_wrestler_id?: string
+  related_promotion_id?: string
+  related_event_id?: string
+  related_championship_id?: string
+  expires_at?: string | null
+}) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('homepage_news')
+    .insert({ ...item, is_auto: false })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function toggleHomepageNewsItem(id: string, isActive: boolean) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('homepage_news')
+    .update({ is_active: isActive })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteHomepageNewsItem(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('homepage_news').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ============================================
 // USER MANAGEMENT & BANS
 // ============================================
 

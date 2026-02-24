@@ -10,6 +10,7 @@ import HeroSlideshow from '@/components/HeroSlideshow'
 import NearYouSection from '@/components/NearYouSection'
 import ThisWeekendSection from '@/components/ThisWeekendSection'
 import RecommendedSection from '@/components/RecommendedSection'
+import WhatsNewSection from '@/components/WhatsNewSection'
 import { 
   Calendar, 
   MapPin, 
@@ -228,6 +229,9 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <HeroSlideshow images={heroImages} />
+
+      {/* What's New — news feed for all visitors */}
+      <WhatsNewSection />
 
       {/* Personalized Section for Logged-in Users */}
       {!authLoading && user && (

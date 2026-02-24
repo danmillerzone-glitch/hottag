@@ -16,6 +16,7 @@ import {
   searchEvents, searchPromotions, searchWrestlersAdmin,
   deleteEvent, deleteWrestler, deletePromotion, updateEventStatus,
   getAnnouncements, createAnnouncement, toggleAnnouncement, deleteAnnouncement,
+  getHomepageNews, createHomepageNewsItem, toggleHomepageNewsItem, deleteHomepageNewsItem,
   banUser, unbanUser, getBannedUsers,
   updateWrestlerAdmin, updatePromotionAdmin, updateEventAdmin,
   getWrestlerFull, getPromotionFull, getEventFull,
@@ -40,10 +41,10 @@ import {
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2, Briefcase, Star,
+  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
+type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -97,6 +98,7 @@ export default function AdminPage() {
     { id: 'wrestlers', label: 'Wrestlers', icon: Award },
     { id: 'crew', label: 'Crew', icon: Briefcase },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    { id: 'news', label: 'News Feed', icon: Newspaper },
     { id: 'users', label: 'Users & Bans', icon: Ban },
     { id: 'merge', label: 'Merge', icon: GitMerge },
     { id: 'import', label: 'Bulk Import', icon: Upload },
@@ -150,6 +152,7 @@ export default function AdminPage() {
         {activeTab === 'wrestlers' && <WrestlersTab />}
         {activeTab === 'crew' && <CrewTab />}
         {activeTab === 'announcements' && <AnnouncementsTab />}
+        {activeTab === 'news' && <NewsFeedTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'merge' && <MergeTab />}
         {activeTab === 'import' && <ImportTab />}
@@ -1161,6 +1164,161 @@ function AnnouncementsTab() {
                   {a.is_active ? <EyeOff className="w-4 h-4 text-foreground-muted" /> : <Eye className="w-4 h-4 text-green-400" />}
                 </button>
                 <button onClick={() => handleDelete(a.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// NEWS FEED TAB
+// ============================================
+
+function NewsFeedTab() {
+  const [newsItems, setNewsItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({
+    title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: ''
+  })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { loadNews() }, [])
+
+  async function loadNews() {
+    setLoading(true)
+    const data = await getHomepageNews()
+    setNewsItems(data)
+    setLoading(false)
+  }
+
+  async function handleCreate() {
+    if (!form.title.trim()) return
+    setSaving(true)
+    try {
+      await createHomepageNewsItem({
+        title: form.title,
+        body: form.body || undefined,
+        type: form.type,
+        image_url: form.image_url || undefined,
+        link_url: form.link_url || undefined,
+        expires_at: form.expires_at || null,
+      })
+      setForm({ title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '' })
+      setShowForm(false)
+      await loadNews()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  async function handleToggle(id: string, isActive: boolean) {
+    try { await toggleHomepageNewsItem(id, !isActive); await loadNews() }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this news item?')) return
+    try { await deleteHomepageNewsItem(id); await loadNews() }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-display font-bold">Homepage News Feed</h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary text-sm">
+          <Plus className="w-4 h-4 mr-1" /> New Item
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="card p-6 mb-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Title *</label>
+            <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full input-field" placeholder="e.g. John Doe wins the World Championship!" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Body (optional)</label>
+            <input type="text" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} className="w-full input-field" placeholder="Optional details..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Type</label>
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full input-field">
+                <option value="announcement">Announcement</option>
+                <option value="title_change">Title Change</option>
+                <option value="new_event">New Event</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Expires (optional)</label>
+              <input type="datetime-local" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} className="w-full input-field" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
+              <input type="text" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full input-field" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
+              <input type="text" value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} className="w-full input-field" placeholder="/wrestlers/john-doe or https://..." />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Create</>}
+            </button>
+            <button onClick={() => setShowForm(false)} className="btn btn-ghost text-sm">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <LoadingSpinner /> : newsItems.length === 0 ? (
+        <EmptyState text="No news items yet. Create one or wait for auto-generated title changes." />
+      ) : (
+        <div className="space-y-2">
+          {newsItems.map((item) => (
+            <div key={item.id} className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                    item.type === 'title_change' ? 'bg-yellow-500/20 text-yellow-400'
+                    : item.type === 'new_event' ? 'bg-green-500/20 text-green-400'
+                    : 'bg-accent/20 text-accent'
+                  }`}>
+                    {item.type === 'title_change' ? 'Title Change' : item.type === 'new_event' ? 'New Event' : 'Announcement'}
+                  </span>
+                  {item.is_auto && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">Auto</span>
+                  )}
+                  <span className={item.is_active ? 'text-green-400 text-xs' : 'text-foreground-muted text-xs'}>
+                    {item.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <p className="text-sm font-medium">{item.title}</p>
+                {item.body && <p className="text-xs text-foreground-muted">{item.body}</p>}
+                {item.link_url && <p className="text-xs text-accent">{item.link_url}</p>}
+                <p className="text-xs text-foreground-muted/60 mt-1">
+                  {new Date(item.created_at).toLocaleDateString()}
+                  {item.expires_at ? ` · Expires ${new Date(item.expires_at).toLocaleDateString()}` : ''}
+                </p>
+              </div>
+              {item.image_url && (
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-background-tertiary flex-shrink-0">
+                  <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => handleToggle(item.id, item.is_active)} className="p-2 hover:bg-background-tertiary rounded transition-colors" title={item.is_active ? 'Deactivate' : 'Activate'}>
+                  {item.is_active ? <EyeOff className="w-4 h-4 text-foreground-muted" /> : <Eye className="w-4 h-4 text-green-400" />}
+                </button>
+                <button onClick={() => handleDelete(item.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}
