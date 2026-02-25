@@ -121,11 +121,10 @@ export default async function EventPage({ params }: EventPageProps) {
     }
   }
 
-  // Fetch related events: same promotion or same city, upcoming, not this event
+  // Fetch related events: same promotion, upcoming, not this event
   const today = getTodayHawaii()
   let relatedEvents: any[] = []
 
-  // Same promotion events
   if (promotion?.id) {
     const { data: promoEvents } = await supabase
       .from('events')
@@ -134,27 +133,14 @@ export default async function EventPage({ params }: EventPageProps) {
       .neq('id', event.id)
       .gte('event_date', today)
       .order('event_date', { ascending: true })
-      .limit(4)
-    if (promoEvents) relatedEvents.push(...promoEvents)
+      .limit(6)
+    if (promoEvents) relatedEvents = promoEvents
   }
 
-  // Same city events (if we need more)
-  if (relatedEvents.length < 6 && event.city) {
-    const { data: cityEvents } = await supabase
-      .from('events')
-      .select('id, name, event_date, city, state, country, venue_name, poster_url, promotions(name, slug)')
-      .eq('city', event.city)
-      .neq('id', event.id)
-      .gte('event_date', today)
-      .order('event_date', { ascending: true })
-      .limit(6 - relatedEvents.length)
-    if (cityEvents) {
-      const existingIds = new Set(relatedEvents.map(e => e.id))
-      relatedEvents.push(...cityEvents.filter(e => !existingIds.has(e.id)))
-    }
-  }
-
-  relatedEvents = relatedEvents.slice(0, 6)
+  // Build maps query: use street address when available, otherwise venue name + city
+  const mapsQuery = event.venue_address && /\d/.test(event.venue_address)
+    ? event.venue_address
+    : [event.venue_name, event.city, event.state, event.country].filter(Boolean).join(', ')
 
   return (
     <div className="min-h-screen">
@@ -252,11 +238,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     </Link>
                   </div>
                 )}
-                {event.venue_address && !(() => {
-                  const parts = [event.city, event.state, event.country].filter(Boolean)
-                  const addr = event.venue_address.toLowerCase().trim()
-                  return parts.some((p: any) => addr === String(p).toLowerCase()) || addr === parts.map((p: any) => String(p).toLowerCase()).join(', ')
-                })() && (
+                {event.venue_address && /\d/.test(event.venue_address) && (
                   <div className="text-sm text-foreground-muted mt-0.5">{event.venue_address}</div>
                 )}
                 <div className="text-sm mt-0.5">
@@ -285,9 +267,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 </div>
                 {/* Google Maps link */}
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
-                  )}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1"
@@ -451,23 +431,19 @@ export default async function EventPage({ params }: EventPageProps) {
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/search?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
-                      [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
-                    )}`}
+                    src={`https://www.google.com/maps/embed/v1/search?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(mapsQuery)}`}
                   />
                 </div>
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     {event.venue_name && <div className="font-semibold">{event.venue_name}</div>}
-                    {event.venue_address && <div className="text-sm text-foreground-muted">{event.venue_address}</div>}
+                    {event.venue_address && /\d/.test(event.venue_address) && <div className="text-sm text-foreground-muted">{event.venue_address}</div>}
                     <div className="text-sm text-foreground-muted">
                       {[event.city, event.state, event.country !== 'USA' ? event.country : null].filter(Boolean).join(', ')}
                     </div>
                   </div>
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      [event.venue_name, event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', ')
-                    )}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-secondary flex-shrink-0"
