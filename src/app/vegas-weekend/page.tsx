@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Calendar, MapPin, Star } from 'lucide-react'
+import { Calendar, ExternalLink, MapPin, Star, Ticket } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
 // Vegas Weekend: April 15–19, 2025
@@ -23,6 +23,7 @@ interface VegasCollective {
   name: string
   description: string | null
   image_url: string | null
+  ticket_url: string | null
 }
 
 export default function VegasWeekendPage() {
@@ -176,9 +177,23 @@ export default function VegasWeekendPage() {
                             {collective.description}
                           </p>
                         </div>
-                        <span className="text-sm font-semibold text-yellow-400/80 whitespace-nowrap flex-shrink-0 bg-yellow-500/10 px-2.5 py-1 rounded-full">
-                          {collective.events.length} shows
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {collective.ticket_url && (
+                            <a
+                              href={collective.ticket_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold transition-colors whitespace-nowrap"
+                            >
+                              <Ticket className="w-4 h-4" />
+                              Ticket Package
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                          <span className="text-sm font-semibold text-yellow-400/80 whitespace-nowrap bg-yellow-500/10 px-2.5 py-1 rounded-full">
+                            {collective.events.length} shows
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

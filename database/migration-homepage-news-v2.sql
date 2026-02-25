@@ -67,3 +67,21 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- =============================================
+-- Backfill display_date for existing title changes
+-- from the linked championship's won_date
+-- =============================================
+
+UPDATE homepage_news hn
+SET display_date = pc.won_date::timestamptz
+FROM promotion_championships pc
+WHERE hn.related_championship_id = pc.id
+  AND hn.type = 'title_change'
+  AND hn.display_date IS NULL
+  AND pc.won_date IS NOT NULL;
+
+-- Verify: check how many title changes still have no display_date
+SELECT COUNT(*) AS title_changes_without_display_date
+FROM homepage_news
+WHERE type = 'title_change' AND display_date IS NULL;

@@ -47,6 +47,11 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// Promotions to skip (Cagematch IDs) — too many historical/irrelevant titles
+const SKIP_CAGEMATCH_IDS = new Set([
+  122,  // Lucha Libre AAA World Wide
+])
+
 function slugify(text) {
   return text.toLowerCase()
     .replace(/[^\w\s-]/g, '')
@@ -228,6 +233,10 @@ async function scrapePromotion(promotion) {
         }).eq('id', existingId)
         updated++
         console.log(`    ✏️  Updated: ${title.name}`)
+      } else if (title.is_vacant) {
+        // Never create new championships with vacant title holders
+        skipped++
+        console.log(`    ⏭️  Skipped (vacant): ${title.name}`)
       } else {
         const { error: insertError } = await supabase
           .from('promotion_championships')
@@ -281,6 +290,12 @@ async function main() {
   for (let i = 0; i < promotions.length; i++) {
     const promo = promotions[i]
     console.log(`\n[${i + 1}/${promotions.length}] ${promo.name} (CM#${promo.cagematch_id})`)
+
+    if (SKIP_CAGEMATCH_IDS.has(promo.cagematch_id)) {
+      console.log(`  ⏭️  Skipped (in skip list)`)
+      if (i < promotions.length - 1) await sleep(2000)
+      continue
+    }
 
     try {
       const result = await scrapePromotion(promo)

@@ -3466,6 +3466,12 @@ function VegasWeekendTab() {
                     rows={2}
                     className="text-sm text-foreground-muted bg-transparent border border-transparent hover:border-border focus:border-accent outline-none w-full rounded p-1 resize-none"
                   />
+                  <input
+                    defaultValue={c.ticket_url || ''}
+                    onBlur={(e) => updateCollective(c.key, 'ticket_url', e.target.value)}
+                    placeholder="Ticket package URL (optional)"
+                    className="text-sm text-foreground-muted bg-transparent border border-transparent hover:border-border focus:border-accent outline-none w-full rounded p-1"
+                  />
                   <div className="text-xs text-foreground-muted">
                     Key: <code className="text-accent">{c.key}</code> · {events.filter(e => e.vegas_collective === c.key).length} events assigned
                   </div>

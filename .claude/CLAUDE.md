@@ -355,5 +355,5 @@ Wrestlers and promoters are the driving "sales team" for fans. If they actively 
 Temporary feature for WrestleMania weekend events in Las Vegas (April 15-19, 2026).
 - Nav item auto-hides after April 20, 2026 11PM PT
 - Events tagged with vegas_weekend = true, optional vegas_collective assignment
-- Collectives: The Collective (Horseshoe), Shooting Star Fest (Swan Dive/Bizarre Bar)
+- Collectives: The Collective (Horseshoe), Shooting Star Fest (Bizarre Bar), HyperX Arena
 - Public route (no auth required)

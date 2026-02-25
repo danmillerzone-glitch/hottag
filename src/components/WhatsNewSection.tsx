@@ -66,15 +66,6 @@ function NewsCard({ item }: { item: any }) {
   return (
     <NewsCardWrapper item={item}>
       <div className="rounded-xl bg-background-secondary border border-border hover:border-border-hover transition-colors overflow-hidden group h-full">
-        {item.image_url && (
-          <div className="aspect-video relative bg-background-tertiary">
-            <img
-              src={item.image_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${config.bgColor} ${config.iconColor}`}>
