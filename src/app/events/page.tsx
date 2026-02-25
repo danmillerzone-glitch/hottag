@@ -173,17 +173,19 @@ export default function EventsPage() {
         <div className="flex flex-wrap gap-3 mb-6">
           {/* Region Filter */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => { setShowRegionDropdown(!showRegionDropdown); setShowStateDropdown(false) }}
+              aria-expanded={showRegionDropdown}
+              aria-haspopup="listbox"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${
-                selectedRegion 
-                  ? 'bg-accent/20 text-accent border-accent/50' 
+                selectedRegion
+                  ? 'bg-accent/20 text-accent border-accent/50'
                   : 'bg-background-secondary border-border hover:border-accent/50'
               }`}
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-4 h-4" aria-hidden="true" />
               {selectedRegion ? getRegionLabel(selectedRegion) : 'All Regions'}
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             
             {showRegionDropdown && (
@@ -214,17 +216,19 @@ export default function EventsPage() {
           {/* State Filter - only show for USA */}
           {isUSA && (
             <div className="relative">
-              <button 
+              <button
                 onClick={() => { setShowStateDropdown(!showStateDropdown); setShowRegionDropdown(false) }}
+                aria-expanded={showStateDropdown}
+                aria-haspopup="listbox"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${
-                  selectedState 
-                    ? 'bg-accent/20 text-accent border-accent/50' 
+                  selectedState
+                    ? 'bg-accent/20 text-accent border-accent/50'
                     : 'bg-background-secondary border-border hover:border-accent/50'
                 }`}
               >
-                <MapPin className="w-4 h-4" />
+                <MapPin className="w-4 h-4" aria-hidden="true" />
                 {selectedState ? getStateName(selectedState) : 'All States'}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
               </button>
               
               {showStateDropdown && (
@@ -259,8 +263,9 @@ export default function EventsPage() {
           )}
           
           {/* Time Filters */}
-          <button 
+          <button
             onClick={() => setTimeFilter('all')}
+            aria-pressed={timeFilter === 'all'}
             className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
               timeFilter === 'all'
                 ? 'bg-accent/20 text-accent border-accent/50'
@@ -270,8 +275,9 @@ export default function EventsPage() {
             All Events
           </button>
           
-          <button 
+          <button
             onClick={() => setTimeFilter('week')}
+            aria-pressed={timeFilter === 'week'}
             className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
               timeFilter === 'week'
                 ? 'bg-accent/20 text-accent border-accent/50'
@@ -281,8 +287,9 @@ export default function EventsPage() {
             This Week
           </button>
           
-          <button 
+          <button
             onClick={() => setTimeFilter('month')}
+            aria-pressed={timeFilter === 'month'}
             className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
               timeFilter === 'month'
                 ? 'bg-accent/20 text-accent border-accent/50'
@@ -313,7 +320,7 @@ export default function EventsPage() {
 
         {/* Results count */}
         {!loading && (
-          <p className="text-sm text-foreground-muted mb-6">
+          <p className="text-sm text-foreground-muted mb-6" aria-live="polite" aria-atomic="true">
             {events.length} {events.length === 1 ? 'event' : 'events'} found
             {selectedRegion && ` in ${getRegionLabel(selectedRegion)}`}
             {selectedState && ` · ${getStateName(selectedState)}`}

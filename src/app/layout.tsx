@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 import LayoutShell from '@/components/LayoutShell'
+import CookieConsent from '@/components/CookieConsent'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -54,6 +55,7 @@ export default function RootLayout({
       <body className="bg-background text-foreground min-h-screen">
         <AuthProvider>
           <LayoutShell>{children}</LayoutShell>
+          <CookieConsent />
         </AuthProvider>
       </body>
     </html>

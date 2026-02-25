@@ -134,11 +134,12 @@ export default function Navigation() {
             </nav>
 
             <div className="flex items-center gap-3">
-              <Link 
+              <Link
                 href="/search"
+                aria-label="Search"
                 className="p-2 rounded-lg text-foreground-muted hover:text-foreground hover:bg-background-secondary transition-colors"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-5 h-5" aria-hidden="true" />
               </Link>
 
               {loading ? (
@@ -147,6 +148,8 @@ export default function Navigation() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
+                    aria-expanded={showDropdown}
+                    aria-haspopup="true"
                     className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background-secondary hover:bg-background-tertiary transition-colors"
                   >
                     <User className="w-5 h-5" />
@@ -156,7 +159,7 @@ export default function Navigation() {
                   </button>
 
                   {showDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-background-secondary border border-border rounded-lg shadow-lg py-1">
+                    <div role="menu" className="absolute right-0 mt-2 w-48 bg-background-secondary border border-border rounded-lg shadow-lg py-1">
                       {hasPromotion && (
                         <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-background-tertiary transition-colors" onClick={() => setShowDropdown(false)}>
                           <Building2 className="w-4 h-4 text-accent" />
@@ -222,8 +225,8 @@ export default function Navigation() {
                 Vegas
               </Link>
             )}
-            <Link href="/search" className="p-2 rounded-lg text-foreground-muted hover:text-foreground">
-              <Search className="w-5 h-5" />
+            <Link href="/search" aria-label="Search" className="p-2 rounded-lg text-foreground-muted hover:text-foreground">
+              <Search className="w-5 h-5" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -279,6 +282,7 @@ export default function Navigation() {
           </Link>
           <button
             onClick={() => setShowMobileMenu(true)}
+            aria-label={user ? 'Open account menu' : 'Sign in'}
             className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
               pathname === '/profile' || pathname.startsWith('/dashboard') ? 'text-accent' : 'text-foreground-muted'
             }`}
@@ -293,15 +297,15 @@ export default function Navigation() {
       {showMobileMenu && (
         <div className="md:hidden fixed inset-0 z-[60]">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowMobileMenu(false)} />
+          <div className="absolute inset-0 bg-black/60" role="presentation" onClick={() => setShowMobileMenu(false)} />
           {/* Panel */}
           <div className="absolute bottom-0 left-0 right-0 bg-background-secondary rounded-t-2xl border-t border-border p-5 pb-8 animate-in slide-in-from-bottom">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display font-bold text-lg">
                 {user ? 'Account' : 'Sign In'}
               </h3>
-              <button onClick={() => setShowMobileMenu(false)} className="p-1 rounded-lg hover:bg-background-tertiary">
-                <X className="w-5 h-5" />
+              <button onClick={() => setShowMobileMenu(false)} aria-label="Close menu" className="p-1 rounded-lg hover:bg-background-tertiary">
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
