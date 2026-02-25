@@ -1246,15 +1246,17 @@ function NewsFeedTab() {
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
     if (swapIdx < 0 || swapIdx >= newsItems.length) return
     const a = newsItems[idx], b = newsItems[swapIdx]
+    // Use position-based sort_order so items with the same value still swap correctly
+    const aOrder = idx
+    const bOrder = swapIdx
     try {
       await Promise.all([
-        updateHomepageNewsItem(a.id, { sort_order: b.sort_order ?? 0 }),
-        updateHomepageNewsItem(b.id, { sort_order: a.sort_order ?? 0 }),
+        updateHomepageNewsItem(a.id, { sort_order: bOrder }),
+        updateHomepageNewsItem(b.id, { sort_order: aOrder }),
       ])
       const updated = [...newsItems]
-      const tempOrder = a.sort_order ?? 0
-      updated[idx] = { ...a, sort_order: b.sort_order ?? 0 }
-      updated[swapIdx] = { ...b, sort_order: tempOrder }
+      updated[idx] = { ...a, sort_order: bOrder }
+      updated[swapIdx] = { ...b, sort_order: aOrder }
       updated.sort((x: any, y: any) => (x.sort_order ?? 0) - (y.sort_order ?? 0))
       setNewsItems(updated)
     } catch (err: any) { alert(`Error: ${err.message}`) }
