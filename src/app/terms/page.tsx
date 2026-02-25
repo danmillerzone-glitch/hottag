@@ -10,11 +10,11 @@ export default function TermsPage() {
     <div className="min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-display font-bold mb-2">Terms of Service</h1>
-        <p className="text-sm text-foreground-muted mb-8">Effective Date: February 7, 2025 &middot; Last Updated: February 7, 2025</p>
+        <p className="text-sm text-foreground-muted mb-8">Effective Date: February 7, 2025 &middot; Last Updated: February 25, 2026</p>
 
         <div className="prose prose-invert max-w-none space-y-6 text-foreground-muted">
           <p>
-            Welcome to Hot Tag (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). Hot Tag is a web-based platform for discovering independent professional wrestling events, following wrestlers, and connecting with the indie wrestling community. By accessing or using our website at <a href="https://www.hottag.app" className="text-accent hover:underline">hottag.app</a> (the &ldquo;Service&rdquo;), you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, you may not use the Service.
+            Welcome to Hot Tag LLC (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). Hot Tag LLC is a web-based platform for discovering independent professional wrestling events, following wrestlers, and connecting with the indie wrestling community. By accessing or using our website at <a href="https://www.hottag.app" className="text-accent hover:underline">hottag.app</a> (the &ldquo;Service&rdquo;), you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, you may not use the Service.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">1. Eligibility</h2>
@@ -48,7 +48,7 @@ export default function TermsPage() {
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">5. Intellectual Property</h2>
           <p>
-            The Service and its original content (excluding User Content), features, and functionality are owned by Hot Tag and are protected by copyright, trademark, and other intellectual property laws. The Hot Tag name, logo, and all related names, logos, product and service names, designs, and slogans are our trademarks. You may not use these marks without our prior written permission.
+            The Service and its original content (excluding User Content), features, and functionality are owned by Hot Tag LLC and are protected by copyright, trademark, and other intellectual property laws. The Hot Tag name, logo, and all related names, logos, product and service names, designs, and slogans are our trademarks. You may not use these marks without our prior written permission.
           </p>
           <p>
             You may not copy, modify, distribute, sell, or lease any part of the Service, nor may you reverse engineer or attempt to extract the source code of the Service.
@@ -94,12 +94,12 @@ export default function TermsPage() {
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">11. Limitation of Liability</h2>
           <p>
-            TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL HOT TAG, ITS OWNER, OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION LOSS OF PROFITS, DATA, USE, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+            TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL HOT TAG LLC, ITS MEMBERS, MANAGERS, OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION LOSS OF PROFITS, DATA, USE, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">12. Indemnification</h2>
           <p>
-            You agree to indemnify, defend, and hold harmless Hot Tag, its owner, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorneys&rsquo; fees) arising out of or in any way connected with your access to or use of the Service, your User Content, or your violation of these Terms.
+            You agree to indemnify, defend, and hold harmless Hot Tag LLC, its members, managers, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorneys&rsquo; fees) arising out of or in any way connected with your access to or use of the Service, your User Content, or your violation of these Terms.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">13. Termination</h2>
@@ -127,7 +127,7 @@ export default function TermsPage() {
             If you have any questions about these Terms, please contact us at:
           </p>
           <p>
-            <strong className="text-foreground">Hot Tag</strong><br />
+            <strong className="text-foreground">Hot Tag LLC</strong><br />
             Email: <a href="mailto:legal@hottag.app" className="text-accent hover:underline">legal@hottag.app</a>
           </p>
         </div>

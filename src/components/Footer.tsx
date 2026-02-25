@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-foreground-muted">
-              &copy; {new Date().getFullYear()} Hot Tag&trade;. All rights reserved.
+              &copy; {new Date().getFullYear()} Hot Tag LLC. All rights reserved.
             </span>
           </div>
           <nav className="flex items-center gap-6 text-sm">

@@ -6,7 +6,7 @@ Hot Tag is a professional wrestling event discovery platform that helps fans fin
 
 **Live site:** https://www.hottag.app
 **Owner:** Dan (Houston, TX)
-**Business entity:** Hot Tag LLC (Texas, formation in progress)
+**Business entity:** Hot Tag LLC (Texas)
 **NAICS:** 519290 (Information Services Platform)
 
 ---

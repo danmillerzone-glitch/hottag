@@ -10,11 +10,11 @@ export default function PrivacyPage() {
     <div className="min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-display font-bold mb-2">Privacy Policy</h1>
-        <p className="text-sm text-foreground-muted mb-8">Effective Date: February 7, 2025 &middot; Last Updated: February 7, 2025</p>
+        <p className="text-sm text-foreground-muted mb-8">Effective Date: February 7, 2025 &middot; Last Updated: February 25, 2026</p>
 
         <div className="prose prose-invert max-w-none space-y-6 text-foreground-muted">
           <p>
-            Hot Tag (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the website at <a href="https://www.hottag.app" className="text-accent hover:underline">hottag.app</a> (the &ldquo;Service&rdquo;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service. Please read this Privacy Policy carefully. By using the Service, you agree to the collection and use of information in accordance with this policy.
+            Hot Tag LLC (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the website at <a href="https://www.hottag.app" className="text-accent hover:underline">hottag.app</a> (the &ldquo;Service&rdquo;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service. Please read this Privacy Policy carefully. By using the Service, you agree to the collection and use of information in accordance with this policy.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground !mt-10">1. Information We Collect</h2>
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
             If you have any questions about this Privacy Policy or our data practices, or if you wish to exercise any of your privacy rights, please contact us at:
           </p>
           <p>
-            <strong className="text-foreground">Hot Tag</strong><br />
+            <strong className="text-foreground">Hot Tag LLC</strong><br />
             Email: <a href="mailto:privacy@hottag.app" className="text-accent hover:underline">privacy@hottag.app</a>
           </p>
         </div>
