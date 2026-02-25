@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import { UserPlus, UserCheck, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { trackEvent } from '@/lib/utils'
 
 interface FollowWrestlerButtonProps {
   wrestlerId: string
@@ -73,6 +74,7 @@ export default function FollowWrestlerButton({
 
         setIsFollowing(true)
         setFollowerCount(c => c + 1)
+        trackEvent('Follow Wrestler', { wrestler: wrestlerName })
       }
     } catch (error) {
       console.error('Error updating follow:', error)
@@ -85,9 +87,11 @@ export default function FollowWrestlerButton({
     <button
       onClick={handleFollow}
       disabled={loading}
+      aria-label={isFollowing ? `Unfollow ${wrestlerName}` : `Follow ${wrestlerName}`}
+      aria-pressed={isFollowing}
       className={`btn ${
-        isFollowing 
-          ? 'bg-accent text-white hover:bg-accent/80' 
+        isFollowing
+          ? 'bg-accent text-white hover:bg-accent/80'
           : 'btn-secondary'
       }`}
     >

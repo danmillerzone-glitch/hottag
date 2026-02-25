@@ -10,6 +10,7 @@ import RosterCarousel from '@/components/RosterCarousel'
 import QRCodeButton from '@/components/QRCodeButton'
 import MerchGallery from '@/components/MerchGallery'
 import VideoCarousel from '@/components/VideoCarousel'
+import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -215,6 +216,14 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
 
   return (
     <div className="min-h-screen">
+      <RecentlyViewedTracker
+        type="promotion"
+        id={promotion.id}
+        name={promotion.name}
+        slug={promotion.slug}
+        image={promotion.logo_url}
+        subtitle={promotion.city ? `${promotion.city}${promotion.state ? `, ${promotion.state}` : ''}` : undefined}
+      />
       {/* Header */}
       <div className="bg-background-secondary py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

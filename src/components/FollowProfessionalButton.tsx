@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import { UserPlus, UserCheck, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { trackEvent } from '@/lib/utils'
 
 interface FollowProfessionalButtonProps {
   professionalId: string
@@ -73,6 +74,7 @@ export default function FollowProfessionalButton({
 
         setIsFollowing(true)
         setFollowerCount(c => c + 1)
+        trackEvent('Follow Crew', { professional: professionalName })
       }
     } catch (error) {
       console.error('Error updating follow:', error)
@@ -86,9 +88,11 @@ export default function FollowProfessionalButton({
       <button
         onClick={handleFollow}
         disabled={loading}
+        aria-label={isFollowing ? `Unfollow ${professionalName}` : `Follow ${professionalName}`}
+        aria-pressed={isFollowing}
         className={`btn ${
-          isFollowing 
-            ? 'bg-accent text-white hover:bg-accent/80' 
+          isFollowing
+            ? 'bg-accent text-white hover:bg-accent/80'
             : 'btn-secondary'
         }`}
       >

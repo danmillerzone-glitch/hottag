@@ -12,6 +12,7 @@ import NearYouSection from '@/components/NearYouSection'
 import ThisWeekendSection from '@/components/ThisWeekendSection'
 import RecommendedSection from '@/components/RecommendedSection'
 import WhatsNewSection from '@/components/WhatsNewSection'
+import RecentlyViewedSection from '@/components/RecentlyViewedSection'
 import { 
   Calendar, 
   MapPin, 
@@ -233,6 +234,9 @@ export default function HomePage() {
 
       {/* What's New — news feed for all visitors */}
       <WhatsNewSection />
+
+      {/* Recently Viewed — localStorage-based history */}
+      <RecentlyViewedSection />
 
       {/* Personalized Section for Logged-in Users */}
       {!authLoading && user && (

@@ -119,6 +119,14 @@ export function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+// Plausible custom event tracking
+// Usage: trackEvent('Ticket Click', { event: 'GCW Bloodsport', promotion: 'GCW' })
+export function trackEvent(eventName: string, props?: Record<string, string | number | boolean>) {
+  if (typeof window !== 'undefined' && (window as any).plausible) {
+    (window as any).plausible(eventName, props ? { props } : undefined)
+  }
+}
+
 // Number formatting
 export function formatNumber(num: number): string {
   if (num >= 1000000) {

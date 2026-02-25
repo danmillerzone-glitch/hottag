@@ -90,22 +90,31 @@ function QRCodeModal({ url, name, onClose }: QRCodeModalProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label={`QR Code for ${name}`}>
       <div className="bg-background-secondary border border-border rounded-xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="font-display font-bold flex items-center gap-2">
             <QrCode className="w-5 h-5 text-accent" />
             QR Code
           </h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-background-tertiary">
+          <button onClick={onClose} aria-label="Close QR code dialog" className="p-1.5 rounded-lg hover:bg-background-tertiary">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
           <div className="bg-white rounded-xl p-4 flex items-center justify-center">
-            <canvas ref={canvasRef} className="w-full max-w-[250px] aspect-square" />
+            <canvas ref={canvasRef} className="w-full max-w-[250px] aspect-square" aria-label={`QR code linking to ${name}`} />
           </div>
 
           <p className="text-xs text-foreground-muted text-center">
@@ -113,11 +122,11 @@ function QRCodeModal({ url, name, onClose }: QRCodeModalProps) {
           </p>
 
           <div className="flex gap-2">
-            <button onClick={handleDownload} className="flex-1 btn btn-primary text-sm">
+            <button onClick={handleDownload} aria-label="Download QR code as PNG" className="flex-1 btn btn-primary text-sm">
               <Download className="w-4 h-4 mr-1.5" />
               Download PNG
             </button>
-            <button onClick={handleCopy} className="btn btn-secondary text-sm">
+            <button onClick={handleCopy} aria-label={copied ? 'Link copied' : 'Copy link to clipboard'} className="btn btn-secondary text-sm">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
@@ -132,7 +141,7 @@ export default function QRCodeButton({ url, name }: { url: string; name: string 
 
   return (
     <>
-      <button onClick={() => setShowModal(true)} className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors" title="QR Code">
+      <button onClick={() => setShowModal(true)} aria-label={`Show QR code for ${name}`} className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors" title="QR Code">
         <QrCode className="w-4 h-4" />
       </button>
       {showModal && <QRCodeModal url={url} name={name} onClose={() => setShowModal(false)} />}

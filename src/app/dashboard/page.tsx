@@ -27,6 +27,7 @@ import {
   User,
 } from 'lucide-react'
 import { formatEventDate, formatLocation } from '@/lib/utils'
+import PromoterAnalytics from '@/components/PromoterAnalytics'
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
@@ -288,6 +289,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Analytics */}
+        <PromoterAnalytics promotionId={promotion.id} />
 
         {/* Upcoming Events */}
         <div className="mb-10">

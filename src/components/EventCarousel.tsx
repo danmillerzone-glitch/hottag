@@ -66,13 +66,19 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
 
   if (events.length === 0) return null
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') { scroll('left'); e.preventDefault() }
+    if (e.key === 'ArrowRight') { scroll('right'); e.preventDefault() }
+  }
+
   return (
-    <div className="relative group/carousel">
+    <div className="relative group/carousel" role="region" aria-label="Event carousel">
       {/* Left arrow */}
       {canScrollLeft && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 -translate-x-1/2"
+          aria-label="Scroll left"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 -translate-x-1/2"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -82,7 +88,8 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
       {canScrollRight && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 translate-x-1/2"
+          aria-label="Scroll right"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 translate-x-1/2"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
@@ -93,6 +100,10 @@ export default function EventCarousel({ events, loading, skeletonCount = 6, badg
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
         style={{ willChange: 'scroll-position' }}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        role="list"
+        aria-label="Events"
       >
         {events.map((event) => (
           <div key={event.id} className="flex-shrink-0 w-[240px] sm:w-[270px] lg:w-[300px] relative">

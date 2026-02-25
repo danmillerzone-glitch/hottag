@@ -44,6 +44,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://floznswkfodjuigfzkki.supabase.co" />
+        {/* Plausible Analytics — privacy-focused, cookie-free */}
+        <script
+          defer
+          data-domain="hottag.app"
+          src="https://plausible.io/js/script.js"
+        />
       </head>
       <body className="bg-background text-foreground min-h-screen">
         <AuthProvider>

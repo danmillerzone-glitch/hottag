@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import { Check, Heart, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { trackEvent } from '@/lib/utils'
 
 type AttendanceStatus = 'attending' | 'interested' | null
 
@@ -92,6 +93,7 @@ export default function AttendanceButtons({
         if (newStatus === 'interested') setInterestedCount(c => c + 1)
         
         setStatus(newStatus)
+        trackEvent('RSVP', { status: newStatus })
       }
     } catch (error) {
       console.error('Error updating attendance:', error)
@@ -106,9 +108,11 @@ export default function AttendanceButtons({
         <button
           onClick={() => handleAttendance('attending')}
           disabled={loading}
+          aria-label={status === 'attending' ? 'Remove going status' : 'Mark as going'}
+          aria-pressed={status === 'attending'}
           className={`btn ${
-            status === 'attending' 
-              ? 'bg-green-600 hover:bg-green-700 text-white' 
+            status === 'attending'
+              ? 'bg-green-600 hover:bg-green-700 text-white'
               : 'btn-secondary'
           }`}
         >
@@ -123,9 +127,11 @@ export default function AttendanceButtons({
         <button
           onClick={() => handleAttendance('interested')}
           disabled={loading}
+          aria-label={status === 'interested' ? 'Remove interested status' : 'Mark as interested'}
+          aria-pressed={status === 'interested'}
           className={`btn ${
-            status === 'interested' 
-              ? 'bg-pink-600 hover:bg-pink-700 text-white' 
+            status === 'interested'
+              ? 'bg-pink-600 hover:bg-pink-700 text-white'
               : 'btn-ghost'
           }`}
         >

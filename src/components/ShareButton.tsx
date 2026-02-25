@@ -62,8 +62,17 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
         setShowMenu(false)
       }
     }
-    if (showMenu) document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowMenu(false)
+    }
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClick)
+      document.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [showMenu])
 
   const handleShare = async () => {
@@ -111,16 +120,16 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
 
   return (
     <div className="relative" ref={menuRef}>
-      <button onClick={handleShare} className="btn btn-secondary">
+      <button onClick={handleShare} aria-label={`Share ${title}`} aria-expanded={showMenu} aria-haspopup="true" className="btn btn-secondary">
         <Share2 className="w-4 h-4 mr-2" />
         Share
       </button>
 
       {showMenu && (
-        <div className="absolute top-full mt-2 right-0 sm:left-0 w-64 bg-background-secondary border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div role="menu" aria-label="Share options" className="absolute top-full mt-2 right-0 sm:left-0 w-64 bg-background-secondary border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <span className="text-sm font-semibold">Share this event</span>
-            <button onClick={() => setShowMenu(false)} className="p-1 rounded hover:bg-background-tertiary">
+            <button onClick={() => setShowMenu(false)} aria-label="Close share menu" className="p-1 rounded hover:bg-background-tertiary">
               <X className="w-4 h-4 text-foreground-muted" />
             </button>
           </div>

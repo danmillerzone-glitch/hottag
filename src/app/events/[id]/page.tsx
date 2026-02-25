@@ -37,6 +37,8 @@ import StreamingLinks from '@/components/StreamingLinks'
 import AnnouncedTalentList from '@/components/AnnouncedTalentList'
 import { VenueAmenitiesDisplay, EventTagsDisplay } from '@/components/VenueEventDisplay'
 import CouponCodeButton from '@/components/CouponCodeButton'
+import TicketLink from '@/components/TicketLink'
+import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic'
@@ -156,6 +158,13 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <div className="min-h-screen">
+      <RecentlyViewedTracker
+        type="event"
+        id={event.id}
+        name={event.name}
+        image={event.poster_url}
+        subtitle={promotion?.name || formatLocation(event.city, event.state)}
+      />
       {/* Hero/Banner */}
       <div className="relative bg-background-secondary">
         {event.poster_url ? (
@@ -243,7 +252,11 @@ export default async function EventPage({ params }: EventPageProps) {
                     </Link>
                   </div>
                 )}
-                {event.venue_address && (
+                {event.venue_address && !(() => {
+                  const parts = [event.city, event.state, event.country].filter(Boolean)
+                  const addr = event.venue_address.toLowerCase().trim()
+                  return parts.some((p: any) => addr === String(p).toLowerCase()) || addr === parts.map((p: any) => String(p).toLowerCase()).join(', ')
+                })() && (
                   <div className="text-sm text-foreground-muted mt-0.5">{event.venue_address}</div>
                 )}
                 <div className="text-sm mt-0.5">
@@ -304,16 +317,11 @@ export default async function EventPage({ params }: EventPageProps) {
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-3 mb-8">
             {event.ticket_url && !event.is_sold_out && (
-              <a
+              <TicketLink
                 href={event.ticket_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary"
-              >
-                <Ticket className="w-4 h-4 mr-2" />
-                Get Tickets
-                <ExternalLink className="w-3 h-3 ml-2" />
-              </a>
+                eventName={event.name}
+                promotionName={promotion?.name}
+              />
             )}
             {couponCode && (
               <CouponCodeButton code={couponCode} label={couponLabel || undefined} />
