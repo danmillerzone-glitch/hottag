@@ -1194,7 +1194,8 @@ function NewsFeedTab() {
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
   const [form, setForm] = useState({
-    title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: ''
+    title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '',
+    size: 'small', sort_order: 0,
   })
   const [saving, setSaving] = useState(false)
 
@@ -1218,8 +1219,10 @@ function NewsFeedTab() {
         image_url: form.image_url || undefined,
         link_url: form.link_url || undefined,
         expires_at: form.expires_at || null,
+        size: form.size,
+        sort_order: form.sort_order,
       })
-      setForm({ title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '' })
+      setForm({ title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '', size: 'small', sort_order: 0 })
       setShowForm(false)
       await loadNews()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1235,6 +1238,26 @@ function NewsFeedTab() {
     if (!confirm('Delete this news item?')) return
     try { await deleteHomepageNewsItem(id); await loadNews() }
     catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleMoveNews(id: string, direction: 'up' | 'down') {
+    const idx = newsItems.findIndex(n => n.id === id)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= newsItems.length) return
+    const a = newsItems[idx], b = newsItems[swapIdx]
+    try {
+      await Promise.all([
+        updateHomepageNewsItem(a.id, { sort_order: b.sort_order ?? 0 }),
+        updateHomepageNewsItem(b.id, { sort_order: a.sort_order ?? 0 }),
+      ])
+      const updated = [...newsItems]
+      const tempOrder = a.sort_order ?? 0
+      updated[idx] = { ...a, sort_order: b.sort_order ?? 0 }
+      updated[swapIdx] = { ...b, sort_order: tempOrder }
+      updated.sort((x: any, y: any) => (x.sort_order ?? 0) - (y.sort_order ?? 0))
+      setNewsItems(updated)
+    } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
   return (
@@ -1272,6 +1295,19 @@ function NewsFeedTab() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <label className="block text-sm font-medium mb-1">Size</label>
+              <select value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} className="w-full input-field">
+                <option value="small">Small (grid card)</option>
+                <option value="featured">Featured (full-width)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Sort Order</label>
+              <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} className="w-full input-field" placeholder="0 (lower = first)" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
               <input type="text" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full input-field" placeholder="https://..." />
               {form.image_url && (
@@ -1298,7 +1334,7 @@ function NewsFeedTab() {
         <EmptyState text="No news items yet. Create one or wait for auto-generated title changes." />
       ) : (
         <div className="space-y-2">
-          {newsItems.map((item) => (
+          {newsItems.map((item, idx) => (
             <div key={item.id} className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               {item.image_url && (
                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-background-tertiary flex-shrink-0">
@@ -1317,6 +1353,9 @@ function NewsFeedTab() {
                   {item.is_auto && (
                     <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">Auto</span>
                   )}
+                  {item.size === 'featured' && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-medium">Featured</span>
+                  )}
                   <span className={item.is_active ? 'text-green-400 text-xs' : 'text-foreground-muted text-xs'}>
                     {item.is_active ? 'Active' : 'Inactive'}
                   </span>
@@ -1325,11 +1364,18 @@ function NewsFeedTab() {
                 {item.body && <p className="text-xs text-foreground-muted mt-0.5">{item.body}</p>}
                 {item.link_url && <p className="text-xs text-accent mt-0.5 truncate">{item.link_url}</p>}
                 <p className="text-xs text-foreground-muted/60 mt-1">
-                  {new Date(item.created_at).toLocaleDateString()}
+                  {new Date(item.display_date || item.created_at).toLocaleDateString()}
                   {item.expires_at ? ` · Expires ${new Date(item.expires_at).toLocaleDateString()}` : ''}
+                  {' · Order: '}{item.sort_order ?? 0}
                 </p>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
+                <button onClick={() => handleMoveNews(item.id, 'up')} disabled={idx === 0} className="p-2 rounded hover:bg-background-tertiary disabled:opacity-30" title="Move up">
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleMoveNews(item.id, 'down')} disabled={idx === newsItems.length - 1} className="p-2 rounded hover:bg-background-tertiary disabled:opacity-30" title="Move down">
+                  <ChevronDown className="w-4 h-4" />
+                </button>
                 <button onClick={() => setEditingItem(item)} className="p-2 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors" title="Edit">
                   <Edit3 className="w-4 h-4" />
                 </button>
@@ -1364,6 +1410,8 @@ function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () 
     image_url: item.image_url || '',
     link_url: item.link_url || '',
     expires_at: item.expires_at ? new Date(item.expires_at).toISOString().slice(0, 16) : '',
+    size: item.size || 'small',
+    sort_order: item.sort_order ?? 0,
   })
   const [saving, setSaving] = useState(false)
 
@@ -1378,6 +1426,8 @@ function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () 
         image_url: form.image_url || null,
         link_url: form.link_url || null,
         expires_at: form.expires_at || null,
+        size: form.size,
+        sort_order: form.sort_order,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -1403,6 +1453,17 @@ function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () 
           </FieldRow>
           <FieldRow label="Expires">
             <input type="datetime-local" className="w-full input-field" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} />
+          </FieldRow>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <FieldRow label="Size">
+            <select className="w-full input-field" value={form.size} onChange={e => setForm({ ...form, size: e.target.value })}>
+              <option value="small">Small (grid card)</option>
+              <option value="featured">Featured (full-width)</option>
+            </select>
+          </FieldRow>
+          <FieldRow label="Sort Order">
+            <input type="number" className="w-full input-field" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} />
           </FieldRow>
         </div>
         <FieldRow label="Image URL">

@@ -496,6 +496,7 @@ export async function getHomepageNews() {
   const { data, error } = await supabase
     .from('homepage_news')
     .select('*')
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(50)
 
@@ -511,8 +512,9 @@ export async function getActiveHomepageNews() {
     .select('*')
     .eq('is_active', true)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
-    .limit(8)
+    .limit(12)
 
   if (error) { console.error(error); return [] }
   return data || []
@@ -529,6 +531,9 @@ export async function createHomepageNewsItem(item: {
   related_event_id?: string
   related_championship_id?: string
   expires_at?: string | null
+  size?: string
+  sort_order?: number
+  display_date?: string | null
 }) {
   const result = await adminApi({
     action: 'insert',
@@ -545,6 +550,9 @@ export async function updateHomepageNewsItem(id: string, updates: {
   image_url?: string | null
   link_url?: string | null
   expires_at?: string | null
+  size?: string
+  sort_order?: number
+  display_date?: string | null
 }) {
   await adminApi({ action: 'update', table: 'homepage_news', id, data: updates })
 }

@@ -42,7 +42,7 @@ function FeaturedNewsCard({ item }: { item: any }) {
                 <Icon className="w-3.5 h-3.5" />
                 {config.label}
               </span>
-              <span className="text-xs text-foreground-muted/60">{formatRelativeTime(item.created_at)}</span>
+              <span className="text-xs text-foreground-muted/60">{formatRelativeTime(item.display_date || item.created_at)}</span>
             </div>
             <h3 className="text-lg md:text-xl font-display font-bold leading-snug mb-2 group-hover:text-accent transition-colors">
               {item.title}
@@ -81,7 +81,7 @@ function NewsCard({ item }: { item: any }) {
               <Icon className="w-3 h-3" />
               {config.label}
             </span>
-            <span className="text-xs text-foreground-muted/60">{formatRelativeTime(item.created_at)}</span>
+            <span className="text-xs text-foreground-muted/60">{formatRelativeTime(item.display_date || item.created_at)}</span>
           </div>
           <h3 className="text-sm font-semibold leading-snug mb-1.5 group-hover:text-accent transition-colors line-clamp-2">
             {item.title}
@@ -110,7 +110,8 @@ export default function WhatsNewSection() {
 
   if (loading || news.length === 0) return null
 
-  const [featured, ...rest] = news
+  const featuredItems = news.filter((item: any) => item.size === 'featured')
+  const smallItems = news.filter((item: any) => item.size !== 'featured')
 
   return (
     <section className="py-8 bg-gradient-to-b from-blue-500/5 to-transparent">
@@ -120,11 +121,17 @@ export default function WhatsNewSection() {
           What&apos;s New
         </h2>
 
-        <FeaturedNewsCard item={featured} />
+        {featuredItems.length > 0 && (
+          <div className="space-y-4">
+            {featuredItems.map((item: any) => (
+              <FeaturedNewsCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
 
-        {rest.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {rest.slice(0, 5).map((item) => (
+        {smallItems.length > 0 && (
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${featuredItems.length > 0 ? 'mt-4' : ''}`}>
+            {smallItems.slice(0, 6).map((item: any) => (
               <NewsCard key={item.id} item={item} />
             ))}
           </div>
