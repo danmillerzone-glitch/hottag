@@ -487,18 +487,24 @@ export function EventTagsSection({ event, onUpdate }: { event: any; onUpdate: (e
 // ============================================
 
 export function PosterSection({ event, eventId, onUpdate }: { event: any; eventId: string; onUpdate: (e: any) => void }) {
-  const [uploading, setUploading] = useState(false)
+  const [uploadingPortrait, setUploadingPortrait] = useState(false)
+  const [uploadingLandscape, setUploadingLandscape] = useState(false)
   const [error, setError] = useState('')
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, variant: 'portrait' | 'landscape') => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return }
     if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5MB.'); return }
+    const setUploading = variant === 'portrait' ? setUploadingPortrait : setUploadingLandscape
     setUploading(true); setError('')
     try {
-      const posterUrl = await uploadEventPoster(eventId, file)
-      onUpdate({ ...event, poster_url: posterUrl })
+      const url = await uploadEventPoster(eventId, file, variant)
+      if (variant === 'landscape') {
+        onUpdate({ ...event, landscape_poster_url: url })
+      } else {
+        onUpdate({ ...event, poster_url: url })
+      }
     } catch (err: any) { setError(err?.message || 'Failed to upload poster.') }
     setUploading(false)
   }
@@ -507,40 +513,76 @@ export function PosterSection({ event, eventId, onUpdate }: { event: any; eventI
     <section className="card p-6">
       <div className="flex items-center gap-2 mb-5">
         <ImageIcon className="w-5 h-5 text-accent" />
-        <h2 className="text-lg font-display font-bold">Event Poster</h2>
+        <h2 className="text-lg font-display font-bold">Event Posters</h2>
       </div>
-      <div className="flex flex-col sm:flex-row gap-6">
-        <div className="w-48 h-64 rounded-lg bg-background-tertiary border border-border overflow-hidden flex-shrink-0">
-          {event.poster_url ? (
-            <Image src={event.poster_url} alt="Event poster" width={192} height={256} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted">
-              <ImageIcon className="w-10 h-10 mb-2" />
-              <span className="text-sm">No poster</span>
-            </div>
-          )}
-        </div>
-        <div className="flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Portrait Poster (3:4) */}
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Portrait Poster</h3>
+          <p className="text-xs text-foreground-muted mb-3">Shown on event cards · Recommended 600×800 (3:4)</p>
+          <div className="w-full aspect-[3/4] max-w-[192px] rounded-lg bg-background-tertiary border border-border overflow-hidden mb-3">
+            {event.poster_url ? (
+              <Image src={event.poster_url} alt="Portrait poster" width={192} height={256} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted">
+                <ImageIcon className="w-10 h-10 mb-2" />
+                <span className="text-sm">No poster</span>
+              </div>
+            )}
+          </div>
           <label className="block">
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent/50 transition-colors">
-              {uploading ? (
+            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-accent/50 transition-colors">
+              {uploadingPortrait ? (
                 <div className="flex flex-col items-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-accent mb-2" />
-                  <span className="text-sm text-foreground-muted">Uploading...</span>
+                  <Loader2 className="w-6 h-6 animate-spin text-accent mb-1" />
+                  <span className="text-xs text-foreground-muted">Uploading...</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <Upload className="w-8 h-8 text-foreground-muted mb-2" />
-                  <span className="text-sm font-medium">Click to upload poster</span>
-                  <span className="text-xs text-foreground-muted mt-1">PNG, JPG, or WebP · Max 5MB</span>
+                  <Upload className="w-6 h-6 text-foreground-muted mb-1" />
+                  <span className="text-sm font-medium">Upload portrait</span>
+                  <span className="text-xs text-foreground-muted mt-0.5">PNG, JPG, or WebP · Max 5MB</span>
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" disabled={uploading} />
+              <input type="file" accept="image/*" onChange={(e) => handleUpload(e, 'portrait')} className="hidden" disabled={uploadingPortrait} />
             </div>
           </label>
-          {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
+        </div>
+
+        {/* Landscape Poster (16:9) */}
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Landscape Poster</h3>
+          <p className="text-xs text-foreground-muted mb-3">Used for social sharing & event hero · Recommended 1200×675 (16:9)</p>
+          <div className="w-full aspect-video rounded-lg bg-background-tertiary border border-border overflow-hidden mb-3">
+            {event.landscape_poster_url ? (
+              <Image src={event.landscape_poster_url} alt="Landscape poster" width={480} height={270} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted">
+                <ImageIcon className="w-10 h-10 mb-2" />
+                <span className="text-sm">No poster</span>
+              </div>
+            )}
+          </div>
+          <label className="block">
+            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-accent/50 transition-colors">
+              {uploadingLandscape ? (
+                <div className="flex flex-col items-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-accent mb-1" />
+                  <span className="text-xs text-foreground-muted">Uploading...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <Upload className="w-6 h-6 text-foreground-muted mb-1" />
+                  <span className="text-sm font-medium">Upload landscape</span>
+                  <span className="text-xs text-foreground-muted mt-0.5">PNG, JPG, or WebP · Max 5MB</span>
+                </div>
+              )}
+              <input type="file" accept="image/*" onChange={(e) => handleUpload(e, 'landscape')} className="hidden" disabled={uploadingLandscape} />
+            </div>
+          </label>
         </div>
       </div>
+      {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
     </section>
   )
 }

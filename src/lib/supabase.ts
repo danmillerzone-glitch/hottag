@@ -176,6 +176,7 @@ export interface Event {
   is_free: boolean
   is_sold_out: boolean
   poster_url: string | null
+  landscape_poster_url: string | null
   attending_count: number
   interested_count: number
   streaming_url: string | null

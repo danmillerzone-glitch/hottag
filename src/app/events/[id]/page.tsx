@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: EventPageProps) {
     openGraph: {
       title: event.name,
       description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state)}`,
-      images: event.poster_url ? [event.poster_url] : undefined,
+      images: (event.landscape_poster_url || event.poster_url) ? [event.landscape_poster_url || event.poster_url] : undefined,
     },
   }
 }
@@ -167,10 +167,10 @@ export default async function EventPage({ params }: EventPageProps) {
       />
       {/* Hero/Banner */}
       <div className="relative bg-background-secondary">
-        {event.poster_url ? (
+        {(event.landscape_poster_url || event.poster_url) ? (
           <div className="relative h-64 md:h-80 lg:h-96">
             <Image
-              src={event.poster_url}
+              src={(event.landscape_poster_url || event.poster_url)!}
               alt={event.name}
               fill
               className="object-cover"

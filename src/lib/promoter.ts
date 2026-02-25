@@ -274,6 +274,7 @@ export async function updateEvent(eventId: string, updates: {
   event_time?: string | null
   doors_time?: string | null
   poster_url?: string | null
+  landscape_poster_url?: string | null
   venue_address?: string | null
   venue_name?: string | null
   city?: string | null
@@ -507,11 +508,12 @@ export async function searchWrestlers(query: string, limit = 10) {
 // POSTER UPLOAD
 // ============================================
 
-export async function uploadEventPoster(eventId: string, file: File) {
+export async function uploadEventPoster(eventId: string, file: File, variant: 'portrait' | 'landscape' = 'portrait') {
   const supabase = createClient()
-  
+
   const fileExt = file.name.split('.').pop()
-  const filePath = `event-posters/${eventId}.${fileExt}`
+  const suffix = variant === 'landscape' ? '-landscape' : ''
+  const filePath = `event-posters/${eventId}${suffix}.${fileExt}`
 
   const { error: uploadError } = await supabase.storage
     .from('posters')
@@ -523,8 +525,12 @@ export async function uploadEventPoster(eventId: string, file: File) {
     .from('posters')
     .getPublicUrl(filePath)
 
-  // Update event with poster URL
-  await updateEvent(eventId, { poster_url: publicUrl })
+  // Update event with the appropriate poster URL column
+  if (variant === 'landscape') {
+    await updateEvent(eventId, { landscape_poster_url: publicUrl })
+  } else {
+    await updateEvent(eventId, { poster_url: publicUrl })
+  }
 
   return publicUrl
 }
