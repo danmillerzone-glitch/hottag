@@ -237,6 +237,7 @@ function PromoClaimsTab() {
   async function handleApprove(claimId: string) {
     if (!confirm('Approve this claim? The user will gain control of the promotion page.')) return
     setProcessing(claimId)
+    await new Promise(r => setTimeout(r, 0))
     try { await approvePromotionClaim(claimId); await loadClaims() }
     catch (err: any) { alert(`Error: ${err.message}`) }
     setProcessing(null)
@@ -323,6 +324,7 @@ function WrestlerClaimsTab() {
   async function handleApprove(claimId: string) {
     if (!confirm('Approve this claim?')) return
     setProcessing(claimId)
+    await new Promise(r => setTimeout(r, 0))
     try { await approveWrestlerClaim(claimId); await loadClaims() }
     catch (err: any) { alert(`Error: ${err.message}`) }
     setProcessing(null)
@@ -980,6 +982,7 @@ function EditCrewModal({ professional, onClose, onSaved }: { professional: any, 
 function CrewClaimsTab() {
   const [claims, setClaims] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState<string | null>(null)
   const [filter, setFilter] = useState<'pending' | 'all'>('pending')
 
   useEffect(() => { loadClaims() }, [filter])
@@ -993,8 +996,11 @@ function CrewClaimsTab() {
 
   async function handleApprove(id: string) {
     if (!confirm('Approve this claim?')) return
+    setProcessing(id)
+    await new Promise(r => setTimeout(r, 0))
     try { await approveProfessionalClaim(id); await loadClaims() }
     catch (err: any) { alert(`Error: ${err.message}`) }
+    setProcessing(null)
   }
 
   async function handleReject(id: string) {
@@ -1044,8 +1050,10 @@ function CrewClaimsTab() {
                 </div>
                 {claim.status === 'pending' && (
                   <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => handleApprove(claim.id)} className="btn btn-primary text-sm"><CheckCircle className="w-4 h-4 mr-1" /> Approve</button>
-                    <button onClick={() => handleReject(claim.id)} className="btn btn-ghost text-sm text-red-400"><XCircle className="w-4 h-4 mr-1" /> Reject</button>
+                    <button onClick={() => handleApprove(claim.id)} disabled={processing === claim.id} className="btn btn-primary text-sm">
+                      {processing === claim.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" /> Approve</>}
+                    </button>
+                    <button onClick={() => handleReject(claim.id)} disabled={processing === claim.id} className="btn btn-ghost text-sm text-red-400"><XCircle className="w-4 h-4 mr-1" /> Reject</button>
                   </div>
                 )}
               </div>
