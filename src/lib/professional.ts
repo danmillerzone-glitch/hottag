@@ -103,6 +103,14 @@ export async function redeemProfessionalClaimCode(code: string) {
     .eq('id', pro.id)
 
   if (error) throw error
+
+  // Mark onboarding complete so AuthGate allows dashboard access
+  await supabase.from('user_profiles').update({
+    user_type: 'crew',
+    onboarding_completed: true,
+    onboarding_step: 99,
+  }).eq('id', user.id)
+
   return { success: true, professional_id: pro.id, professional_name: pro.name } as { success: boolean; error?: string; professional_id?: string; professional_name?: string }
 }
 

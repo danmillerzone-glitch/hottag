@@ -24,7 +24,7 @@ export default function ClaimWrestlerButton({
   wrestlerName,
   verificationStatus 
 }: ClaimWrestlerButtonProps) {
-  const { user } = useAuth()
+  const { user, refreshOnboarding } = useAuth()
   const [showModal, setShowModal] = useState(false)
   const [existingClaim, setExistingClaim] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -91,6 +91,7 @@ export default function ClaimWrestlerButton({
       const result = await redeemWrestlerClaimCode(claimCode.trim())
       if (result.success) {
         setCodeSuccess(true)
+        await refreshOnboarding()
       } else {
         setError(result.error || 'Invalid claim code.')
       }
