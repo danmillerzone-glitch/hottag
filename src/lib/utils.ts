@@ -127,6 +127,67 @@ export function trackEvent(eventName: string, props?: Record<string, string | nu
   }
 }
 
+// Timezone-aware event start time
+// Converts event_date + event_time (local to the event's timezone) to a UTC Date
+export function getEventStartUTC(
+  eventDate: string,
+  eventTime: string,
+  timezone: string
+): Date {
+  // Normalize time to HH:MM:SS
+  const timeParts = eventTime.split(':')
+  const normalizedTime = [
+    timeParts[0]?.padStart(2, '0') || '00',
+    timeParts[1]?.padStart(2, '0') || '00',
+    timeParts[2]?.padStart(2, '0') || '00',
+  ].join(':')
+
+  // Treat the datetime as UTC temporarily
+  const asUTC = new Date(`${eventDate}T${normalizedTime}Z`)
+
+  // Format that UTC timestamp in the event's timezone
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(asUTC)
+
+  const get = (type: string) =>
+    parts.find((p) => p.type === type)?.value || '00'
+  const localStr = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}Z`
+  const asLocalUTC = new Date(localStr)
+
+  // The difference is the timezone offset; add it to get the real UTC start
+  const offsetMs = asUTC.getTime() - asLocalUTC.getTime()
+  return new Date(asUTC.getTime() + offsetMs)
+}
+
+// Check if an event is currently "happening now"
+// Returns true from bell time until 4 hours after bell time
+const HAPPENING_NOW_WINDOW_MS = 4 * 60 * 60 * 1000 // 4 hours
+
+export function isHappeningNow(event: {
+  event_date: string
+  event_time: string | null
+  timezone?: string | null
+}): boolean {
+  if (!event.event_time) return false
+
+  try {
+    const tz = event.timezone || 'America/Chicago'
+    const startUTC = getEventStartUTC(event.event_date, event.event_time, tz)
+    const now = Date.now()
+    return now >= startUTC.getTime() && now < startUTC.getTime() + HAPPENING_NOW_WINDOW_MS
+  } catch {
+    return false
+  }
+}
+
 // Number formatting
 export function formatNumber(num: number): string {
   if (num >= 1000000) {

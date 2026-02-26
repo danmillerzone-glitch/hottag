@@ -2918,15 +2918,21 @@ function PageRequestsTab() {
     setLoading(false)
   }
 
-  async function handleUpdateStatus(id: string, status: string) {
+  async function handleUpdateStatus(id: string, status: string, grantAccess = false) {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
-    
+
     // If approving, create the wrestler/promotion record
     if (status === 'approved') {
       const req = requests.find(r => r.id === id)
       if (!req) return
 
       const slug = req.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const claimFields = grantAccess && req.requested_by ? {
+        claimed_by: req.requested_by,
+        verification_status: 'verified',
+      } : {
+        verification_status: 'unverified',
+      }
 
       if (req.type === 'wrestler') {
         // Check if wrestler already exists with this name
@@ -2937,16 +2943,23 @@ function PageRequestsTab() {
           .maybeSingle()
 
         if (existing) {
-          // Wrestler already exists, nothing to create
-          alert(`Wrestler "${req.name}" already exists. The user can claim the existing page.`)
+          if (grantAccess && req.requested_by) {
+            // Grant access to existing page
+            const { error: claimErr } = await supabase.from('wrestlers').update({
+              claimed_by: req.requested_by,
+              verification_status: 'verified',
+            }).eq('id', existing.id)
+            if (claimErr) { alert(`Error granting access: ${claimErr.message}`); return }
+          } else {
+            alert(`Wrestler "${req.name}" already exists. The user can claim the existing page.`)
+          }
         } else {
-          // Create new wrestler page (unclaimed)
           const { error: createErr } = await supabase
             .from('wrestlers')
             .insert({
               name: req.name.trim(),
               slug,
-              verification_status: 'unverified',
+              ...claimFields,
             })
             .select('id')
             .single()
@@ -2957,7 +2970,6 @@ function PageRequestsTab() {
           }
         }
       } else if (req.type === 'promotion') {
-        // Check if promotion already exists
         const { data: existing } = await supabase
           .from('promotions')
           .select('id')
@@ -2965,10 +2977,16 @@ function PageRequestsTab() {
           .maybeSingle()
 
         if (existing) {
-          // Promotion already exists, nothing to create
-          alert(`Promotion "${req.name}" already exists. The user can claim the existing page.`)
+          if (grantAccess && req.requested_by) {
+            const { error: claimErr } = await supabase.from('promotions').update({
+              claimed_by: req.requested_by,
+              verification_status: 'verified',
+            }).eq('id', existing.id)
+            if (claimErr) { alert(`Error granting access: ${claimErr.message}`); return }
+          } else {
+            alert(`Promotion "${req.name}" already exists. The user can claim the existing page.`)
+          }
         } else {
-          // Create new promotion page (unclaimed)
           const { error: createErr } = await supabase
             .from('promotions')
             .insert({
@@ -2976,6 +2994,10 @@ function PageRequestsTab() {
               slug,
               country: 'USA',
               region: 'South',
+              ...(grantAccess && req.requested_by ? {
+                claimed_by: req.requested_by,
+                verification_status: 'verified',
+              } : {}),
             })
             .select('id')
             .single()
@@ -2993,7 +3015,15 @@ function PageRequestsTab() {
           .maybeSingle()
 
         if (existing) {
-          alert(`Crew member "${req.name}" already exists. The user can claim the existing page.`)
+          if (grantAccess && req.requested_by) {
+            const { error: claimErr } = await supabase.from('professionals').update({
+              claimed_by: req.requested_by,
+              verification_status: 'verified',
+            }).eq('id', existing.id)
+            if (claimErr) { alert(`Error granting access: ${claimErr.message}`); return }
+          } else {
+            alert(`Crew member "${req.name}" already exists. The user can claim the existing page.`)
+          }
         } else {
           const { error: createErr } = await supabase
             .from('professionals')
@@ -3001,7 +3031,7 @@ function PageRequestsTab() {
               name: req.name.trim(),
               slug,
               role: ['other'],
-              verification_status: 'unverified',
+              ...claimFields,
             })
             .select('id')
             .single()
@@ -3011,6 +3041,16 @@ function PageRequestsTab() {
             return
           }
         }
+      }
+
+      // If granting access, also complete their onboarding
+      if (grantAccess && req.requested_by) {
+        const userType = req.type === 'promotion' ? 'promoter' : req.type === 'crew' ? 'crew' : 'wrestler'
+        await supabase.from('user_profiles').update({
+          user_type: userType,
+          onboarding_completed: true,
+          onboarding_step: 99,
+        }).eq('id', req.requested_by)
       }
     }
 
@@ -3078,9 +3118,14 @@ function PageRequestsTab() {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {req.status === 'pending' && (
                     <>
-                      <button onClick={() => handleUpdateStatus(req.id, 'approved')} className="p-2 rounded text-green-400 hover:bg-green-500/10 transition-colors" title="Approve">
+                      <button onClick={() => handleUpdateStatus(req.id, 'approved')} className="p-2 rounded text-green-400 hover:bg-green-500/10 transition-colors" title="Approve (create page only)">
                         <CheckCircle className="w-4 h-4" />
                       </button>
+                      {req.requested_by && (
+                        <button onClick={() => handleUpdateStatus(req.id, 'approved', true)} className="px-2 py-1.5 rounded text-xs font-medium text-accent hover:bg-accent/10 transition-colors whitespace-nowrap" title="Approve and grant dashboard access to requester">
+                          Approve &amp; Grant
+                        </button>
+                      )}
                       <button onClick={() => handleUpdateStatus(req.id, 'rejected')} className="p-2 rounded text-red-400 hover:bg-red-500/10 transition-colors" title="Reject">
                         <XCircle className="w-4 h-4" />
                       </button>

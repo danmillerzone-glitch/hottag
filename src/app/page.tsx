@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
-import { getTodayHawaii } from '@/lib/utils'
+import { getTodayHawaii, isHappeningNow } from '@/lib/utils'
 import Link from 'next/link'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
@@ -13,17 +13,18 @@ import ThisWeekendSection from '@/components/ThisWeekendSection'
 import RecommendedSection from '@/components/RecommendedSection'
 import WhatsNewSection from '@/components/WhatsNewSection'
 import RecentlyViewedSection from '@/components/RecentlyViewedSection'
-import { 
-  Calendar, 
-  MapPin, 
-  TrendingUp, 
-  Users, 
-  Heart, 
+import {
+  Calendar,
+  MapPin,
+  TrendingUp,
+  Users,
+  Heart,
   Check,
   Flame,
   Star,
   ChevronRight,
-  Loader2
+  Loader2,
+  Radio
 } from 'lucide-react'
 
 export default function HomePage() {
@@ -36,10 +37,28 @@ export default function HomePage() {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [heroImages, setHeroImages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0) // re-evaluate "happening now" every minute
 
   useEffect(() => {
     fetchData()
   }, [user])
+
+  // Re-check live status every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60_000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Compute happening-now events (re-evaluated on data change or tick)
+  const happeningNowEvents = useMemo(() => {
+    void tick // dependency
+    return upcomingEvents.filter(isHappeningNow)
+  }, [upcomingEvents, tick])
+
+  const happeningNowIds = useMemo(
+    () => new Set(happeningNowEvents.map(e => e.id)),
+    [happeningNowEvents]
+  )
 
   async function fetchData() {
     setLoading(true)
@@ -232,6 +251,33 @@ export default function HomePage() {
       {/* Hero Section */}
       <HeroSlideshow images={heroImages} />
 
+      {/* Happening Now — live events based on bell time */}
+      {happeningNowEvents.length > 0 && (
+        <section className="py-10 bg-gradient-to-b from-red-500/10 via-red-500/5 to-transparent">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-display font-bold flex items-center gap-2">
+                <span className="relative flex items-center justify-center w-6 h-6">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-30 animate-ping" />
+                  <Radio className="w-5 h-5 text-red-500 relative" />
+                </span>
+                Happening Now
+              </h2>
+            </div>
+
+            <EventCarousel
+              events={happeningNowEvents}
+              badge={() => (
+                <span className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-bold z-10 bg-red-500/90 text-white flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  LIVE
+                </span>
+              )}
+            />
+          </div>
+        </section>
+      )}
+
       {/* What's New — news feed for all visitors */}
       <WhatsNewSection />
 
@@ -355,7 +401,7 @@ export default function HomePage() {
           {loading ? (
             <EventCarousel events={[]} loading={true} skeletonCount={8} />
           ) : (
-            <EventCarousel events={upcomingEvents.slice(0, 20)} />
+            <EventCarousel events={upcomingEvents.filter(e => !happeningNowIds.has(e.id)).slice(0, 20)} />
           )}
         </div>
       </section>
