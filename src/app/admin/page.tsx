@@ -1738,7 +1738,7 @@ function ImportTab() {
         state: row.state || undefined,
         ticket_url: row.ticket_url || undefined,
         doors_time: row.doors_time || undefined,
-        start_time: row.start_time || undefined,
+        event_time: row.event_time || row.start_time || undefined,
       }))
       const data = await bulkImportEvents(events)
       setResult(`Successfully imported ${data.length} events!`)
@@ -1752,7 +1752,7 @@ function ImportTab() {
     <div>
       <h2 className="text-xl font-display font-bold mb-2">Bulk Import Events</h2>
       <p className="text-sm text-foreground-muted mb-6">
-        Paste CSV data with headers: <code className="bg-background-tertiary px-1 rounded">name, event_date, venue_name, city, state, ticket_url, doors_time, start_time</code>
+        Paste CSV data with headers: <code className="bg-background-tertiary px-1 rounded">name, event_date, venue_name, city, state, ticket_url, doors_time, event_time</code>
       </p>
 
       <div className="space-y-4">
@@ -2043,7 +2043,7 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
 }
 
 function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () => void, onSaved: () => void }) {
-  const [form, setForm] = useState({ name: event.name || '', event_date: event.event_date || '', venue_name: event.venue_name || '', city: event.city || '', state: event.state || '', ticket_url: event.ticket_url || '', doors_time: event.doors_time || '', start_time: event.start_time || '' })
+  const [form, setForm] = useState({ name: event.name || '', event_date: event.event_date || '', venue_name: event.venue_name || '', city: event.city || '', state: event.state || '', ticket_url: event.ticket_url ?? '', doors_time: event.doors_time || '', event_time: event.event_time || '' })
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -2052,7 +2052,7 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
       await updateEventAdmin(event.id, {
         name: form.name, event_date: form.event_date, venue_name: form.venue_name || null,
         city: form.city || null, state: form.state || null, ticket_url: form.ticket_url || null,
-        doors_time: form.doors_time || null, start_time: form.start_time || null,
+        doors_time: form.doors_time || null, event_time: form.event_time || null,
       })
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
@@ -2072,7 +2072,7 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
         <FieldRow label="Ticket URL"><input className="w-full input-field" value={form.ticket_url} onChange={e => setForm({...form, ticket_url: e.target.value})} /></FieldRow>
         <div className="grid grid-cols-2 gap-3">
           <FieldRow label="Doors"><input className="w-full input-field" value={form.doors_time} onChange={e => setForm({...form, doors_time: e.target.value})} /></FieldRow>
-          <FieldRow label="Start"><input className="w-full input-field" value={form.start_time} onChange={e => setForm({...form, start_time: e.target.value})} /></FieldRow>
+          <FieldRow label="Start"><input className="w-full input-field" value={form.event_time} onChange={e => setForm({...form, event_time: e.target.value})} /></FieldRow>
         </div>
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>

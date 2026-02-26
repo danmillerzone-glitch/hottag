@@ -718,7 +718,7 @@ export async function bulkImportEvents(events: Array<{
   state?: string
   ticket_url?: string
   doors_time?: string
-  start_time?: string
+  event_time?: string
 }>) {
   const supabase = createClient()
   const { data, error } = await supabase
