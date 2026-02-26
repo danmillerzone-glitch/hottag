@@ -167,6 +167,109 @@ export function getEventStartUTC(
   return new Date(asUTC.getTime() + offsetMs)
 }
 
+// Infer IANA timezone from event location (state/country)
+const US_STATE_TIMEZONES: Record<string, string> = {
+  // Eastern
+  CT: 'America/New_York', DE: 'America/New_York', FL: 'America/New_York',
+  GA: 'America/New_York', ME: 'America/New_York', MD: 'America/New_York',
+  MA: 'America/New_York', MI: 'America/New_York', NH: 'America/New_York',
+  NJ: 'America/New_York', NY: 'America/New_York', NC: 'America/New_York',
+  OH: 'America/New_York', PA: 'America/New_York', RI: 'America/New_York',
+  SC: 'America/New_York', VT: 'America/New_York', VA: 'America/New_York',
+  WV: 'America/New_York', DC: 'America/New_York',
+  // Central
+  AL: 'America/Chicago', AR: 'America/Chicago', IL: 'America/Chicago',
+  IA: 'America/Chicago', KS: 'America/Chicago', KY: 'America/Chicago',
+  LA: 'America/Chicago', MN: 'America/Chicago', MS: 'America/Chicago',
+  MO: 'America/Chicago', NE: 'America/Chicago', ND: 'America/Chicago',
+  OK: 'America/Chicago', SD: 'America/Chicago', TN: 'America/Chicago',
+  TX: 'America/Chicago', WI: 'America/Chicago',
+  // Mountain
+  AZ: 'America/Phoenix', CO: 'America/Denver', ID: 'America/Boise',
+  MT: 'America/Denver', NM: 'America/Denver', UT: 'America/Denver',
+  WY: 'America/Denver',
+  // Pacific
+  CA: 'America/Los_Angeles', NV: 'America/Los_Angeles',
+  OR: 'America/Los_Angeles', WA: 'America/Los_Angeles',
+  // Non-contiguous & territories
+  AK: 'America/Anchorage', HI: 'Pacific/Honolulu',
+  PR: 'America/Puerto_Rico', GU: 'Pacific/Guam', VI: 'America/Virgin',
+  AS: 'Pacific/Pago_Pago', MP: 'Pacific/Guam',
+  // Full state names (fallback for data that uses full names)
+  CONNECTICUT: 'America/New_York', DELAWARE: 'America/New_York',
+  FLORIDA: 'America/New_York', GEORGIA: 'America/New_York',
+  MAINE: 'America/New_York', MARYLAND: 'America/New_York',
+  MASSACHUSETTS: 'America/New_York', MICHIGAN: 'America/New_York',
+  'NEW HAMPSHIRE': 'America/New_York', 'NEW JERSEY': 'America/New_York',
+  'NEW YORK': 'America/New_York', 'NORTH CAROLINA': 'America/New_York',
+  OHIO: 'America/New_York', PENNSYLVANIA: 'America/New_York',
+  'RHODE ISLAND': 'America/New_York', 'SOUTH CAROLINA': 'America/New_York',
+  VERMONT: 'America/New_York', VIRGINIA: 'America/New_York',
+  'WEST VIRGINIA': 'America/New_York',
+  ALABAMA: 'America/Chicago', ARKANSAS: 'America/Chicago',
+  ILLINOIS: 'America/Chicago', IOWA: 'America/Chicago',
+  KANSAS: 'America/Chicago', KENTUCKY: 'America/Chicago',
+  LOUISIANA: 'America/Chicago', MINNESOTA: 'America/Chicago',
+  MISSISSIPPI: 'America/Chicago', MISSOURI: 'America/Chicago',
+  NEBRASKA: 'America/Chicago', 'NORTH DAKOTA': 'America/Chicago',
+  OKLAHOMA: 'America/Chicago', 'SOUTH DAKOTA': 'America/Chicago',
+  TENNESSEE: 'America/Chicago', TEXAS: 'America/Chicago',
+  WISCONSIN: 'America/Chicago',
+  ARIZONA: 'America/Phoenix', COLORADO: 'America/Denver',
+  IDAHO: 'America/Boise', MONTANA: 'America/Denver',
+  'NEW MEXICO': 'America/Denver', UTAH: 'America/Denver',
+  WYOMING: 'America/Denver',
+  CALIFORNIA: 'America/Los_Angeles', NEVADA: 'America/Los_Angeles',
+  OREGON: 'America/Los_Angeles', WASHINGTON: 'America/Los_Angeles',
+  ALASKA: 'America/Anchorage', HAWAII: 'Pacific/Honolulu',
+  'PUERTO RICO': 'America/Puerto_Rico',
+  'DISTRICT OF COLUMBIA': 'America/New_York',
+  // Canadian provinces
+  ON: 'America/Toronto', QC: 'America/Toronto', BC: 'America/Vancouver',
+  AB: 'America/Edmonton', SK: 'America/Regina', MB: 'America/Winnipeg',
+  NS: 'America/Halifax', NB: 'America/Moncton', NL: 'America/St_Johns',
+  PE: 'America/Halifax', NT: 'America/Yellowknife', YT: 'America/Whitehorse',
+  NU: 'America/Iqaluit',
+  ONTARIO: 'America/Toronto', QUEBEC: 'America/Toronto',
+  'BRITISH COLUMBIA': 'America/Vancouver', ALBERTA: 'America/Edmonton',
+  SASKATCHEWAN: 'America/Regina', MANITOBA: 'America/Winnipeg',
+  'NOVA SCOTIA': 'America/Halifax', 'NEW BRUNSWICK': 'America/Moncton',
+  'NEWFOUNDLAND AND LABRADOR': 'America/St_Johns',
+  'PRINCE EDWARD ISLAND': 'America/Halifax',
+}
+
+const COUNTRY_TIMEZONES: Record<string, string> = {
+  US: 'America/Chicago', USA: 'America/Chicago',
+  'UNITED STATES': 'America/Chicago',
+  CA: 'America/Toronto', CAN: 'America/Toronto', CANADA: 'America/Toronto',
+  MX: 'America/Mexico_City', MEX: 'America/Mexico_City', MEXICO: 'America/Mexico_City',
+  GB: 'Europe/London', UK: 'Europe/London', 'UNITED KINGDOM': 'Europe/London',
+  IE: 'Europe/Dublin', IRELAND: 'Europe/Dublin',
+  DE: 'Europe/Berlin', GERMANY: 'Europe/Berlin',
+  FR: 'Europe/Paris', FRANCE: 'Europe/Paris',
+  ES: 'Europe/Madrid', SPAIN: 'Europe/Madrid',
+  IT: 'Europe/Rome', ITALY: 'Europe/Rome',
+  JP: 'Asia/Tokyo', JAPAN: 'Asia/Tokyo',
+  AU: 'Australia/Sydney', AUSTRALIA: 'Australia/Sydney',
+  NZ: 'Pacific/Auckland', 'NEW ZEALAND': 'Pacific/Auckland',
+  PR: 'America/Puerto_Rico', 'PUERTO RICO': 'America/Puerto_Rico',
+}
+
+export function inferTimezone(
+  state: string | null | undefined,
+  country: string | null | undefined
+): string | null {
+  if (state) {
+    const tz = US_STATE_TIMEZONES[state.toUpperCase().trim()]
+    if (tz) return tz
+  }
+  if (country) {
+    const tz = COUNTRY_TIMEZONES[country.toUpperCase().trim()]
+    if (tz) return tz
+  }
+  return null
+}
+
 // Check if an event is currently "happening now"
 // Returns true from bell time until 4 hours after bell time
 const HAPPENING_NOW_WINDOW_MS = 4 * 60 * 60 * 1000 // 4 hours
@@ -175,11 +278,14 @@ export function isHappeningNow(event: {
   event_date: string
   event_time: string | null
   timezone?: string | null
+  state?: string | null
+  country?: string | null
 }): boolean {
   if (!event.event_time) return false
 
   try {
-    const tz = event.timezone || 'America/Chicago'
+    const tz = event.timezone || inferTimezone(event.state, event.country)
+    if (!tz) return false // no timezone info — can't determine if live
     const startUTC = getEventStartUTC(event.event_date, event.event_time, tz)
     const now = Date.now()
     return now >= startUTC.getTime() && now < startUTC.getTime() + HAPPENING_NOW_WINDOW_MS
