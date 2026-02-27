@@ -168,16 +168,33 @@ export default function VegasWeekendPage() {
                       </div>
                     )}
                     <div className={`p-6 ${collective.image_url ? '-mt-12 relative z-10' : ''}`}>
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                         <div>
-                          <h2 className="text-2xl font-display font-bold text-yellow-400 mb-2 drop-shadow-lg">
-                            {collective.name}
-                          </h2>
-                          <p className="text-foreground-muted text-sm leading-relaxed max-w-xl">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h2 className="text-2xl font-display font-bold text-yellow-400 drop-shadow-lg">
+                              {collective.name}
+                            </h2>
+                            {collective.ticket_url && (
+                              <a
+                                href={collective.ticket_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold transition-colors whitespace-nowrap sm:hidden"
+                              >
+                                <Ticket className="w-4 h-4" />
+                                Ticket Package
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <span className="text-sm font-semibold text-yellow-400/80 whitespace-nowrap bg-yellow-500/10 px-2.5 py-1 rounded-full sm:hidden">
+                              {collective.events.length} {collective.events.length === 1 ? 'show' : 'shows'}
+                            </span>
+                          </div>
+                          <p className="text-foreground-muted text-sm leading-relaxed">
                             {collective.description}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
                           {collective.ticket_url && (
                             <a
                               href={collective.ticket_url}
@@ -191,7 +208,7 @@ export default function VegasWeekendPage() {
                             </a>
                           )}
                           <span className="text-sm font-semibold text-yellow-400/80 whitespace-nowrap bg-yellow-500/10 px-2.5 py-1 rounded-full">
-                            {collective.events.length} shows
+                            {collective.events.length} {collective.events.length === 1 ? 'show' : 'shows'}
                           </span>
                         </div>
                       </div>
