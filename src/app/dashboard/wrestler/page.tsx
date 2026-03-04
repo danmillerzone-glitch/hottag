@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   getWrestlerDashboardData, getClaimedWrestler, getUserWrestlerClaims,
-  updateWrestlerProfile, uploadWrestlerPhoto, uploadWrestlerRender,
+  updateWrestlerProfile, uploadWrestlerRender,
   type WrestlerDashboardData,
 } from '@/lib/wrestler'
 import {
@@ -17,7 +17,6 @@ import {
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import { WRESTLING_STYLES, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
-import ImageCropUploader from '@/components/ImageCropUploader'
 import HeroThemePicker from '@/components/HeroThemePicker'
 import MerchManager from '@/components/MerchManager'
 import VideoManager from '@/components/VideoManager'
@@ -51,7 +50,6 @@ export default function WrestlerDashboardPage() {
   // Edit state
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   // Form state
   const [bio, setBio] = useState('')
@@ -177,25 +175,6 @@ export default function WrestlerDashboardPage() {
     setSaving(false)
   }
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !dashboardData) return
-    if (!file.type.startsWith('image/')) return
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5MB')
-      return
-    }
-
-    setUploadingPhoto(true)
-    try {
-      const updated = await uploadWrestlerPhoto(dashboardData.wrestler.id, file)
-      setDashboardData({ ...dashboardData, wrestler: updated })
-    } catch (err) {
-      console.error('Error uploading photo:', err)
-      alert('Failed to upload photo. Please try again.')
-    }
-    setUploadingPhoto(false)
-  }
 
   if (authLoading || loading) {
     return (
@@ -359,58 +338,37 @@ export default function WrestlerDashboardPage() {
             <h2 className="text-lg font-display font-bold">Profile Photo</h2>
           </div>
 
-          <ImageCropUploader
-            currentUrl={wrestler.photo_url}
-            shape="square"
-            size={96}
-            onUpload={async (file) => {
-              const updated = await uploadWrestlerPhoto(dashboardData!.wrestler.id, file)
-              setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, photo_url: updated.photo_url } })
-              return updated.photo_url
-            }}
-            label="Upload Photo"
-          />
-          <p className="text-xs text-foreground-muted mt-3">Square image recommended. Max 5MB.</p>
-        </section>
-
-        {/* Hero Render Image */}
-        <section className="card p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <ImageIcon className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-display font-bold">Hero Image</h2>
-          </div>
-
           <p className="text-sm text-foreground-muted mb-4">
-            Upload a transparent PNG of yourself for a cinematic hero display on your profile page. This image appears large on desktop and as a trading card on mobile.
+            Upload a photo of yourself for your profile page hero display and trading card. Recommended size: 800×1000px or larger.
           </p>
 
           {wrestler.render_url && (
             <div className="mb-4 p-4 rounded-lg bg-background-tertiary inline-block">
-              <Image src={wrestler.render_url} alt="Current render" width={200} height={200} className="object-contain" unoptimized />
+              <Image src={wrestler.render_url} alt="Current photo" width={200} height={250} className="object-cover object-top" unoptimized />
             </div>
           )}
 
           <label className="btn btn-secondary text-sm cursor-pointer inline-flex">
             <Upload className="w-4 h-4 mr-1.5" />
-            {wrestler.render_url ? 'Replace Hero Image' : 'Upload Hero Image'}
+            {wrestler.render_url ? 'Replace Photo' : 'Upload Photo'}
             <input
               type="file"
-              accept="image/png"
+              accept="image/*"
               className="hidden"
               onChange={async (e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
                 try {
                   const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
-                  setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url } })
+                  setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
                 } catch (err) {
-                  console.error('Error uploading render:', err)
-                  alert('Failed to upload. Please try a PNG file under 5MB.')
+                  console.error('Error uploading photo:', err)
+                  alert('Failed to upload. Please try an image file under 5MB.')
                 }
               }}
             />
           </label>
-          <p className="text-xs text-foreground-muted mt-3">Transparent PNG required. Recommended size: 800×1000px or larger.</p>
+          <p className="text-xs text-foreground-muted mt-3">Recommended size: 800×1000px or larger. Max 5MB.</p>
         </section>
 
         {/* Page Theme */}

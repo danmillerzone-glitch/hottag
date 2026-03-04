@@ -297,7 +297,7 @@ export async function uploadWrestlerRender(wrestlerId: string, file: File) {
     .getPublicUrl(filePath)
 
   const urlWithBust = `${publicUrl}?v=${Date.now()}`
-  const updated = await updateWrestlerProfile(wrestlerId, { render_url: urlWithBust })
+  const updated = await updateWrestlerProfile(wrestlerId, { render_url: urlWithBust, photo_url: urlWithBust })
   return updated
 }
 

@@ -159,7 +159,7 @@ export default async function EventPage({ params }: EventPageProps) {
               src={(event.landscape_poster_url || event.poster_url)!}
               alt={event.name}
               fill
-              className="object-cover"
+              className="object-cover object-top"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/50 to-transparent" />

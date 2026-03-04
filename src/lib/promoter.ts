@@ -525,14 +525,17 @@ export async function uploadEventPoster(eventId: string, file: File, variant: 'p
     .from('posters')
     .getPublicUrl(filePath)
 
+  // Add cache-busting param so browsers show the new image after replacement
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+
   // Update event with the appropriate poster URL column
   if (variant === 'landscape') {
-    await updateEvent(eventId, { landscape_poster_url: publicUrl })
+    await updateEvent(eventId, { landscape_poster_url: urlWithBust })
   } else {
-    await updateEvent(eventId, { poster_url: publicUrl })
+    await updateEvent(eventId, { poster_url: urlWithBust })
   }
 
-  return publicUrl
+  return urlWithBust
 }
 
 // ============================================
