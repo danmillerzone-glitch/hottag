@@ -272,7 +272,9 @@ export async function getEvent(idOrSlug: string) {
         facebook_url,
         youtube_url,
         booking_email,
-        merch_url
+        merch_url,
+        bluesky_handle,
+        patreon_url
       )
     `)
     .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)

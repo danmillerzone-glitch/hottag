@@ -62,6 +62,24 @@ function TikTokIcon({ className }: { className?: string }) {
   )
 }
 
+// Bluesky icon component
+function BlueskyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.6 3.476 6.178 3.238-4.596.55-8.626 2.04-3.39 7.205 5.42 4.244 7.108-1.012 8.588-4.65.134-.33.221-.547.288-.547.066 0 .154.218.288.547 1.48 3.638 3.168 8.894 8.588 4.65 5.236-5.165 1.206-6.655-3.39-7.205 2.578.238 5.393-.611 6.178-3.238.246-.828.624-5.789.624-6.479 0-.688-.139-1.86-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z" />
+    </svg>
+  )
+}
+
+// Patreon icon component
+function PatreonIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M14.82 2.41c3.96 0 7.18 3.24 7.18 7.21 0 3.96-3.22 7.18-7.18 7.18-3.97 0-7.21-3.22-7.21-7.18 0-3.97 3.24-7.21 7.21-7.21M2 21.6h3.5V2.41H2V21.6z" />
+    </svg>
+  )
+}
+
 interface EventPageProps {
   params: { id: string }
 }
@@ -159,7 +177,7 @@ export default async function EventPage({ params }: EventPageProps) {
               src={(event.landscape_poster_url || event.poster_url)!}
               alt={event.name}
               fill
-              className="object-cover object-top"
+              className="object-cover"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-background-secondary/50 to-transparent" />
@@ -458,7 +476,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
           {/* Promotion info */}
           {promotion && (
-            <div className="border-t border-border pt-8">
+            <div className="border-t border-border mt-4 pt-8">
               <h2 className="text-xl font-semibold mb-4">Presented by</h2>
               <Link
                 href={`/promotions/${promotion.slug}`}
@@ -573,6 +591,28 @@ export default async function EventPage({ params }: EventPageProps) {
                   >
                     <ShoppingBag className="w-4 h-4" />
                     Merch
+                  </a>
+                )}
+                {promotion.bluesky_handle && (
+                  <a
+                    href={`https://bsky.app/profile/${promotion.bluesky_handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <BlueskyIcon className="w-4 h-4" />
+                    @{promotion.bluesky_handle}
+                  </a>
+                )}
+                {promotion.patreon_url && (
+                  <a
+                    href={promotion.patreon_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
+                  >
+                    <PatreonIcon className="w-4 h-4" />
+                    Patreon
                   </a>
                 )}
               </div>
