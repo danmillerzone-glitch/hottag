@@ -621,7 +621,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
           {/* Related Events */}
           {relatedEvents.length > 0 && (
-            <div className="border-t border-border pt-8">
+            <div className="border-t border-border mt-4 pt-8">
               <h2 className="text-xl font-semibold mb-4">More Events</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedEvents.map((related: any) => (
