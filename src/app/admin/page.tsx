@@ -44,6 +44,12 @@ import {
   ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper,
 } from 'lucide-react'
 
+const REGION_OPTIONS = [
+  'National', 'Northeast', 'Southeast', 'Mid Atlantic', 'Midwest', 'South', 'West', 'Pacific Northwest',
+  'Canada', 'Mexico', 'Puerto Rico', 'Japan', 'United Kingdom', 'Europe', 'Australia & New Zealand',
+  'Asia', 'Latin America', 'Middle East', 'Africa',
+]
+
 type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
@@ -1984,6 +1990,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
 function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: () => void, onSaved: () => void }) {
   const [form, setForm] = useState({
     name: promo.name || '', slug: promo.slug || '', city: promo.city || '', state: promo.state || '',
+    region: promo.region || '',
     website: promo.website || '', description: promo.description || '',
     twitter_handle: promo.twitter_handle || '', instagram_handle: promo.instagram_handle || '',
     tiktok_handle: promo.tiktok_handle || '', facebook_url: promo.facebook_url || '', youtube_url: promo.youtube_url || '',
@@ -1995,6 +2002,7 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
     try {
       await updatePromotionAdmin(promo.id, {
         name: form.name, slug: form.slug, city: form.city || null, state: form.state || null,
+        region: form.region || null,
         website: form.website || null, description: form.description || null,
         twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
         tiktok_handle: form.tiktok_handle || null, facebook_url: form.facebook_url || null, youtube_url: form.youtube_url || null,
@@ -2020,6 +2028,12 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
           <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></FieldRow>
           <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
         </div>
+        <FieldRow label="Region">
+          <select className="w-full input-field" value={form.region} onChange={e => setForm({...form, region: e.target.value})}>
+            <option value="">Select region...</option>
+            {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </FieldRow>
         <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} /></FieldRow>
         <FieldRow label="Description"><textarea className="w-full input-field" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></FieldRow>
         <div className="border-t border-border pt-3 mt-3">
@@ -2182,7 +2196,7 @@ function CreateWrestlerModal({ onClose, onCreated }: { onClose: () => void, onCr
 
 function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
   const [form, setForm] = useState({
-    name: '', slug: '', city: '', state: '', website: '', description: '',
+    name: '', slug: '', city: '', state: '', region: '', website: '', description: '',
     twitter_handle: '', instagram_handle: '', tiktok_handle: '', facebook_url: '', youtube_url: '',
   })
   const [saving, setSaving] = useState(false)
@@ -2203,6 +2217,7 @@ function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onC
       const data = await createPromotionAdmin({
         name: form.name.trim(), slug: form.slug.trim(),
         city: form.city || undefined, state: form.state || undefined,
+        region: form.region || undefined,
         website: form.website || undefined, description: form.description || undefined,
       })
       setCreatedId(data.id)
@@ -2232,6 +2247,12 @@ function CreatePromotionModal({ onClose, onCreated }: { onClose: () => void, onC
           <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="e.g. Houston" disabled={!!createdId} /></FieldRow>
           <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="e.g. TX" disabled={!!createdId} /></FieldRow>
         </div>
+        <FieldRow label="Region">
+          <select className="w-full input-field" value={form.region} onChange={e => setForm({...form, region: e.target.value})} disabled={!!createdId}>
+            <option value="">Select region...</option>
+            {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </FieldRow>
         <FieldRow label="Website"><input className="w-full input-field" value={form.website} onChange={e => setForm({...form, website: e.target.value})} placeholder="https://..." disabled={!!createdId} /></FieldRow>
         <FieldRow label="Description"><textarea className="w-full input-field" rows={2} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Optional description..." disabled={!!createdId} /></FieldRow>
         <div className="border-t border-border pt-3 mt-3">

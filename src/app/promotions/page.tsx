@@ -15,7 +15,9 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-export const revalidate = 300
+// Force dynamic rendering so manually added promotions appear immediately
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 async function PromotionsList() {
   const promotions = await getPromotions(200)

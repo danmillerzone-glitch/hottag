@@ -67,6 +67,7 @@ export default function EditPromotionPage() {
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [country, setCountry] = useState('')
+  const [region, setRegion] = useState('')
   const [bookingEmail, setBookingEmail] = useState('')
   const [merchUrl, setMerchUrl] = useState('')
   const [blueskyHandle, setBlueskyHandle] = useState('')
@@ -105,6 +106,7 @@ export default function EditPromotionPage() {
     setCity(data.city || '')
     setState(data.state || '')
     setCountry(data.country || 'USA')
+    setRegion(data.region || '')
     setBookingEmail(data.booking_email || '')
     setMerchUrl(data.merch_url || '')
     setBlueskyHandle(data.bluesky_handle || '')
@@ -132,6 +134,7 @@ export default function EditPromotionPage() {
         city: city || null,
         state: state || null,
         country: country || null,
+        region: region || null,
         booking_email: bookingEmail || null,
         merch_url: merchUrl || null,
         bluesky_handle: blueskyHandle || null,
@@ -399,15 +402,32 @@ export default function EditPromotionPage() {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Country</label>
-              <input
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="USA"
-                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Country</label>
+                <input
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  placeholder="USA"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Region</label>
+                <select
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                >
+                  <option value="">Select region...</option>
+                  {['National', 'Northeast', 'Southeast', 'Mid Atlantic', 'Midwest', 'South', 'West', 'Pacific Northwest',
+                    'Canada', 'Mexico', 'Puerto Rico', 'Japan', 'United Kingdom', 'Europe', 'Australia & New Zealand',
+                    'Asia', 'Latin America', 'Middle East', 'Africa'].map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </section>

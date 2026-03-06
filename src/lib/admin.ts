@@ -767,6 +767,7 @@ export async function createPromotionAdmin(promotion: {
   slug: string
   city?: string
   state?: string
+  region?: string
   website?: string
   description?: string
 }) {

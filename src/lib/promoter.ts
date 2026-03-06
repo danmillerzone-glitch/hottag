@@ -463,6 +463,7 @@ export async function updatePromotion(promotionId: string, updates: {
   city?: string | null
   state?: string | null
   country?: string | null
+  region?: string | null
   booking_email?: string | null
   merch_url?: string | null
   bluesky_handle?: string | null
