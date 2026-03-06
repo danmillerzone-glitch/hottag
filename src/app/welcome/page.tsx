@@ -27,18 +27,17 @@ export default function WelcomePage() {
 
       <div className="relative z-10 text-center max-w-lg">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <img src="/logo.svg" alt="Hot Tag" className="h-24 w-auto" />
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <img src="/logo.svg" alt="Hot Tag" className="h-48 sm:h-56 w-auto" />
         </div>
 
-        {/* Heading */}
-        <h1 className="text-5xl sm:text-6xl font-display font-black uppercase tracking-tight mb-4">
-          Welcome to<br />
-          <span className="text-accent">Hot Tag</span>
+        {/* Slogan */}
+        <h1 className="text-4xl sm:text-5xl font-display font-black uppercase tracking-tight mb-4">
+          Go See <span className="text-accent">A Show</span>
         </h1>
 
         <p className="text-lg text-foreground-muted mb-12 max-w-sm mx-auto">
-          Go see a show. Find indie wrestling events, follow wrestlers, and join the community.
+          Find indie wrestling events, follow wrestlers, and join the community.
         </p>
 
         {/* Buttons */}
