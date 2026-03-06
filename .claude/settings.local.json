@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C /v/HotTag/hottag log --oneline --graph -20)",
-      "Bash(git -C /v/HotTag/hottag log -5 --pretty=format:\"%H %s\")"
-    ]
-  }
-}

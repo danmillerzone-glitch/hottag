@@ -13,3 +13,14 @@ scripts/.env
 
 # Vercel
 .vercel
+
+# Claude Code config
+.claude/
+
+# One-off files
+Smoothness Prompt.txt
+compress-flags.ps1
+
+# Root-level package files (app is in src/)
+/package.json
+/package-lock.json
