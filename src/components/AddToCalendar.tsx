@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { CalendarPlus, ChevronDown } from 'lucide-react'
+import { CalendarPlus } from 'lucide-react'
 
 interface Props {
   eventName: string
@@ -16,8 +15,7 @@ interface Props {
   eventUrl: string
 }
 
-function formatDateForGoogle(date: string, time?: string | null): string {
-  // Google Calendar format: YYYYMMDDTHHmmSS
+function formatDateForCalendar(date: string, time?: string | null): string {
   const d = date.replace(/-/g, '')
   if (time) {
     const t = time.replace(/:/g, '').substring(0, 6).padEnd(6, '0')
@@ -26,13 +24,10 @@ function formatDateForGoogle(date: string, time?: string | null): string {
   return `${d}T200000` // Default 8 PM
 }
 
-function formatDateForICS(date: string, time?: string | null): string {
-  const d = date.replace(/-/g, '')
-  if (time) {
-    const t = time.replace(/:/g, '').substring(0, 6).padEnd(6, '0')
-    return `${d}T${t}`
-  }
-  return `${d}T200000`
+function getEndStr(date: string, time?: string | null): string {
+  const endDate = new Date(`${date}T${time || '20:00:00'}`)
+  endDate.setHours(endDate.getHours() + 3)
+  return `${date.replace(/-/g, '')}T${String(endDate.getHours()).padStart(2, '0')}${String(endDate.getMinutes()).padStart(2, '0')}00`
 }
 
 function buildDescription(props: Props): string {
@@ -48,26 +43,12 @@ function buildLocation(props: Props): string {
 }
 
 export default function AddToCalendar(props: Props) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
   const location = buildLocation(props)
   const desc = buildDescription(props)
 
   const handleGoogle = () => {
-    const start = formatDateForGoogle(props.eventDate, props.eventTime)
-    // Assume 3 hour event
-    const endDate = new Date(`${props.eventDate}T${props.eventTime || '20:00:00'}`)
-    endDate.setHours(endDate.getHours() + 3)
-    const endStr = `${props.eventDate.replace(/-/g, '')}T${String(endDate.getHours()).padStart(2, '0')}${String(endDate.getMinutes()).padStart(2, '0')}00`
+    const start = formatDateForCalendar(props.eventDate, props.eventTime)
+    const endStr = getEndStr(props.eventDate, props.eventTime)
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
@@ -79,14 +60,11 @@ export default function AddToCalendar(props: Props) {
     })
 
     window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank')
-    setOpen(false)
   }
 
   const handleICS = () => {
-    const start = formatDateForICS(props.eventDate, props.eventTime)
-    const endDate = new Date(`${props.eventDate}T${props.eventTime || '20:00:00'}`)
-    endDate.setHours(endDate.getHours() + 3)
-    const endStr = `${props.eventDate.replace(/-/g, '')}T${String(endDate.getHours()).padStart(2, '0')}${String(endDate.getMinutes()).padStart(2, '0')}00`
+    const start = formatDateForCalendar(props.eventDate, props.eventTime)
+    const endStr = getEndStr(props.eventDate, props.eventTime)
 
     const icsContent = [
       'BEGIN:VCALENDAR',
@@ -112,38 +90,26 @@ export default function AddToCalendar(props: Props) {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    setOpen(false)
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="flex items-center gap-2">
       <button
-        onClick={() => setOpen(!open)}
-        className="btn btn-ghost flex items-center gap-2"
+        onClick={handleGoogle}
+        className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"
+        title="Add to Google Calendar"
+        aria-label="Add to Google Calendar"
       >
-        <CalendarPlus className="w-4 h-4" />
-        Add to Calendar
-        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <GoogleCalIcon className="w-5 h-5" />
       </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-2 w-52 py-1 rounded-lg bg-background-secondary border border-border shadow-xl z-50">
-          <button
-            onClick={handleGoogle}
-            className="w-full text-left px-4 py-2.5 text-sm hover:bg-background-tertiary transition-colors flex items-center gap-3"
-          >
-            <GoogleCalIcon className="w-4 h-4" />
-            Google Calendar
-          </button>
-          <button
-            onClick={handleICS}
-            className="w-full text-left px-4 py-2.5 text-sm hover:bg-background-tertiary transition-colors flex items-center gap-3"
-          >
-            <CalendarPlus className="w-4 h-4 text-foreground-muted" />
-            Apple / Outlook (.ics)
-          </button>
-        </div>
-      )}
+      <button
+        onClick={handleICS}
+        className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"
+        title="Add to Apple / Outlook Calendar"
+        aria-label="Add to Apple / Outlook Calendar"
+      >
+        <CalendarPlus className="w-5 h-5 text-foreground-muted" />
+      </button>
     </div>
   )
 }

@@ -30,6 +30,7 @@ import {
 } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import AttendanceButtons from '@/components/AttendanceButtons'
+import AddToCalendar from '@/components/AddToCalendar'
 import ShareButton from '@/components/ShareButton'
 import QRCodeButton from '@/components/QRCodeButton'
 import MatchCard from '@/components/MatchCard'
@@ -327,13 +328,27 @@ export default async function EventPage({ params }: EventPageProps) {
             <StreamingLinks eventId={event.id} />
           </div>
 
-          {/* Attendance buttons */}
+          {/* Attendance buttons + Calendar icons */}
           <div className="mb-8">
-            <AttendanceButtons 
-              eventId={event.id}
-              initialGoingCount={event.attending_count || 0}
-              initialInterestedCount={event.interested_count || 0}
-            />
+            <div className="flex items-start justify-between gap-4">
+              <AttendanceButtons
+                eventId={event.id}
+                initialGoingCount={event.attending_count || 0}
+                initialInterestedCount={event.interested_count || 0}
+              />
+              <AddToCalendar
+                eventName={event.name}
+                eventDate={event.event_date}
+                eventTime={event.event_time}
+                doorsTime={event.doors_time}
+                venueName={event.venue_name}
+                city={event.city}
+                state={event.state}
+                venueAddress={event.venue_address}
+                description={event.description}
+                eventUrl={`https://www.hottag.app/events/${event.id}`}
+              />
+            </div>
           </div>
 
           {/* Description */}
