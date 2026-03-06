@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { 
-  Flame, Calendar, Map, Users, Building2, Search,
+import {
+  Calendar, Map, Users, Building2, Search,
   User, LogOut, Loader2, Shield, Home, X, Briefcase, Star
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -94,9 +94,8 @@ export default function Navigation() {
       <header className="hidden md:block sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <Flame className="w-8 h-8 text-accent" />
-              <span className="font-display font-bold text-xl">Hot Tag</span>
+            <Link href="/" className="flex items-center">
+              <img src="/logo.svg" alt="Hot Tag" className="h-9 w-auto" />
             </Link>
 
             <nav className="flex items-center gap-1">
@@ -207,9 +206,8 @@ export default function Navigation() {
       {/* Mobile Header */}
       <header className="md:hidden sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Flame className="w-6 h-6 text-accent" />
-            <span className="text-lg font-display font-bold">Hot Tag</span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo.svg" alt="Hot Tag" className="h-7 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
             {showVegas && (

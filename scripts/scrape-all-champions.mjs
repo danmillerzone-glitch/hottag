@@ -15,9 +15,29 @@
 import { createClient } from '@supabase/supabase-js'
 import https from 'https'
 import http from 'http'
+import { readFileSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Auto-load env vars from src/.env.local or scripts/.env
+const __dirname = dirname(fileURLToPath(import.meta.url))
+for (const envFile of [resolve(__dirname, '../src/.env.local'), resolve(__dirname, '.env')]) {
+  try {
+    const lines = readFileSync(envFile, 'utf-8').split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const eq = trimmed.indexOf('=')
+      if (eq === -1) continue
+      const key = trimmed.slice(0, eq)
+      const val = trimmed.slice(eq + 1)
+      if (!process.env[key]) process.env[key] = val
+    }
+  } catch {}
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing env vars: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY')
@@ -270,17 +290,66 @@ async function scrapePromotion(promotion) {
 }
 
 async function main() {
-  console.log('\n🏆 Batch Championship Scraper\n')
+  // Parse --recent N flag (only scrape promotions with events in last N days)
+  const recentIdx = process.argv.indexOf('--recent')
+  const recentDays = recentIdx !== -1 ? parseInt(process.argv[recentIdx + 1] || '10') : 0
 
-  const { data: promotions, error } = await supabase
-    .from('promotions')
-    .select('id, name, slug, cagematch_id')
-    .not('cagematch_id', 'is', null)
-    .order('name')
+  if (recentDays > 0) {
+    console.log(`\n🏆 Championship Scraper (promotions with events in last ${recentDays} days)\n`)
+  } else {
+    console.log('\n🏆 Batch Championship Scraper (all promotions)\n')
+  }
 
-  if (error) {
-    console.error('Error fetching promotions:', error)
-    process.exit(1)
+  let promotions
+
+  if (recentDays > 0) {
+    // Find promotions that had events in the last N days
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - recentDays)
+    const cutoffStr = cutoff.toISOString().split('T')[0]
+
+    const { data: recentEvents, error: evError } = await supabase
+      .from('events')
+      .select('promotion_id')
+      .gte('event_date', cutoffStr)
+      .lte('event_date', new Date().toISOString().split('T')[0])
+      .not('promotion_id', 'is', null)
+
+    if (evError) {
+      console.error('Error fetching recent events:', evError)
+      process.exit(1)
+    }
+
+    const recentPromoIds = [...new Set(recentEvents.map(e => e.promotion_id))]
+    if (recentPromoIds.length === 0) {
+      console.log('No promotions had events in the last ' + recentDays + ' days.')
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('id, name, slug, cagematch_id')
+      .not('cagematch_id', 'is', null)
+      .in('id', recentPromoIds)
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching promotions:', error)
+      process.exit(1)
+    }
+    promotions = data
+  } else {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('id, name, slug, cagematch_id')
+      .not('cagematch_id', 'is', null)
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching promotions:', error)
+      process.exit(1)
+    }
+    promotions = data
   }
 
   console.log(`Found ${promotions.length} promotions with Cagematch IDs\n`)

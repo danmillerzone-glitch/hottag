@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
-import { Flame, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export default function WelcomePage() {
   const { user, loading, onboardingCompleted, onboardingLoading } = useAuth()
@@ -28,9 +28,7 @@ export default function WelcomePage() {
       <div className="relative z-10 text-center max-w-lg">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-3 rounded-2xl bg-accent/10 border border-accent/20">
-            <Flame className="w-10 h-10 text-accent" />
-          </div>
+          <img src="/logo.svg" alt="Hot Tag" className="h-16 w-auto" />
         </div>
 
         {/* Heading */}
@@ -40,7 +38,7 @@ export default function WelcomePage() {
         </h1>
 
         <p className="text-lg text-foreground-muted mb-12 max-w-sm mx-auto">
-          The home of indie wrestling. Track events, follow wrestlers, and never miss a show.
+          Go see a show. Find indie wrestling events, follow wrestlers, and join the community.
         </p>
 
         {/* Buttons */}

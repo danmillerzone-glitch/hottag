@@ -73,12 +73,12 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
           ) : (
             <>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-4 drop-shadow-lg">
-                Never miss another{' '}
-                <span className="text-accent">indie show</span>
+                Go See{' '}
+                <span className="text-accent">A Show</span>
               </h1>
               <p className="text-lg md:text-xl text-white/80 mb-8 drop-shadow">
-                Discover wrestling events around the world. Follow your favorite wrestlers.
-                Connect with the indie wrestling community.
+                Discover indie wrestling events near you. Follow your favorite wrestlers.
+                Connect with the community.
               </p>
             </>
           )}
