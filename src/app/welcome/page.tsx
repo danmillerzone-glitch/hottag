@@ -28,7 +28,7 @@ export default function WelcomePage() {
       <div className="relative z-10 text-center max-w-lg">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <img src="/logo.svg" alt="Hot Tag" className="h-48 sm:h-56 w-auto" />
+          <img src="/logo.svg" alt="Hot Tag" className="h-72 sm:h-96 w-auto" />
         </div>
 
         {/* Slogan */}
