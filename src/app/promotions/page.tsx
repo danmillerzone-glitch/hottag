@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 async function PromotionsList() {
-  const promotions = await getPromotions(200)
+  const promotions = await getPromotions(500)
 
   // Group by region
   const byRegion = promotions.reduce((acc, promo) => {
