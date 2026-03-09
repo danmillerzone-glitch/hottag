@@ -32,7 +32,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
   }, [images.length, multi])
 
   return (
-    <section className="relative overflow-hidden bg-background-secondary min-h-[250px] aspect-[2.5/1] max-h-[600px]">
+    <section className="relative overflow-hidden bg-background-secondary h-[350px] md:h-[450px] lg:h-[550px]">
       {/* Slideshow images */}
       {hasImages && images.map((img, i) => (
         <div
