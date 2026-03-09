@@ -9,7 +9,10 @@ out/
 .env
 .env.local
 .env*.local
-scripts/.env
+
+# Data pipeline & migrations
+scripts/
+database/
 
 # Vercel
 .vercel
