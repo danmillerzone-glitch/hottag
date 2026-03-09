@@ -32,7 +32,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
   }, [images.length, multi])
 
   return (
-    <section className="relative overflow-hidden bg-background-secondary" style={{ minHeight: hasImages ? '480px' : undefined, maxHeight: '600px' }}>
+    <section className="relative overflow-hidden bg-background-secondary aspect-[16/9] max-h-[80vh]">
       {/* Slideshow images */}
       {hasImages && images.map((img, i) => (
         <div
@@ -56,7 +56,7 @@ export default function HeroSlideshow({ images }: HeroSlideshowProps) {
       ))}
 
       {/* Content overlay */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 md:pt-40 pb-12 md:pb-16 flex items-end" style={{ minHeight: 'inherit' }}>
+      <div className="absolute inset-0 z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-8 md:pb-12 flex items-end">
         <div className="max-w-3xl">
           {/* Show slide-specific title/subtitle if available */}
           {hasImages && images[current]?.title ? (
