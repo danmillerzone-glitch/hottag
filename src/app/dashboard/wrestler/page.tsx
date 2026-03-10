@@ -208,7 +208,6 @@ export default function WrestlerDashboardPage() {
   }
 
   const handleRemoveAppearance = async (id: string) => {
-    if (!confirm('Remove this appearance?')) return
     setAppearances(prev => prev.filter(a => a.id !== id))
     try {
       await removeWrestlerAppearance(id)

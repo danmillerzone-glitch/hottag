@@ -88,10 +88,14 @@ export default function MerchManager({ wrestlerId, promotionId, professionalId }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remove this merch item?')) return
-    const supabase = createClient()
-    await supabase.from(table).delete().eq('id', id)
-    setItems(items.filter(i => i.id !== id))
+    setItems(prev => prev.filter(i => i.id !== id))
+    try {
+      const supabase = createClient()
+      await supabase.from(table).delete().eq('id', id)
+    } catch (err: any) {
+      alert(`Failed to remove: ${err.message}`)
+      await loadItems()
+    }
   }
 
   return (

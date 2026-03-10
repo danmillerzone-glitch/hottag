@@ -65,10 +65,14 @@ export default function VideoManager({ wrestlerId, promotionId, professionalId, 
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remove this video?')) return
-    const supabase = createClient()
-    await supabase.from('profile_videos').delete().eq('id', id)
-    setVideos(videos.filter(v => v.id !== id))
+    setVideos(prev => prev.filter(v => v.id !== id))
+    try {
+      const supabase = createClient()
+      await supabase.from('profile_videos').delete().eq('id', id)
+    } catch (err: any) {
+      alert(`Failed to remove: ${err.message}`)
+      await loadVideos()
+    }
   }
 
   async function handleMove(index: number, direction: 'up' | 'down') {
