@@ -1251,8 +1251,7 @@ function NewsFeedTab() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this news item?')) return
-    // Optimistic UI update
+    // Optimistic UI update — no confirm() needed since the trash icon is intentional
     setNewsItems(prev => prev.filter(n => n.id !== id))
     try { await deleteHomepageNewsItem(id) }
     catch (err: any) { alert(`Error: ${err.message}`); await loadNews() }
