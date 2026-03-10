@@ -1244,14 +1244,18 @@ function NewsFeedTab() {
   }
 
   async function handleToggle(id: string, isActive: boolean) {
-    try { await toggleHomepageNewsItem(id, !isActive); await loadNews() }
-    catch (err: any) { alert(`Error: ${err.message}`) }
+    // Optimistic UI update
+    setNewsItems(prev => prev.map(n => n.id === id ? { ...n, is_active: !isActive } : n))
+    try { await toggleHomepageNewsItem(id, !isActive) }
+    catch (err: any) { alert(`Error: ${err.message}`); await loadNews() }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this news item?')) return
-    try { await deleteHomepageNewsItem(id); await loadNews() }
-    catch (err: any) { alert(`Error: ${err.message}`) }
+    // Optimistic UI update
+    setNewsItems(prev => prev.filter(n => n.id !== id))
+    try { await deleteHomepageNewsItem(id) }
+    catch (err: any) { alert(`Error: ${err.message}`); await loadNews() }
   }
 
   async function handleMoveNews(id: string, direction: 'up' | 'down') {
