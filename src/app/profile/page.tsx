@@ -18,7 +18,9 @@ import {
   Heart,
   Check,
   Shield,
-  ChevronRight
+  ChevronRight,
+  Key,
+  Mail
 } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -33,6 +35,7 @@ export default function ProfilePage() {
   const [hasWrestler, setHasWrestler] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [resetSent, setResetSent] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -131,6 +134,17 @@ export default function ProfilePage() {
     router.push('/')
   }
 
+  const handleResetPassword = async () => {
+    if (!user?.email) return
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (!error) {
+      setResetSent(true)
+      setTimeout(() => setResetSent(false), 3000)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -191,14 +205,27 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Sign Out */}
-            <button
-              onClick={handleSignOut}
-              className="btn btn-ghost text-red-400 hover:text-red-300"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </button>
+            {/* Account Actions */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleResetPassword}
+                disabled={resetSent}
+                className="btn btn-ghost text-foreground-muted hover:text-foreground"
+              >
+                {resetSent ? (
+                  <><Mail className="w-4 h-4 mr-2" /> Check your email</>
+                ) : (
+                  <><Key className="w-4 h-4 mr-2" /> Reset Password</>
+                )}
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="btn btn-ghost text-red-400 hover:text-red-300"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </div>

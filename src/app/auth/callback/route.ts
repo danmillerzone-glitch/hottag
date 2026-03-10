@@ -32,7 +32,12 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Redirect to home — AuthGate will check onboarding and redirect if needed
+      // If a next param is specified (e.g. from password reset), redirect there
+      const next = searchParams.get('next')
+      if (next && next.startsWith('/')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+      // Otherwise redirect to home — AuthGate will check onboarding and redirect if needed
       return NextResponse.redirect(`${origin}/`)
     }
   }

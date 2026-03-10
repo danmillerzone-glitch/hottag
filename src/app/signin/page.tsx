@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
+import { createClient } from '@/lib/supabase-browser'
 import { Mail, Lock, Loader2 } from 'lucide-react'
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -23,8 +24,11 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
+  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +42,24 @@ export default function SignInPage() {
       setLoading(false)
     } else {
       router.push('/')
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Enter your email address first.')
+      return
+    }
+    setResetLoading(true)
+    setError(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setResetLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      setResetSent(true)
     }
   }
 
@@ -65,6 +87,12 @@ export default function SignInPage() {
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
               {error}
+            </div>
+          )}
+
+          {resetSent && (
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm mb-4">
+              Check your email for a password reset link.
             </div>
           )}
 
@@ -127,6 +155,17 @@ export default function SignInPage() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={resetLoading}
+                className="text-sm text-accent hover:underline"
+              >
+                {resetLoading ? 'Sending...' : 'Forgot password?'}
+              </button>
             </div>
 
             <button
