@@ -5,6 +5,14 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
+
+  // On Vercel, origin may be an internal URL — use x-forwarded-host for the real domain
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const isLocal = process.env.NODE_ENV === 'development'
+  const redirectBase = !isLocal && forwardedHost
+    ? `https://${forwardedHost}`
+    : origin
 
   if (code) {
     const cookieStore = cookies()
@@ -32,15 +40,12 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // If a next param is specified (e.g. from password reset), redirect there
-      const next = searchParams.get('next')
-      if (next && next.startsWith('/')) {
-        return NextResponse.redirect(`${origin}${next}`)
+      if (next.startsWith('/')) {
+        return NextResponse.redirect(`${redirectBase}${next}`)
       }
-      // Otherwise redirect to home — AuthGate will check onboarding and redirect if needed
-      return NextResponse.redirect(`${origin}/`)
+      return NextResponse.redirect(`${redirectBase}/`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/signin?error=auth_failed`)
+  return NextResponse.redirect(`${redirectBase}/signin?error=auth_failed`)
 }
