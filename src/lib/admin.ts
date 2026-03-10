@@ -311,6 +311,8 @@ export async function createChampionshipAdmin(data: {
 export async function updateChampionshipAdmin(championshipId: string, updates: {
   name?: string
   short_name?: string | null
+  cagematch_name?: string | null
+  locked?: boolean
   current_champion_id?: string | null
   current_champion_2_id?: string | null
   is_tag_team?: boolean

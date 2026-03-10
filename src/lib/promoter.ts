@@ -811,6 +811,8 @@ export interface Championship {
   promotion_id: string
   name: string
   short_name: string | null
+  cagematch_name: string | null
+  locked: boolean
   current_champion_id: string | null
   current_champion_2_id: string | null
   champion_group_id: string | null
@@ -897,6 +899,7 @@ export async function updateChampionship(championshipId: string, updates: {
   sort_order?: number
   image_url?: string | null
   won_date?: string | null
+  locked?: boolean
 }) {
   const supabase = createClient()
 

@@ -2652,12 +2652,16 @@ function ChampionshipsManagerModal({ promoId, promoName, championships, onUpdate
               <div className="flex items-center gap-3 p-3 bg-background-tertiary rounded-lg">
                 <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{c.name}</p>
+                  <p className="font-semibold text-sm">
+                    {c.name}
+                    {c.locked && <span className="ml-1.5 text-yellow-500 text-xs" title="Locked from scraper updates">🔒</span>}
+                  </p>
                   <p className="text-xs text-foreground-muted">
                     {c.is_tag_team ? 'Tag Team' : 'Singles'}
                     {c.current_champion ? ` • ${c.current_champion.name}` : ' • Vacant'}
                     {c.current_champion_2 && ` & ${c.current_champion_2.name}`}
                     {c.won_date && ` (since ${c.won_date})`}
+                    {c.cagematch_name && c.cagematch_name !== c.name && ` • CM: ${c.cagematch_name}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -2697,7 +2701,9 @@ function ChampionshipsManagerModal({ promoId, promoName, championships, onUpdate
 
 function EditChampionshipInline({ championship, onSaved, onCancel }: { championship: any, onSaved: (c: any) => void, onCancel: () => void }) {
   const [name, setName] = useState(championship.name || '')
+  const [cagematchName, setCagematchName] = useState(championship.cagematch_name || '')
   const [isTag, setIsTag] = useState(championship.is_tag_team || false)
+  const [isLocked, setIsLocked] = useState(championship.locked || false)
   const [wonDate, setWonDate] = useState(championship.won_date || '')
   const [saving, setSaving] = useState(false)
 
@@ -2734,6 +2740,8 @@ function EditChampionshipInline({ championship, onSaved, onCancel }: { champions
     try {
       const updated = await updateChampionshipAdmin(championship.id, {
         name, is_tag_team: isTag,
+        cagematch_name: cagematchName || null,
+        locked: isLocked,
         current_champion_id: selectedChamp?.id || null,
         current_champion_2_id: isTag ? (selectedChamp2?.id || null) : null,
         won_date: wonDate || null,
@@ -2749,10 +2757,20 @@ function EditChampionshipInline({ championship, onSaved, onCancel }: { champions
         <input className="w-full input-field text-sm" value={name} onChange={e => setName(e.target.value)} />
       </FieldRow>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={isTag} onChange={e => setIsTag(e.target.checked)} className="rounded" />
-        Tag Team Championship
-      </label>
+      <FieldRow label="Cagematch Name">
+        <input className="w-full input-field text-sm" value={cagematchName} onChange={e => setCagematchName(e.target.value)} placeholder="Name as it appears on Cagematch (for alias matching)" />
+      </FieldRow>
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={isTag} onChange={e => setIsTag(e.target.checked)} className="rounded" />
+          Tag Team Championship
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={isLocked} onChange={e => setIsLocked(e.target.checked)} className="rounded" />
+          <span className="text-yellow-500">Locked (skip scraper updates)</span>
+        </label>
+      </div>
 
       {/* Champion 1 */}
       <div>

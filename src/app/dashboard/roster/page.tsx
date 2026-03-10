@@ -244,14 +244,15 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
     setSaving(true)
     try {
       if (settingPartner) {
-        await updateChampionship(championship.id, { current_champion_2_id: wrestlerId })
-        onUpdate({ ...championship, current_champion_2_id: wrestlerId, current_champion_2: wrestlerData })
+        await updateChampionship(championship.id, { current_champion_2_id: wrestlerId, locked: true })
+        onUpdate({ ...championship, current_champion_2_id: wrestlerId, current_champion_2: wrestlerData, locked: true })
       } else {
         await updateChampionship(championship.id, {
           current_champion_id: wrestlerId,
           current_champion_2_id: null,
           champion_group_id: null,
           won_date: new Date().toISOString().split('T')[0],
+          locked: true,
         })
         onUpdate({
           ...championship,
@@ -273,8 +274,8 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
     if (!confirm('Vacate this championship?')) return
     setSaving(true)
     try {
-      await updateChampionship(championship.id, { current_champion_id: null, current_champion_2_id: null, champion_group_id: null })
-      onUpdate({ ...championship, current_champion_id: null, current_champion: null, current_champion_2_id: null, current_champion_2: null, champion_group_id: null, champion_group: null })
+      await updateChampionship(championship.id, { current_champion_id: null, current_champion_2_id: null, champion_group_id: null, locked: true })
+      onUpdate({ ...championship, current_champion_id: null, current_champion: null, current_champion_2_id: null, current_champion_2: null, champion_group_id: null, champion_group: null, locked: true })
     } catch (err) { console.error('Error vacating:', err) }
     setSaving(false)
   }
