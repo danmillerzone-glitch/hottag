@@ -3281,7 +3281,7 @@ function HeroSlidesTab() {
       </div>
 
       <p className="text-sm text-foreground-muted mb-4">
-        Upload hero images for the homepage slideshow. Recommended size: 1920x800px or wider. Images cycle every 5 seconds.
+        Upload hero images for the homepage slideshow. Recommended size: 1920x700px (2.7:1 ratio). Images cycle every 6 seconds.
       </p>
 
       {loading ? (
