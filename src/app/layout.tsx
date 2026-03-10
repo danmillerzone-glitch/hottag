@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   description: 'Go see a show. Discover indie wrestling events, follow your favorite wrestlers, and connect with the wrestling community.',
   keywords: ['wrestling', 'indie wrestling', 'GCW', 'PWG', 'wrestling events', 'independent wrestling'],
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
   },
   icons: {
     icon: '/icon.svg',
