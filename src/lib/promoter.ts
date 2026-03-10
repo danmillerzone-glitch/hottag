@@ -75,6 +75,7 @@ export interface AnnouncedTalent {
   wrestler_id: string
   announcement_note: string | null
   sort_order: number
+  self_announced?: boolean
   // Joined
   wrestlers?: {
     id: string

@@ -10,6 +10,7 @@ import { ROLE_LABELS } from '@/lib/supabase'
 interface Talent {
   id: string
   announcement_note: string | null
+  self_announced?: boolean
   wrestlers: {
     id: string
     name: string
@@ -43,7 +44,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
     const [talentRes, crewRes] = await Promise.all([
       supabase
         .from('event_announced_talent')
-        .select('id, announcement_note, wrestlers (id, name, slug, photo_url)')
+        .select('id, announcement_note, self_announced, wrestlers (id, name, slug, photo_url)')
         .eq('event_id', eventId)
         .order('sort_order', { ascending: true }),
       supabase
@@ -103,6 +104,11 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                 {t.announcement_note && (
                   <span className="text-xs text-accent mt-0.5 text-center line-clamp-1 w-full">
                     {t.announcement_note}
+                  </span>
+                )}
+                {t.self_announced && !t.announcement_note && (
+                  <span className="text-[10px] text-foreground-muted/60 mt-0.5 text-center">
+                    Self-announced
                   </span>
                 )}
               </Link>

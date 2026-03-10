@@ -9,12 +9,15 @@ import {
   getWrestlerDashboardData, getClaimedWrestler, getUserWrestlerClaims,
   updateWrestlerProfile, uploadWrestlerRender,
   getWrestlerAppearances, addWrestlerAppearance, removeWrestlerAppearance,
+  searchUpcomingEvents, getSelfAnnouncements, getAnnouncedEventIds,
+  selfAnnounceAtEvent, removeSelfAnnouncement,
   type WrestlerDashboardData, type WrestlerAppearance,
 } from '@/lib/wrestler'
 import {
   Loader2, ArrowLeft, Save, User, Globe, Instagram, Youtube,
   Upload, Check, ExternalLink, ImageIcon, Mail, ShoppingBag,
   Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X, Plus,
+  Search, Megaphone,
 } from 'lucide-react'
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import { WRESTLING_STYLES, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
@@ -91,6 +94,15 @@ export default function WrestlerDashboardPage() {
   const [newAppLink, setNewAppLink] = useState('')
   const [addingAppearance, setAddingAppearance] = useState(false)
 
+  // Self-announcement state
+  const [selfAnnouncements, setSelfAnnouncements] = useState<any[]>([])
+  const [announcedEventIds, setAnnouncedEventIds] = useState<string[]>([])
+  const [showEventSearch, setShowEventSearch] = useState(false)
+  const [eventSearchQuery, setEventSearchQuery] = useState('')
+  const [eventSearchResults, setEventSearchResults] = useState<any[]>([])
+  const [searchingEvents, setSearchingEvents] = useState(false)
+  const [addingSelfAnnounce, setAddingSelfAnnounce] = useState(false)
+
   useEffect(() => {
     if (authLoading) return
     if (!user) {
@@ -135,9 +147,15 @@ export default function WrestlerDashboardPage() {
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
       setWrestlingStyle(data.wrestler.wrestling_style || [])
-      // Load appearances
-      const apps = await getWrestlerAppearances(data.wrestler.id)
+      // Load appearances and self-announcements
+      const [apps, selfAnns, annEventIds] = await Promise.all([
+        getWrestlerAppearances(data.wrestler.id),
+        getSelfAnnouncements(data.wrestler.id),
+        getAnnouncedEventIds(data.wrestler.id),
+      ])
       setAppearances(apps)
+      setSelfAnnouncements(selfAnns)
+      setAnnouncedEventIds(annEventIds)
     } else {
       const userClaims = await getUserWrestlerClaims()
       setClaims(userClaims)
@@ -216,6 +234,56 @@ export default function WrestlerDashboardPage() {
       if (dashboardData) {
         const apps = await getWrestlerAppearances(dashboardData.wrestler.id)
         setAppearances(apps)
+      }
+    }
+  }
+
+  // Debounced event search for self-announce
+  useEffect(() => {
+    if (eventSearchQuery.length < 2) { setEventSearchResults([]); return }
+    const timer = setTimeout(async () => {
+      setSearchingEvents(true)
+      const results = await searchUpcomingEvents(eventSearchQuery)
+      setEventSearchResults(results.filter((e: any) => !announcedEventIds.includes(e.id)))
+      setSearchingEvents(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [eventSearchQuery, announcedEventIds])
+
+  const handleSelfAnnounce = async (eventId: string) => {
+    if (!dashboardData) return
+    setAddingSelfAnnounce(true)
+    try {
+      const result = await selfAnnounceAtEvent(dashboardData.wrestler.id, eventId)
+      setSelfAnnouncements(prev => [...prev, result])
+      setAnnouncedEventIds(prev => [...prev, eventId])
+      setEventSearchQuery('')
+      setEventSearchResults([])
+      setShowEventSearch(false)
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        alert('You are already announced at this event.')
+      } else {
+        alert(`Failed to announce: ${err.message}`)
+      }
+    }
+    setAddingSelfAnnounce(false)
+  }
+
+  const handleRemoveSelfAnnouncement = async (announcementId: string, eventId: string) => {
+    setSelfAnnouncements(prev => prev.filter(a => a.id !== announcementId))
+    setAnnouncedEventIds(prev => prev.filter(id => id !== eventId))
+    try {
+      await removeSelfAnnouncement(announcementId)
+    } catch (err: any) {
+      alert(`Failed to remove: ${err.message}`)
+      if (dashboardData) {
+        const [anns, ids] = await Promise.all([
+          getSelfAnnouncements(dashboardData.wrestler.id),
+          getAnnouncedEventIds(dashboardData.wrestler.id),
+        ])
+        setSelfAnnouncements(anns)
+        setAnnouncedEventIds(ids)
       }
     }
   }
@@ -473,6 +541,121 @@ export default function WrestlerDashboardPage() {
           ) : (
             <div className="text-center py-6 text-foreground-muted text-sm">
               No upcoming appearances posted yet. Add shows you'll be at!
+            </div>
+          )}
+        </section>
+
+        {/* Announce at Events */}
+        <section className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-accent" />
+              <h2 className="text-lg font-display font-bold">Announce at Events</h2>
+            </div>
+            <button
+              onClick={() => setShowEventSearch(!showEventSearch)}
+              className="btn btn-secondary text-sm"
+            >
+              <Search className="w-4 h-4 mr-1" />
+              Find Event
+            </button>
+          </div>
+          <p className="text-sm text-foreground-muted mb-4">
+            Search for upcoming events on Hot Tag and announce that you'll be there. This adds you to the event's Announced Talent section.
+          </p>
+
+          {showEventSearch && (
+            <div className="p-4 rounded-lg bg-background-tertiary border border-border mb-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+                  <input
+                    type="text"
+                    value={eventSearchQuery}
+                    onChange={(e) => setEventSearchQuery(e.target.value)}
+                    placeholder="Search events by name or city..."
+                    autoFocus
+                    className="w-full pl-8 pr-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent outline-none transition-colors text-sm"
+                  />
+                </div>
+                <button
+                  onClick={() => { setShowEventSearch(false); setEventSearchQuery(''); setEventSearchResults([]) }}
+                  className="p-2 rounded hover:bg-background"
+                >
+                  <X className="w-4 h-4 text-foreground-muted" />
+                </button>
+              </div>
+              {eventSearchResults.length > 0 && (
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {eventSearchResults.map((event: any) => (
+                    <button
+                      key={event.id}
+                      onClick={() => handleSelfAnnounce(event.id)}
+                      disabled={addingSelfAnnounce}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-background transition-colors text-left"
+                    >
+                      <div className="text-center flex-shrink-0 w-12">
+                        <div className="text-xs text-foreground-muted uppercase">
+                          {new Date(event.event_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                        </div>
+                        <div className="text-lg font-bold text-accent">
+                          {new Date(event.event_date + 'T00:00:00').getDate()}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{event.name}</div>
+                        <div className="text-xs text-foreground-muted truncate">
+                          {event.promotions?.name}{event.city && ` · ${event.city}`}{event.state && `, ${event.state}`}
+                        </div>
+                      </div>
+                      <Plus className="w-4 h-4 text-accent flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {eventSearchQuery.length >= 2 && eventSearchResults.length === 0 && !searchingEvents && (
+                <p className="text-xs text-foreground-muted text-center py-2">No upcoming events found.</p>
+              )}
+              {searchingEvents && (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-foreground-muted" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {selfAnnouncements.length > 0 ? (
+            <div className="space-y-2">
+              {selfAnnouncements.map((ann: any) => (
+                <div key={ann.id} className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary border border-border group">
+                  <div className="text-center flex-shrink-0 w-14">
+                    <div className="text-xs text-foreground-muted uppercase">
+                      {new Date(ann.events.event_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-lg font-bold text-accent">
+                      {new Date(ann.events.event_date + 'T00:00:00').getDate()}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/events/${ann.events.id}`} className="text-sm font-medium hover:text-accent transition-colors truncate block">
+                      {ann.events.name}
+                    </Link>
+                    <div className="text-xs text-foreground-muted truncate">
+                      {ann.events.promotions?.name}{ann.events.city && ` · ${ann.events.city}`}{ann.events.state && `, ${ann.events.state}`}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveSelfAnnouncement(ann.id, ann.event_id)}
+                    className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-foreground-muted text-sm">
+              No event announcements yet. Search for events to announce your appearance!
             </div>
           )}
         </section>

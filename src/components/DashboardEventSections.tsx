@@ -686,7 +686,12 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{t.wrestlers?.name}</div>
+                <div className="font-medium text-sm">
+                  {t.wrestlers?.name}
+                  {t.self_announced && (
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">self-announced</span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={t.announcement_note || ''}

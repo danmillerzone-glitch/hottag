@@ -364,3 +364,89 @@ export async function removeWrestlerAppearance(appearanceId: string): Promise<vo
 
   if (error) throw error
 }
+
+// ============================================
+// SELF-ANNOUNCE AT EVENTS
+// ============================================
+
+export async function searchUpcomingEvents(query: string, limit = 10) {
+  const supabase = createClient()
+  const today = getTodayHawaii()
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(`id, name, event_date, city, state, promotions (id, name, slug)`)
+    .or(`name.ilike.%${query}%,city.ilike.%${query}%`)
+    .gte('event_date', today)
+    .order('event_date', { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error searching events:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function getSelfAnnouncements(wrestlerId: string) {
+  const supabase = createClient()
+  const today = getTodayHawaii()
+
+  const { data, error } = await supabase
+    .from('event_announced_talent')
+    .select(`id, event_id, self_announced, created_at, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .eq('wrestler_id', wrestlerId)
+    .eq('self_announced', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching self-announcements:', error)
+    return []
+  }
+  // Filter to upcoming events only
+  return (data || []).filter((d: any) => d.events && d.events.event_date >= today)
+}
+
+export async function getAnnouncedEventIds(wrestlerId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_talent')
+    .select('event_id')
+    .eq('wrestler_id', wrestlerId)
+
+  if (error) {
+    console.error('Error fetching announced event IDs:', error)
+    return []
+  }
+  return (data || []).map((d: any) => d.event_id)
+}
+
+export async function selfAnnounceAtEvent(wrestlerId: string, eventId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_talent')
+    .insert({
+      event_id: eventId,
+      wrestler_id: wrestlerId,
+      self_announced: true,
+      sort_order: 999,
+    })
+    .select(`*, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function removeSelfAnnouncement(talentId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_announced_talent')
+    .delete()
+    .eq('id', talentId)
+    .eq('self_announced', true)
+
+  if (error) throw error
+}
