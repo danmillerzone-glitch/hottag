@@ -668,7 +668,7 @@ export default function WrestlerDashboardPage() {
           </div>
 
           <p className="text-sm text-foreground-muted mb-4">
-            Upload a photo of yourself for your profile picture and trading card. Recommended size: 800×1000px or larger.
+            Upload a photo of yourself for your profile picture and trading card. We recommend a transparent PNG for the best look on your hero card. Recommended size: 800×1000px or larger.
           </p>
 
           {wrestler.render_url && (

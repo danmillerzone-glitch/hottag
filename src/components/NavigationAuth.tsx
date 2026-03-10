@@ -278,6 +278,15 @@ export default function Navigation() {
             <Building2 className="w-5 h-5" />
             <span className="text-[10px]">Promos</span>
           </Link>
+          <Link
+            href="/crew"
+            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+              pathname === '/crew' || pathname.startsWith('/crew/') ? 'text-accent' : 'text-foreground-muted'
+            }`}
+          >
+            <Briefcase className="w-5 h-5" />
+            <span className="text-[10px]">Crew</span>
+          </Link>
           <button
             onClick={() => setShowMobileMenu(true)}
             aria-label={user ? 'Open account menu' : 'Sign in'}
