@@ -394,7 +394,7 @@ export async function getSelfAnnouncements(wrestlerId: string) {
 
   const { data, error } = await supabase
     .from('event_announced_talent')
-    .select(`id, event_id, self_announced, created_at, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .select(`*, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
     .eq('wrestler_id', wrestlerId)
     .eq('self_announced', true)
     .order('created_at', { ascending: false })

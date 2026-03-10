@@ -44,7 +44,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
     const [talentRes, crewRes] = await Promise.all([
       supabase
         .from('event_announced_talent')
-        .select('id, announcement_note, self_announced, wrestlers (id, name, slug, photo_url)')
+        .select('*, wrestlers (id, name, slug, photo_url)')
         .eq('event_id', eventId)
         .order('sort_order', { ascending: true }),
       supabase
