@@ -54,7 +54,6 @@ export default function RecentlyViewedSection() {
                     fill
                     className={`${item.type === 'promotion' ? 'object-contain p-4' : 'object-cover'} group-hover:scale-105 transition-transform duration-300`}
                     sizes="160px"
-                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">

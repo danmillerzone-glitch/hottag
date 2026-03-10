@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { User, Session } from '@supabase/supabase-js'
 
@@ -26,8 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null)
   const [onboardingLoading, setOnboardingLoading] = useState(true)
   const supabase = createClient()
+  const lastCheckedUserId = useRef<string | null>(null)
 
-  async function checkOnboarding(userId: string) {
+  async function checkOnboarding(userId: string, force = false) {
+    if (!force && lastCheckedUserId.current === userId) return
+    lastCheckedUserId.current = userId
     setOnboardingLoading(true)
     const { data } = await supabase
       .from('user_profiles')
@@ -46,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function refreshOnboarding() {
-    if (user) await checkOnboarding(user.id)
+    if (user) await checkOnboarding(user.id, true)
   }
 
   useEffect(() => {
@@ -99,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut()
     setOnboardingCompleted(null)
+    lastCheckedUserId.current = null
   }
 
   return (

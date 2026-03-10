@@ -326,7 +326,7 @@ export async function getEventWrestlers(eventId: string) {
 export async function getPromotions(limit = 50) {
   const { data, error } = await supabase
     .from('promotions')
-    .select('*')
+    .select('id, name, slug, logo_url, region, city, state, country, twitter_handle')
     .order('name')
     .limit(limit)
 

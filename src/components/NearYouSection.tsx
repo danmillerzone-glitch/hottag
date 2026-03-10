@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { getTodayHawaii } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
@@ -26,7 +26,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
   const supabase = createClient()
-  const [events, setEvents] = useState<any[]>([])
+  const [allEvents, setAllEvents] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [locationStatus, setLocationStatus] = useState<'loading' | 'granted' | 'denied' | 'unavailable'>('loading')
   const [radius, setRadius] = useState(defaultRadius)
@@ -47,7 +47,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
         }
         setUserCoords(coords)
         setLocationStatus('granted')
-        fetchNearbyEvents(coords, radius)
+        fetchEvents(coords)
       },
       () => {
         setLocationStatus('denied')
@@ -57,13 +57,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
     )
   }, [])
 
-  useEffect(() => {
-    if (userCoords) {
-      fetchNearbyEvents(userCoords, radius)
-    }
-  }, [radius])
-
-  async function fetchNearbyEvents(coords: { lat: number; lng: number }, radiusMiles: number) {
+  async function fetchEvents(coords: { lat: number; lng: number }) {
     setLoading(true)
     const today = getTodayHawaii()
 
@@ -78,20 +72,24 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
       .limit(100)
 
     if (data) {
-      const withDistance = data
-        .map((e: any) => ({
-          ...e,
-          attending_count: e.real_attending_count || 0,
-          interested_count: e.real_interested_count || 0,
-          distance: calculateDistance(coords.lat, coords.lng, e.latitude, e.longitude),
-        }))
-        .filter((e: any) => e.distance <= radiusMiles)
-        .sort((a: any, b: any) => a.distance - b.distance)
-
-      setEvents(withDistance)
+      const withDistance = data.map((e: any) => ({
+        ...e,
+        attending_count: e.real_attending_count || 0,
+        interested_count: e.real_interested_count || 0,
+        distance: calculateDistance(coords.lat, coords.lng, e.latitude, e.longitude),
+      }))
+      setAllEvents(withDistance)
     }
     setLoading(false)
   }
+
+  // Filter and sort by radius — no DB call when radius changes
+  const events = useMemo(() => {
+    if (!allEvents) return []
+    return allEvents
+      .filter((e: any) => e.distance <= radius)
+      .sort((a: any, b: any) => a.distance - b.distance)
+  }, [allEvents, radius])
 
   // Don't render anything if location is denied/unavailable
   if (locationStatus === 'denied' || locationStatus === 'unavailable') {

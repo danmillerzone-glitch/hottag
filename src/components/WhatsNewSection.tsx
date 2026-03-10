@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getActiveHomepageNews } from '@/lib/admin'
 import { formatRelativeTime } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Newspaper, Crown, Megaphone, Calendar } from 'lucide-react'
 
 const TYPE_CONFIG: Record<string, { icon: any; iconColor: string; bgColor: string; label: string }> = {
@@ -29,10 +30,12 @@ function FeaturedNewsCard({ item }: { item: any }) {
         <div className="flex flex-col md:flex-row">
           {item.image_url && (
             <div className="md:w-2/5 aspect-video md:aspect-auto md:min-h-[200px] relative bg-background-tertiary flex-shrink-0">
-              <img
+              <Image
                 src={item.image_url}
                 alt=""
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 40vw"
               />
             </div>
           )}
