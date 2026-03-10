@@ -128,7 +128,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   if (!wrestler) notFound()
 
   // Fire all independent queries in parallel (~200-500ms faster)
-  const [events, followerCount, championships, groups, wrestlerPromotions, { data: merchItems }, { data: profileVideos }, linkedProfessionalRes] = await Promise.all([
+  const [events, followerCount, championships, groups, wrestlerPromotions, { data: merchItems }, { data: profileVideos }, linkedProfessionalRes, { data: wrestlerAppearances }] = await Promise.all([
     getWrestlerEvents(wrestler.id),
     getFollowerCount(wrestler.id),
     getWrestlerChampionships(wrestler.id),
@@ -151,6 +151,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           .eq('id', wrestler.linked_professional_id)
           .single()
       : Promise.resolve({ data: null }),
+    supabase
+      .from('wrestler_appearances')
+      .select('id, event_date, description, link_url')
+      .eq('wrestler_id', wrestler.id)
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('event_date', { ascending: true }),
   ])
 
   const linkedProfessional = linkedProfessionalRes.data
@@ -715,6 +721,30 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             </div>
           )}
 
+          {wrestlerAppearances && wrestlerAppearances.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-2xl font-display font-bold mb-6">Upcoming Appearances</h2>
+              <div className="space-y-3">
+                {wrestlerAppearances.map((app: any) => (
+                  <div key={app.id} className="card p-4 flex items-center gap-4">
+                    <div className="flex-shrink-0 w-16 text-center">
+                      <div className="text-accent font-bold">{new Date(app.event_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
+                      <div className="text-2xl font-bold">{new Date(app.event_date + 'T00:00:00').getDate()}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{app.description}</div>
+                    </div>
+                    {app.link_url && (
+                      <a href={app.link_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-xs flex-shrink-0">
+                        <ExternalLink className="w-3.5 h-3.5 mr-1" /> Info
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {pastEvents.length > 0 && (
             <div>
               <h2 className="text-2xl font-display font-bold mb-6 text-foreground-muted">Past Events ({pastEvents.length})</h2>
@@ -735,7 +765,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             </div>
           )}
 
-          {events.length === 0 && (
+          {events.length === 0 && (!wrestlerAppearances || wrestlerAppearances.length === 0) && (
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 text-foreground-muted mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No events yet</h3>

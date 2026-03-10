@@ -307,3 +307,60 @@ export async function redeemWrestlerClaimCode(code: string) {
   if (error) throw error
   return data as { success: boolean; error?: string; wrestler_id?: string; wrestler_name?: string }
 }
+
+// ============================================
+// WRESTLER APPEARANCES (self-managed schedule)
+// ============================================
+
+export interface WrestlerAppearance {
+  id: string
+  wrestler_id: string
+  event_date: string
+  description: string
+  link_url: string | null
+  created_at: string
+}
+
+export async function getWrestlerAppearances(wrestlerId: string): Promise<WrestlerAppearance[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('wrestler_appearances')
+    .select('*')
+    .eq('wrestler_id', wrestlerId)
+    .gte('event_date', new Date().toISOString().split('T')[0])
+    .order('event_date', { ascending: true })
+
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function addWrestlerAppearance(wrestlerId: string, appearance: {
+  event_date: string
+  description: string
+  link_url?: string | null
+}): Promise<WrestlerAppearance> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('wrestler_appearances')
+    .insert({
+      wrestler_id: wrestlerId,
+      event_date: appearance.event_date,
+      description: appearance.description,
+      link_url: appearance.link_url || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function removeWrestlerAppearance(appearanceId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('wrestler_appearances')
+    .delete()
+    .eq('id', appearanceId)
+
+  if (error) throw error
+}

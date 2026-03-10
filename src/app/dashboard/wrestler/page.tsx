@@ -8,7 +8,8 @@ import Image from 'next/image'
 import {
   getWrestlerDashboardData, getClaimedWrestler, getUserWrestlerClaims,
   updateWrestlerProfile, uploadWrestlerRender,
-  type WrestlerDashboardData,
+  getWrestlerAppearances, addWrestlerAppearance, removeWrestlerAppearance,
+  type WrestlerDashboardData, type WrestlerAppearance,
 } from '@/lib/wrestler'
 import {
   Loader2, ArrowLeft, Save, User, Globe, Instagram, Youtube,
@@ -82,6 +83,14 @@ export default function WrestlerDashboardPage() {
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const dataLoaded = useRef(false)
 
+  // Appearances state
+  const [appearances, setAppearances] = useState<WrestlerAppearance[]>([])
+  const [showAddAppearance, setShowAddAppearance] = useState(false)
+  const [newAppDate, setNewAppDate] = useState('')
+  const [newAppDesc, setNewAppDesc] = useState('')
+  const [newAppLink, setNewAppLink] = useState('')
+  const [addingAppearance, setAddingAppearance] = useState(false)
+
   useEffect(() => {
     if (authLoading) return
     if (!user) {
@@ -126,6 +135,9 @@ export default function WrestlerDashboardPage() {
       setCountriesWrestled(data.wrestler.countries_wrestled || [])
       setSignatureMoves(data.wrestler.signature_moves || [])
       setWrestlingStyle(data.wrestler.wrestling_style || [])
+      // Load appearances
+      const apps = await getWrestlerAppearances(data.wrestler.id)
+      setAppearances(apps)
     } else {
       const userClaims = await getUserWrestlerClaims()
       setClaims(userClaims)
@@ -175,6 +187,39 @@ export default function WrestlerDashboardPage() {
     setSaving(false)
   }
 
+  const handleAddAppearance = async () => {
+    if (!dashboardData || !newAppDate || !newAppDesc.trim()) return
+    setAddingAppearance(true)
+    try {
+      const app = await addWrestlerAppearance(dashboardData.wrestler.id, {
+        event_date: newAppDate,
+        description: newAppDesc.trim(),
+        link_url: newAppLink.trim() || null,
+      })
+      setAppearances([...appearances, app].sort((a, b) => a.event_date.localeCompare(b.event_date)))
+      setNewAppDate('')
+      setNewAppDesc('')
+      setNewAppLink('')
+      setShowAddAppearance(false)
+    } catch (err: any) {
+      alert(`Failed to add appearance: ${err.message}`)
+    }
+    setAddingAppearance(false)
+  }
+
+  const handleRemoveAppearance = async (id: string) => {
+    if (!confirm('Remove this appearance?')) return
+    setAppearances(prev => prev.filter(a => a.id !== id))
+    try {
+      await removeWrestlerAppearance(id)
+    } catch (err: any) {
+      alert(`Failed to remove: ${err.message}`)
+      if (dashboardData) {
+        const apps = await getWrestlerAppearances(dashboardData.wrestler.id)
+        setAppearances(apps)
+      }
+    }
+  }
 
   if (authLoading || loading) {
     return (
@@ -330,6 +375,108 @@ export default function WrestlerDashboardPage() {
             </div>
           </section>
         )}
+
+        {/* Upcoming Appearances */}
+        <section className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-accent" />
+              <h2 className="text-lg font-display font-bold">Upcoming Appearances</h2>
+            </div>
+            <button
+              onClick={() => setShowAddAppearance(!showAddAppearance)}
+              className="btn btn-secondary text-sm"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </button>
+          </div>
+          <p className="text-sm text-foreground-muted mb-4">
+            Post shows you'll be at — even if the promotion or event isn't on Hot Tag yet. These appear on your public profile.
+          </p>
+
+          {showAddAppearance && (
+            <div className="p-4 rounded-lg bg-background-tertiary border border-border mb-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date *</label>
+                  <input
+                    type="date"
+                    value={newAppDate}
+                    onChange={(e) => setNewAppDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link (optional)</label>
+                  <input
+                    type="url"
+                    value={newAppLink}
+                    onChange={(e) => setNewAppLink(e.target.value)}
+                    placeholder="https://tickets.example.com"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  type="text"
+                  value={newAppDesc}
+                  onChange={(e) => setNewAppDesc(e.target.value)}
+                  placeholder='e.g. "PWG Battle of Los Angeles — American Legion Hall, Reseda CA"'
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowAddAppearance(false)} className="btn btn-ghost text-sm">Cancel</button>
+                <button
+                  onClick={handleAddAppearance}
+                  disabled={addingAppearance || !newAppDate || !newAppDesc.trim()}
+                  className="btn btn-primary text-sm"
+                >
+                  {addingAppearance ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+                  Add Appearance
+                </button>
+              </div>
+            </div>
+          )}
+
+          {appearances.length > 0 ? (
+            <div className="space-y-2">
+              {appearances.map((app) => (
+                <div key={app.id} className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary border border-border group">
+                  <div className="text-center flex-shrink-0 w-14">
+                    <div className="text-xs text-foreground-muted uppercase">
+                      {new Date(app.event_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-lg font-bold text-accent">
+                      {new Date(app.event_date + 'T00:00:00').getDate()}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{app.description}</div>
+                    {app.link_url && (
+                      <a href={app.link_url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline inline-flex items-center gap-1 mt-0.5">
+                        <ExternalLink className="w-3 h-3" /> Tickets / Info
+                      </a>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveAppearance(app.id)}
+                    className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-foreground-muted text-sm">
+              No upcoming appearances posted yet. Add shows you'll be at!
+            </div>
+          )}
+        </section>
 
         {/* Profile Photo */}
         <section className="card p-6">
