@@ -217,7 +217,7 @@ export default function ImageCropUploader({
             onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-display font-bold">Adjust Photo</h3>
             <p className="text-sm text-foreground-muted flex items-center gap-1">
-              <Move className="w-3 h-3" /> Drag to reposition, scroll to zoom
+              <Move className="w-3 h-3" /> Drag to reposition, use slider to zoom
             </p>
 
             <div
@@ -258,15 +258,25 @@ export default function ImageCropUploader({
             </div>
 
             <div className="flex items-center gap-3 justify-center">
-              <ZoomOut className="w-4 h-4 text-foreground-muted" />
+              <button type="button" onClick={() => {
+                const z = Math.max(1, zoomRef.current - 0.25)
+                setZoom(z); zoomRef.current = z; applyTransform()
+              }} className="p-1.5 rounded-lg hover:bg-background-tertiary active:bg-background-tertiary transition-colors">
+                <ZoomOut className="w-4 h-4 text-foreground-muted" />
+              </button>
               <input type="range" min="1" max="5" step="0.05" value={zoom}
                 onChange={e => {
                   const z = parseFloat(e.target.value)
                   setZoom(z)
                   zoomRef.current = z
                   applyTransform()
-                }} className="w-40 accent-accent" />
-              <ZoomIn className="w-4 h-4 text-foreground-muted" />
+                }} className="w-40 accent-accent" style={{ touchAction: 'auto' }} />
+              <button type="button" onClick={() => {
+                const z = Math.min(5, zoomRef.current + 0.25)
+                setZoom(z); zoomRef.current = z; applyTransform()
+              }} className="p-1.5 rounded-lg hover:bg-background-tertiary active:bg-background-tertiary transition-colors">
+                <ZoomIn className="w-4 h-4 text-foreground-muted" />
+              </button>
             </div>
 
             <div className="flex gap-2 justify-center">
