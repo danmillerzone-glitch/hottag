@@ -34,6 +34,8 @@ export default function ImageCropUploader({
   const [tx, setTx] = useState(0) // translate X in px
   const [ty, setTy] = useState(0) // translate Y in px
 
+  const [natSize, setNatSize] = useState<{ w: number; h: number } | null>(null)
+
   const draggingRef = useRef(false)
   const lastPt = useRef({ x: 0, y: 0 })
   const imgRef = useRef<HTMLImageElement>(null)
@@ -50,18 +52,24 @@ export default function ImageCropUploader({
     setZoom(1)
     setTx(0)
     setTy(0)
+    setNatSize(null)
     setCropping(true)
   }
 
   // --- Clamping: prevent showing area outside image ---
-  // At zoom Z, the image is Z times bigger than the box in its cover dimension.
-  // Max translate = (scaled_dim - BOX) / 2 for each axis.
-  // We don't know exact rendered dims without reading DOM, so we clamp conservatively:
-  // The cover dimension is exactly BOX, so scaled = BOX * Z, slack = BOX*(Z-1)/2
-  // The overflow dimension is >= BOX*Z, so slack >= BOX*(Z-1)/2
-  // So BOX*(Z-1)/2 is the safe min slack for both axes.
-  const maxTx = Math.max(0, boxW * (zoom - 1) / 2)
-  const maxTy = Math.max(0, boxH * (zoom - 1) / 2)
+  // Use actual image dimensions to compute how much slack exists per axis.
+  // With object-fit:cover, the image is scaled so the smaller ratio fills the box,
+  // leaving overflow in the other dimension that can be panned.
+  const { maxTx, maxTy } = (() => {
+    if (!natSize) return { maxTx: 0, maxTy: 0 }
+    const coverScale = Math.max(boxW / natSize.w, boxH / natSize.h)
+    const rendW = natSize.w * coverScale * zoom
+    const rendH = natSize.h * coverScale * zoom
+    return {
+      maxTx: Math.max(0, (rendW - boxW) / 2),
+      maxTy: Math.max(0, (rendH - boxH) / 2),
+    }
+  })()
   const clampedTx = Math.max(-maxTx, Math.min(maxTx, tx))
   const clampedTy = Math.max(-maxTy, Math.min(maxTy, ty))
 
@@ -194,6 +202,10 @@ export default function ImageCropUploader({
               src={objectUrl}
               draggable={false}
               alt=""
+              onLoad={e => {
+                const img = e.currentTarget
+                setNatSize({ w: img.naturalWidth, h: img.naturalHeight })
+              }}
               style={{
                 position: 'absolute',
                 width: boxW,
