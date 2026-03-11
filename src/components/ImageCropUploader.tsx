@@ -111,7 +111,7 @@ export default function ImageCropUploader({
     if (!cropping) return
     const mm = (e: MouseEvent) => ptrMove(e.clientX, e.clientY)
     const tm = (e: TouchEvent) => {
-      if (e.touches.length === 1) { e.preventDefault(); ptrMove(e.touches[0].clientX, e.touches[0].clientY) }
+      if (e.touches.length === 1 && draggingRef.current) { e.preventDefault(); ptrMove(e.touches[0].clientX, e.touches[0].clientY) }
     }
     window.addEventListener('mousemove', mm)
     window.addEventListener('mouseup', ptrUp)
