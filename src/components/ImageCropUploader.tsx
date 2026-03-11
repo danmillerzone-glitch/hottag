@@ -73,6 +73,13 @@ export default function ImageCropUploader({
   const clampedTx = Math.max(-maxTx, Math.min(maxTx, tx))
   const clampedTy = Math.max(-maxTy, Math.min(maxTy, ty))
 
+  // Compute explicit image position (matches canvas export model exactly)
+  const coverScale = natSize ? Math.max(boxW / natSize.w, boxH / natSize.h) : 1
+  const imgW = natSize ? natSize.w * coverScale * zoom : boxW
+  const imgH = natSize ? natSize.h * coverScale * zoom : boxH
+  const imgX = (boxW - imgW) / 2 + clampedTx
+  const imgY = (boxH - imgH) / 2 + clampedTy
+
   // --- Pointer handling ---
   function ptrDown(x: number, y: number) {
     draggingRef.current = true
@@ -208,13 +215,10 @@ export default function ImageCropUploader({
               }}
               style={{
                 position: 'absolute',
-                width: boxW,
-                height: boxH,
-                left: 0,
-                top: 0,
-                objectFit: 'cover',
-                transform: `scale(${zoom}) translate(${clampedTx / zoom}px, ${clampedTy / zoom}px)`,
-                transformOrigin: 'center center',
+                width: imgW,
+                height: imgH,
+                left: imgX,
+                top: imgY,
                 pointerEvents: 'none',
                 userSelect: 'none',
               }}
