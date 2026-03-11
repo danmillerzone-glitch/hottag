@@ -86,7 +86,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                       alt={t.wrestlers.name}
                       width={64}
                       height={64}
-                      className="object-cover w-full h-full"
+                      className="object-cover object-top w-full h-full"
                       sizes="64px"
                     />
                   ) : (

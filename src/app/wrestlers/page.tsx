@@ -471,7 +471,7 @@ function WrestlerHeroCard({ wrestler, badge }: { wrestler: WrestlerCard; badge?:
         {/* Name + moniker overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3 z-[3]">
           {wrestler.moniker && (
-            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-1 drop-shadow-lg">
+            <span className="text-[10px] font-bold italic text-accent/80 line-clamp-2 drop-shadow-lg">
               &ldquo;{wrestler.moniker}&rdquo;
             </span>
           )}

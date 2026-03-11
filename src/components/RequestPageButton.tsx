@@ -51,7 +51,7 @@ export default function RequestPageButton() {
         className="btn btn-secondary text-sm"
       >
         <Plus className="w-4 h-4 mr-1.5" />
-        Request a Page
+        Request Page
       </button>
 
       {showModal && (
