@@ -15,7 +15,7 @@ import {
 } from '@/lib/wrestler'
 import {
   Loader2, ArrowLeft, Save, User, Globe, Instagram, Youtube,
-  Upload, Check, ExternalLink, ImageIcon, Mail, ShoppingBag,
+  Check, ExternalLink, ImageIcon, Mail, ShoppingBag,
   Shield, ShieldCheck, Clock, Crown, Calendar, Users, MapPin, X, Plus,
   Search, Megaphone,
 } from 'lucide-react'
@@ -24,6 +24,7 @@ import { WRESTLING_STYLES, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import HeroThemePicker from '@/components/HeroThemePicker'
 import MerchManager from '@/components/MerchManager'
 import VideoManager from '@/components/VideoManager'
+import ImageCropUploader from '@/components/ImageCropUploader'
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {
@@ -668,41 +669,21 @@ export default function WrestlerDashboardPage() {
           </div>
 
           <p className="text-sm text-foreground-muted mb-4">
-            Upload a photo of yourself for your profile picture and trading card. <strong>We recommend a transparent PNG</strong> for the best look on your profile picture. Recommended size: 800×1000px or larger.
+            Upload a photo of yourself for your profile picture and trading card. <strong>We recommend a transparent PNG</strong> for the best look on your profile picture. You can reposition and zoom to frame your photo perfectly.
           </p>
 
-          <div className="relative inline-block mb-4">
-            {wrestler.render_url ? (
-              <div className="p-4 rounded-lg bg-background-tertiary">
-                <Image src={wrestler.render_url} alt="Current photo" width={200} height={250} className="object-cover object-top" unoptimized />
-              </div>
-            ) : (
-              <div className="w-[200px] h-[250px] rounded-lg bg-background-tertiary flex items-center justify-center">
-                <ImageIcon className="w-10 h-10 text-foreground-muted/30" />
-              </div>
-            )}
-            <label className="absolute bottom-2 left-1/2 -translate-x-1/2 btn btn-secondary text-xs cursor-pointer inline-flex whitespace-nowrap">
-              <Upload className="w-3.5 h-3.5 mr-1" />
-              {wrestler.render_url ? 'Replace' : 'Upload'}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  try {
-                    const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
-                    setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
-                  } catch (err) {
-                    console.error('Error uploading photo:', err)
-                    alert('Failed to upload. Please try an image file under 5MB.')
-                  }
-                }}
-              />
-            </label>
-          </div>
-          <p className="text-xs text-foreground-muted">Max 5MB.</p>
+          <ImageCropUploader
+            currentUrl={wrestler.render_url || ''}
+            aspectRatio={4 / 5}
+            size={160}
+            label={wrestler.render_url ? 'Replace Photo' : 'Upload Photo'}
+            onUpload={async (file) => {
+              const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
+              setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
+              return updated.render_url
+            }}
+          />
+          <p className="text-xs text-foreground-muted mt-3">Max 5MB.</p>
         </section>
 
         {/* Page Theme */}

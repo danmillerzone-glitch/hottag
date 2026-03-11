@@ -7,6 +7,8 @@ interface Props {
   currentUrl?: string
   shape?: 'circle' | 'square'
   size?: number
+  /** Width-to-height ratio (e.g. 4/5 = 0.8). Overrides shape to rectangular. */
+  aspectRatio?: number
   onUpload: (file: File) => Promise<string>
   label?: string
 }
@@ -15,8 +17,13 @@ const BOX = 240
 const OUT = 512
 
 export default function ImageCropUploader({
-  currentUrl, shape = 'circle', size = 80, onUpload, label = 'Upload Photo',
+  currentUrl, shape = 'circle', size = 80, aspectRatio, onUpload, label = 'Upload Photo',
 }: Props) {
+  // Crop area dimensions — rectangular if aspectRatio provided, otherwise square
+  const boxW = BOX
+  const boxH = aspectRatio ? Math.round(BOX / aspectRatio) : BOX
+  const outW = OUT
+  const outH = aspectRatio ? Math.round(OUT / aspectRatio) : OUT
   const [imageUrl, setImageUrl] = useState(currentUrl || '')
   const [file, setFile] = useState<File | null>(null)
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
@@ -53,9 +60,10 @@ export default function ImageCropUploader({
   // The cover dimension is exactly BOX, so scaled = BOX * Z, slack = BOX*(Z-1)/2
   // The overflow dimension is >= BOX*Z, so slack >= BOX*(Z-1)/2
   // So BOX*(Z-1)/2 is the safe min slack for both axes.
-  const maxT = Math.max(0, BOX * (zoom - 1) / 2)
-  const clampedTx = Math.max(-maxT, Math.min(maxT, tx))
-  const clampedTy = Math.max(-maxT, Math.min(maxT, ty))
+  const maxTx = Math.max(0, boxW * (zoom - 1) / 2)
+  const maxTy = Math.max(0, boxH * (zoom - 1) / 2)
+  const clampedTx = Math.max(-maxTx, Math.min(maxTx, tx))
+  const clampedTy = Math.max(-maxTy, Math.min(maxTy, ty))
 
   // --- Pointer handling ---
   function ptrDown(x: number, y: number) {
@@ -111,32 +119,24 @@ export default function ImageCropUploader({
     // We need the natural dimensions to compute how object-fit:cover positioned it
     const natW = img.naturalWidth
     const natH = img.naturalHeight
-    const coverScale = Math.max(BOX / natW, BOX / natH)
+    const coverScale = Math.max(boxW / natW, boxH / natH)
     const rendW = natW * coverScale
     const rendH = natH * coverScale
 
-    // object-fit:cover centers the image, so the offset from box top-left is:
-    const baseX = (BOX - rendW) / 2
-    const baseY = (BOX - rendH) / 2
-
-    // Apply zoom and translate: the CSS transform scales from center, then translates
-    // In the visual: the image is first placed by object-fit:cover (centered, covering),
-    // then scaled by zoom from center of box, then translated.
-    // For canvas: we draw at the equivalent position.
     const finalW = rendW * zoom
     const finalH = rendH * zoom
-    const finalX = (BOX - finalW) / 2 + clampedTx
-    const finalY = (BOX - finalH) / 2 + clampedTy
+    const finalX = (boxW - finalW) / 2 + clampedTx
+    const finalY = (boxH - finalH) / 2 + clampedTy
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')!
-    canvas.width = OUT
-    canvas.height = OUT
+    canvas.width = outW
+    canvas.height = outH
 
-    const r = OUT / BOX
-    if (shape === 'circle') {
+    const r = outW / boxW
+    if (!aspectRatio && shape === 'circle') {
       ctx.beginPath()
-      ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2)
+      ctx.arc(outW / 2, outH / 2, outW / 2, 0, Math.PI * 2)
       ctx.clip()
     }
 
@@ -184,16 +184,11 @@ export default function ImageCropUploader({
 
           <div
             className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent"
-            style={{ width: BOX, height: BOX, borderRadius: bdr }}
+            style={{ width: boxW, height: boxH, borderRadius: aspectRatio ? '8px' : bdr }}
             onMouseDown={e => { e.preventDefault(); ptrDown(e.clientX, e.clientY) }}
             onTouchStart={e => { if (e.touches.length === 1) ptrDown(e.touches[0].clientX, e.touches[0].clientY) }}
             onWheel={handleWheel}
           >
-            {/*
-              object-fit:cover ensures the image ALWAYS fills the box
-              with correct aspect ratio — the browser handles EXIF, scaling, everything.
-              transform:scale zooms from center, translate moves.
-            */}
             <img
               ref={imgRef}
               src={objectUrl}
@@ -201,8 +196,8 @@ export default function ImageCropUploader({
               alt=""
               style={{
                 position: 'absolute',
-                width: BOX,
-                height: BOX,
+                width: boxW,
+                height: boxH,
                 left: 0,
                 top: 0,
                 objectFit: 'cover',
@@ -234,9 +229,9 @@ export default function ImageCropUploader({
       ) : (
         <div className="flex items-center gap-4">
           <div className={`flex items-center justify-center overflow-hidden flex-shrink-0 ${imageUrl ? '' : 'bg-background-tertiary'}`}
-            style={{ width: size, height: size, borderRadius: bdr }}>
+            style={{ width: size, height: aspectRatio ? Math.round(size / aspectRatio) : size, borderRadius: aspectRatio ? '8px' : bdr }}>
             {imageUrl
-              ? <img src={imageUrl} alt="" className="object-contain w-full h-full" style={{ borderRadius: bdr }} />
+              ? <img src={imageUrl} alt="" className="object-cover w-full h-full" style={{ borderRadius: aspectRatio ? '8px' : bdr }} />
               : <Upload className="w-6 h-6 text-foreground-muted" />}
           </div>
           <label className="btn btn-secondary text-xs cursor-pointer">
