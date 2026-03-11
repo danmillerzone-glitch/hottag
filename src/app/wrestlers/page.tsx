@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, TrendingUp, Loader2, Navigation, Star, Trophy } from 'lucide-react'
+import { User, Search, ShieldCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -77,8 +77,9 @@ export default function WrestlersPage() {
         .eq('verification_status', 'verified')
         .order('created_at', { ascending: false })
         .limit(12),
-      // Most Followed
+      // Most Followed — only wrestlers with at least 1 follower
       supabase.from('wrestlers').select(SELECT_COLS)
+        .gt('follower_count', 0)
         .order('follower_count', { ascending: false })
         .limit(18),
       // New Champions — recent title holders
@@ -92,7 +93,7 @@ export default function WrestlersPage() {
     // Vegas Weekend talent (only query if within date range)
     if (showVegas) {
       queries.push(
-        supabase.from('event_announced_talent')
+        supabase.from('event_wrestlers')
           .select('wrestler_id, events!inner(id, vegas_weekend, event_date)')
           .eq('events.vegas_weekend', true)
           .gte('events.event_date', today)
@@ -221,9 +222,9 @@ export default function WrestlersPage() {
 
     const fetchWrestlers = async () => {
       const supabase = createClient()
-      // Get wrestler IDs from announced talent for nearby events
+      // Get wrestler IDs from event roster for nearby events
       const { data: talent } = await supabase
-        .from('event_announced_talent')
+        .from('event_wrestlers')
         .select('wrestler_id')
         .in('event_id', nearbyEventIds)
 
@@ -357,9 +358,7 @@ export default function WrestlersPage() {
                     <option value={500}>500 miles</option>
                   </select>
                 </div>
-                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {nearYouWrestlers.slice(0, 12).map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
-                </div>
+                <WrestlerCarousel wrestlers={nearYouWrestlers} />
               </section>
             )}
 
@@ -463,6 +462,91 @@ function WrestlerHeroCard({ wrestler, badge }: { wrestler: WrestlerCard; badge?:
         </div>
       </div>
     </Link>
+  )
+}
+
+function WrestlerCarousel({ wrestlers }: { wrestlers: WrestlerCard[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  const rafRef = useRef<number>(0)
+
+  const checkScroll = useCallback(() => {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      const el = scrollRef.current
+      if (!el) return
+      const left = el.scrollLeft > 4
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 4
+      setCanScrollLeft(prev => prev !== left ? left : prev)
+      setCanScrollRight(prev => prev !== right ? right : prev)
+    })
+  }, [])
+
+  useEffect(() => {
+    checkScroll()
+    const el = scrollRef.current
+    if (el) el.addEventListener('scroll', checkScroll, { passive: true })
+    window.addEventListener('resize', checkScroll)
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      if (el) el.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+    }
+  }, [wrestlers, checkScroll])
+
+  function scroll(dir: 'left' | 'right') {
+    const el = scrollRef.current
+    if (!el) return
+    const cardWidth = el.querySelector(':scope > a')?.clientWidth || 150
+    const distance = cardWidth * 3
+    el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') { scroll('left'); e.preventDefault() }
+    if (e.key === 'ArrowRight') { scroll('right'); e.preventDefault() }
+  }
+
+  return (
+    <div className="relative group/carousel">
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          aria-label="Scroll left"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 -translate-x-1/2"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          aria-label="Scroll right"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 translate-x-1/2"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+      >
+        {wrestlers.map(w => (
+          <div key={w.id} className="flex-shrink-0 w-[120px] sm:w-[140px] md:w-[160px]">
+            <WrestlerHeroCard wrestler={w} />
+          </div>
+        ))}
+      </div>
+      {canScrollLeft && (
+        <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-[5]" />
+      )}
+      {canScrollRight && (
+        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-[5]" />
+      )}
+    </div>
   )
 }
 
