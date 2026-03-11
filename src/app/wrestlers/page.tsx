@@ -77,9 +77,8 @@ export default function WrestlersPage() {
         .eq('verification_status', 'verified')
         .order('created_at', { ascending: false })
         .limit(12),
-      // Most Followed — only wrestlers with at least 1 follower
+      // Most Followed
       supabase.from('wrestlers').select(SELECT_COLS)
-        .gt('follower_count', 0)
         .order('follower_count', { ascending: false })
         .limit(18),
       // New Champions — recent title holders
@@ -222,18 +221,19 @@ export default function WrestlersPage() {
 
     const fetchWrestlers = async () => {
       const supabase = createClient()
-      // Get wrestler IDs from event roster for nearby events
-      const { data: talent } = await supabase
-        .from('event_wrestlers')
-        .select('wrestler_id')
-        .in('event_id', nearbyEventIds)
+      // Get wrestler IDs from both scraped rosters and promoter announcements
+      const [{ data: scraped }, { data: announced }] = await Promise.all([
+        supabase.from('event_wrestlers').select('wrestler_id').in('event_id', nearbyEventIds),
+        supabase.from('event_announced_talent').select('wrestler_id').in('event_id', nearbyEventIds),
+      ])
 
-      if (!talent || talent.length === 0) {
+      const allIds = [...(scraped || []), ...(announced || [])].map((t: any) => t.wrestler_id)
+      if (allIds.length === 0) {
         setNearYouWrestlers([])
         return
       }
 
-      const wrestlerIds = Array.from(new Set(talent.map((t: any) => t.wrestler_id))) as string[]
+      const wrestlerIds = Array.from(new Set(allIds)) as string[]
       const { data: wrestlers } = await supabase
         .from('wrestlers').select(SELECT_COLS)
         .in('id', wrestlerIds)
