@@ -194,28 +194,16 @@ export default function MapPage() {
         <button onClick={() => setShowList(!showList)} className="flex items-center gap-2 px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm font-medium hover:bg-background-tertiary transition-colors">
           <List className="w-4 h-4" /> {showList ? 'Hide List' : 'Show List'}
         </button>
-      </div>
-      <div className="absolute bottom-20 md:bottom-10 left-4 z-10 flex flex-col gap-2">
-        <div className="px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm">
+        <div className="px-3 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-xs">
           <span className="text-accent font-bold">{events.length}</span>{' '}
-          <span className="text-foreground-muted">events on map</span>
-        </div>
-        {/* Legend */}
-        <div className="px-4 py-3 bg-background-secondary/95 backdrop-blur rounded-lg">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
-              <span className="text-[11px] text-foreground-muted">This week</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-accent opacity-80" />
-              <span className="text-[11px] text-foreground-muted">This month</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-accent opacity-50" />
-              <span className="text-[11px] text-foreground-muted">Later</span>
-            </div>
-          </div>
+          <span className="text-foreground-muted">events</span>
+          <span className="text-foreground-muted/40 mx-1.5">|</span>
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-accent animate-pulse align-middle" />
+          <span className="text-foreground-muted ml-1">Week</span>
+          <span className="inline-block w-2 h-2 rounded-full bg-accent opacity-80 align-middle ml-2" />
+          <span className="text-foreground-muted ml-1">Month</span>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent opacity-50 align-middle ml-2" />
+          <span className="text-foreground-muted ml-1">Later</span>
         </div>
       </div>
       {showList && (

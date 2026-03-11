@@ -48,9 +48,9 @@ export default function RequestPageButton() {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="btn btn-secondary text-sm"
+        className="btn btn-secondary text-xs px-2.5 py-1.5 sm:text-sm sm:px-4 sm:py-2"
       >
-        <Plus className="w-4 h-4 mr-1.5" />
+        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
         Request Page
       </button>
 
