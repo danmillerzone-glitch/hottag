@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Search, ShieldCheck, CalendarCheck, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -77,9 +77,10 @@ export default function WrestlersPage() {
         .eq('verification_status', 'verified')
         .order('created_at', { ascending: false })
         .limit(12),
-      // Most Followed
+      // Most Booked — active indie wrestlers with upcoming shows
       supabase.from('wrestlers').select(SELECT_COLS)
-        .order('follower_count', { ascending: false })
+        .gt('upcoming_events_count', 0)
+        .order('upcoming_events_count', { ascending: false })
         .limit(18),
       // New Champions — recent title holders
       supabase.from('promotion_championships')
@@ -377,12 +378,12 @@ export default function WrestlersPage() {
               </section>
             )}
 
-            {/* Most Followed */}
+            {/* Most Booked */}
             {popular.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-display font-bold">Most Followed</h2>
+                  <CalendarCheck className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-display font-bold">Most Booked</h2>
                 </div>
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {popular.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
