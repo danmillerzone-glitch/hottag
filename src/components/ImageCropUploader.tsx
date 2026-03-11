@@ -58,27 +58,23 @@ export default function ImageCropUploader({
 
   // --- Clamping: prevent showing area outside image ---
   // Use actual image dimensions to compute how much slack exists per axis.
-  // With object-fit:cover, the image is scaled so the smaller ratio fills the box,
-  // leaving overflow in the other dimension that can be panned.
   const { maxTx, maxTy } = (() => {
     if (!natSize) return { maxTx: 0, maxTy: 0 }
-    const coverScale = Math.max(boxW / natSize.w, boxH / natSize.h)
-    const rendW = natSize.w * coverScale * zoom
-    const rendH = natSize.h * coverScale * zoom
+    const cs = Math.max(boxW / natSize.w, boxH / natSize.h)
+    const visW = natSize.w * cs * zoom
+    const visH = natSize.h * cs * zoom
     return {
-      maxTx: Math.max(0, (rendW - boxW) / 2),
-      maxTy: Math.max(0, (rendH - boxH) / 2),
+      maxTx: Math.max(0, (visW - boxW) / 2),
+      maxTy: Math.max(0, (visH - boxH) / 2),
     }
   })()
   const clampedTx = Math.max(-maxTx, Math.min(maxTx, tx))
   const clampedTy = Math.max(-maxTy, Math.min(maxTy, ty))
 
-  // Compute explicit image position (matches canvas export model exactly)
+  // Display dimensions at zoom=1 (zoom applied via CSS transform for smooth scaling)
   const coverScale = natSize ? Math.max(boxW / natSize.w, boxH / natSize.h) : 1
-  const imgW = natSize ? natSize.w * coverScale * zoom : boxW
-  const imgH = natSize ? natSize.h * coverScale * zoom : boxH
-  const imgX = (boxW - imgW) / 2 + clampedTx
-  const imgY = (boxH - imgH) / 2 + clampedTy
+  const rendW = (natSize?.w ?? boxW) * coverScale
+  const rendH = (natSize?.h ?? boxH) * coverScale
 
   // --- Pointer handling ---
   function ptrDown(x: number, y: number) {
@@ -130,16 +126,14 @@ export default function ImageCropUploader({
       img.onload = () => res()
     })
 
-    // Read the actual rendered size of the <img> (after object-fit:cover)
-    // We need the natural dimensions to compute how object-fit:cover positioned it
     const natW = img.naturalWidth
     const natH = img.naturalHeight
-    const coverScale = Math.max(boxW / natW, boxH / natH)
-    const rendW = natW * coverScale
-    const rendH = natH * coverScale
+    const cs = Math.max(boxW / natW, boxH / natH)
+    const rW = natW * cs
+    const rH = natH * cs
 
-    const finalW = rendW * zoom
-    const finalH = rendH * zoom
+    const finalW = rW * zoom
+    const finalH = rH * zoom
     const finalX = (boxW - finalW) / 2 + clampedTx
     const finalY = (boxH - finalH) / 2 + clampedTy
 
@@ -191,71 +185,80 @@ export default function ImageCropUploader({
     <div>
       <canvas ref={canvasRef} className="hidden" />
 
-      {cropping && objectUrl ? (
-        <div className="space-y-3">
-          <p className="text-sm text-foreground-muted flex items-center gap-1">
-            <Move className="w-3 h-3" /> Drag to reposition, scroll to zoom
-          </p>
+      {/* Crop modal */}
+      {cropping && objectUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={e => { if (e.target === e.currentTarget && !uploading) handleCancel() }}>
+          <div className="bg-background border border-border rounded-xl p-6 space-y-4 max-w-sm mx-4"
+            onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-display font-bold">Adjust Photo</h3>
+            <p className="text-sm text-foreground-muted flex items-center gap-1">
+              <Move className="w-3 h-3" /> Drag to reposition, scroll to zoom
+            </p>
 
-          <div
-            className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent"
-            style={{ width: boxW, height: boxH, borderRadius: aspectRatio ? '8px' : bdr }}
-            onMouseDown={e => { e.preventDefault(); ptrDown(e.clientX, e.clientY) }}
-            onTouchStart={e => { if (e.touches.length === 1) ptrDown(e.touches[0].clientX, e.touches[0].clientY) }}
-            onWheel={handleWheel}
-          >
-            <img
-              ref={imgRef}
-              src={objectUrl}
-              draggable={false}
-              alt=""
-              onLoad={e => {
-                const img = e.currentTarget
-                setNatSize({ w: img.naturalWidth, h: img.naturalHeight })
-              }}
-              style={{
-                position: 'absolute',
-                width: imgW,
-                height: imgH,
-                left: imgX,
-                top: imgY,
-                pointerEvents: 'none',
-                userSelect: 'none',
-              }}
-            />
-          </div>
+            <div
+              className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent"
+              style={{ width: boxW, height: boxH, borderRadius: aspectRatio ? '8px' : bdr }}
+              onMouseDown={e => { e.preventDefault(); ptrDown(e.clientX, e.clientY) }}
+              onTouchStart={e => { if (e.touches.length === 1) ptrDown(e.touches[0].clientX, e.touches[0].clientY) }}
+              onWheel={handleWheel}
+            >
+              <img
+                ref={imgRef}
+                src={objectUrl}
+                draggable={false}
+                alt=""
+                onLoad={e => {
+                  const img = e.currentTarget
+                  setNatSize({ w: img.naturalWidth, h: img.naturalHeight })
+                }}
+                style={{
+                  position: 'absolute',
+                  width: rendW,
+                  height: rendH,
+                  left: (boxW - rendW) / 2,
+                  top: (boxH - rendH) / 2,
+                  transform: `scale(${zoom}) translate(${clampedTx / zoom}px, ${clampedTy / zoom}px)`,
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+            </div>
 
-          <div className="flex items-center gap-3 justify-center">
-            <ZoomOut className="w-4 h-4 text-foreground-muted" />
-            <input type="range" min="1" max="5" step="0.05" value={zoom}
-              onChange={e => setZoom(parseFloat(e.target.value))} className="w-40 accent-accent" />
-            <ZoomIn className="w-4 h-4 text-foreground-muted" />
-          </div>
+            <div className="flex items-center gap-3 justify-center">
+              <ZoomOut className="w-4 h-4 text-foreground-muted" />
+              <input type="range" min="1" max="5" step="0.05" value={zoom}
+                onChange={e => setZoom(parseFloat(e.target.value))} className="w-40 accent-accent" />
+              <ZoomIn className="w-4 h-4 text-foreground-muted" />
+            </div>
 
-          <div className="flex gap-2 justify-center">
-            <button onClick={handleCropConfirm} disabled={uploading} className="btn btn-primary text-sm">
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-              {uploading ? 'Uploading...' : 'Save'}
-            </button>
-            <button onClick={handleCancel} disabled={uploading} className="btn btn-ghost text-sm">
-              <X className="w-4 h-4 mr-1" /> Cancel
-            </button>
+            <div className="flex gap-2 justify-center">
+              <button onClick={handleCropConfirm} disabled={uploading} className="btn btn-primary text-sm">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                {uploading ? 'Uploading...' : 'Save'}
+              </button>
+              <button onClick={handleCancel} disabled={uploading} className="btn btn-ghost text-sm">
+                <X className="w-4 h-4 mr-1" /> Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center justify-center overflow-hidden flex-shrink-0 ${imageUrl ? '' : 'bg-background-tertiary'}`}
-            style={{ width: size, height: aspectRatio ? Math.round(size / aspectRatio) : size, borderRadius: aspectRatio ? '8px' : bdr }}>
-            {imageUrl
-              ? <img src={imageUrl} alt="" className="object-cover w-full h-full" style={{ borderRadius: aspectRatio ? '8px' : bdr }} />
-              : <Upload className="w-6 h-6 text-foreground-muted" />}
-          </div>
-          <label className="btn btn-secondary text-xs cursor-pointer">
-            <Upload className="w-3 h-3 mr-1" /> {label}
-            <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
-          </label>
         </div>
       )}
+
+      {/* Preview + upload button */}
+      <div className="flex items-center gap-4">
+        <div className={`flex items-center justify-center overflow-hidden flex-shrink-0 ${imageUrl ? '' : 'bg-background-tertiary'}`}
+          style={{ width: size, height: aspectRatio ? Math.round(size / aspectRatio) : size, borderRadius: aspectRatio ? '8px' : bdr }}>
+          {imageUrl
+            ? <img src={imageUrl} alt="" className="object-cover w-full h-full" style={{ borderRadius: aspectRatio ? '8px' : bdr }} />
+            : <Upload className="w-6 h-6 text-foreground-muted" />}
+        </div>
+        <label className="btn btn-secondary text-xs cursor-pointer">
+          <Upload className="w-3 h-3 mr-1" /> {label}
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+        </label>
+      </div>
     </div>
   )
 }
