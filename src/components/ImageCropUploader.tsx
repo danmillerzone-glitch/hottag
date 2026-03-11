@@ -222,9 +222,9 @@ export default function ImageCropUploader({
 
             <div
               className="relative mx-auto overflow-hidden cursor-grab active:cursor-grabbing border-2 border-accent"
-              style={{ width: boxW, height: boxH, borderRadius: aspectRatio ? '8px' : bdr }}
+              style={{ width: boxW, height: boxH, borderRadius: aspectRatio ? '8px' : bdr, touchAction: 'none' }}
               onMouseDown={e => { e.preventDefault(); ptrDown(e.clientX, e.clientY) }}
-              onTouchStart={e => { if (e.touches.length === 1) ptrDown(e.touches[0].clientX, e.touches[0].clientY) }}
+              onTouchStart={e => { if (e.touches.length === 1) { e.preventDefault(); ptrDown(e.touches[0].clientX, e.touches[0].clientY) } }}
               onWheel={handleWheel}
             >
               <img
@@ -250,6 +250,7 @@ export default function ImageCropUploader({
                   pointerEvents: 'none',
                   userSelect: 'none',
                   willChange: 'transform',
+                  visibility: natSize ? 'visible' : 'hidden',
                 }}
               />
             </div>
