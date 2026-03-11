@@ -30,11 +30,16 @@ export default function ImageCropUploader({
   const [cropping, setCropping] = useState(false)
   const [uploading, setUploading] = useState(false)
 
+  // Zoom as both state (for slider UI) and ref (for drag handler)
   const [zoom, setZoom] = useState(1)
-  const [tx, setTx] = useState(0) // translate X in px
-  const [ty, setTy] = useState(0) // translate Y in px
+  const zoomRef = useRef(1)
+
+  // Drag position via refs — direct DOM updates for 1:1 smooth dragging
+  const txRef = useRef(0)
+  const tyRef = useRef(0)
 
   const [natSize, setNatSize] = useState<{ w: number; h: number } | null>(null)
+  const natSizeRef = useRef<{ w: number; h: number } | null>(null)
 
   const draggingRef = useRef(false)
   const lastPt = useRef({ x: 0, y: 0 })
@@ -43,6 +48,29 @@ export default function ImageCropUploader({
 
   useEffect(() => { if (currentUrl) setImageUrl(currentUrl) }, [currentUrl])
 
+  // --- Clamping helper: reads from refs for instant access ---
+  function getClampedPos() {
+    const ns = natSizeRef.current
+    if (!ns) return { cx: 0, cy: 0 }
+    const cs = Math.max(boxW / ns.w, boxH / ns.h)
+    const z = zoomRef.current
+    const mTx = Math.max(0, (ns.w * cs * z - boxW) / 2)
+    const mTy = Math.max(0, (ns.h * cs * z - boxH) / 2)
+    return {
+      cx: Math.max(-mTx, Math.min(mTx, txRef.current)),
+      cy: Math.max(-mTy, Math.min(mTy, tyRef.current)),
+    }
+  }
+
+  // --- Direct DOM update — bypasses React re-render for smooth 1:1 dragging ---
+  function applyTransform() {
+    const img = imgRef.current
+    if (!img) return
+    const { cx, cy } = getClampedPos()
+    const z = zoomRef.current
+    img.style.transform = `scale(${z}) translate(${cx / z}px, ${cy / z}px)`
+  }
+
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
@@ -50,28 +78,15 @@ export default function ImageCropUploader({
     setFile(f)
     setObjectUrl(URL.createObjectURL(f))
     setZoom(1)
-    setTx(0)
-    setTy(0)
+    zoomRef.current = 1
+    txRef.current = 0
+    tyRef.current = 0
     setNatSize(null)
+    natSizeRef.current = null
     setCropping(true)
   }
 
-  // --- Clamping: prevent showing area outside image ---
-  // Use actual image dimensions to compute how much slack exists per axis.
-  const { maxTx, maxTy } = (() => {
-    if (!natSize) return { maxTx: 0, maxTy: 0 }
-    const cs = Math.max(boxW / natSize.w, boxH / natSize.h)
-    const visW = natSize.w * cs * zoom
-    const visH = natSize.h * cs * zoom
-    return {
-      maxTx: Math.max(0, (visW - boxW) / 2),
-      maxTy: Math.max(0, (visH - boxH) / 2),
-    }
-  })()
-  const clampedTx = Math.max(-maxTx, Math.min(maxTx, tx))
-  const clampedTy = Math.max(-maxTy, Math.min(maxTy, ty))
-
-  // Display dimensions at zoom=1 (zoom applied via CSS transform for smooth scaling)
+  // Display dimensions at zoom=1 (zoom applied via CSS transform)
   const coverScale = natSize ? Math.max(boxW / natSize.w, boxH / natSize.h) : 1
   const rendW = (natSize?.w ?? boxW) * coverScale
   const rendH = (natSize?.h ?? boxH) * coverScale
@@ -84,9 +99,10 @@ export default function ImageCropUploader({
 
   const ptrMove = useCallback((x: number, y: number) => {
     if (!draggingRef.current) return
-    setTx(p => p + (x - lastPt.current.x))
-    setTy(p => p + (y - lastPt.current.y))
+    txRef.current += x - lastPt.current.x
+    tyRef.current += y - lastPt.current.y
     lastPt.current = { x, y }
+    applyTransform()
   }, [])
 
   const ptrUp = useCallback(() => { draggingRef.current = false }, [])
@@ -111,7 +127,10 @@ export default function ImageCropUploader({
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault()
-    setZoom(z => Math.max(1, Math.min(5, z + (e.deltaY > 0 ? -0.05 : 0.05))))
+    const newZ = Math.max(1, Math.min(5, zoomRef.current + (e.deltaY > 0 ? -0.05 : 0.05)))
+    setZoom(newZ)
+    zoomRef.current = newZ
+    applyTransform()
   }
 
   // --- Export: render what the user sees onto a canvas ---
@@ -132,10 +151,12 @@ export default function ImageCropUploader({
     const rW = natW * cs
     const rH = natH * cs
 
-    const finalW = rW * zoom
-    const finalH = rH * zoom
-    const finalX = (boxW - finalW) / 2 + clampedTx
-    const finalY = (boxH - finalH) / 2 + clampedTy
+    const z = zoomRef.current
+    const { cx, cy } = getClampedPos()
+    const finalW = rW * z
+    const finalH = rH * z
+    const finalX = (boxW - finalW) / 2 + cx
+    const finalY = (boxH - finalH) / 2 + cy
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')!
@@ -181,6 +202,9 @@ export default function ImageCropUploader({
 
   const bdr = shape === 'circle' ? '50%' : '8px'
 
+  // Initial transform for React render (before any dragging)
+  const { cx: initCx, cy: initCy } = getClampedPos()
+
   return (
     <div>
       <canvas ref={canvasRef} className="hidden" />
@@ -210,7 +234,10 @@ export default function ImageCropUploader({
                 alt=""
                 onLoad={e => {
                   const img = e.currentTarget
-                  setNatSize({ w: img.naturalWidth, h: img.naturalHeight })
+                  const ns = { w: img.naturalWidth, h: img.naturalHeight }
+                  setNatSize(ns)
+                  natSizeRef.current = ns
+                  applyTransform()
                 }}
                 style={{
                   position: 'absolute',
@@ -218,10 +245,11 @@ export default function ImageCropUploader({
                   height: rendH,
                   left: (boxW - rendW) / 2,
                   top: (boxH - rendH) / 2,
-                  transform: `scale(${zoom}) translate(${clampedTx / zoom}px, ${clampedTy / zoom}px)`,
+                  transform: `scale(${zoom}) translate(${initCx / zoom}px, ${initCy / zoom}px)`,
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
                   userSelect: 'none',
+                  willChange: 'transform',
                 }}
               />
             </div>
@@ -229,7 +257,12 @@ export default function ImageCropUploader({
             <div className="flex items-center gap-3 justify-center">
               <ZoomOut className="w-4 h-4 text-foreground-muted" />
               <input type="range" min="1" max="5" step="0.05" value={zoom}
-                onChange={e => setZoom(parseFloat(e.target.value))} className="w-40 accent-accent" />
+                onChange={e => {
+                  const z = parseFloat(e.target.value)
+                  setZoom(z)
+                  zoomRef.current = z
+                  applyTransform()
+                }} className="w-40 accent-accent" />
               <ZoomIn className="w-4 h-4 text-foreground-muted" />
             </div>
 
