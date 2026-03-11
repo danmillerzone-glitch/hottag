@@ -88,6 +88,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                       height={64}
                       className="object-cover object-top w-full h-full"
                       sizes="64px"
+                      unoptimized
                     />
                   ) : (
                     <User className="w-8 h-8 text-foreground-muted" />
@@ -139,6 +140,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                       height={64}
                       className="object-cover w-full h-full"
                       sizes="64px"
+                      unoptimized
                     />
                   ) : (
                     <Briefcase className="w-8 h-8 text-foreground-muted" />

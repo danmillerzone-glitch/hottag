@@ -522,7 +522,7 @@ export function PosterSection({ event, eventId, onUpdate }: { event: any; eventI
           <p className="text-xs text-foreground-muted mb-3">Shown on event cards · Recommended 600×800 (3:4)</p>
           <div className="w-full aspect-[3/4] max-w-[192px] rounded-lg bg-background-tertiary border border-border overflow-hidden mb-3">
             {event.poster_url ? (
-              <Image src={event.poster_url} alt="Portrait poster" width={192} height={256} className="w-full h-full object-cover" />
+              <Image src={event.poster_url} alt="Portrait poster" width={192} height={256} className="w-full h-full object-cover" sizes="192px" unoptimized />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted">
                 <ImageIcon className="w-10 h-10 mb-2" />
@@ -555,7 +555,7 @@ export function PosterSection({ event, eventId, onUpdate }: { event: any; eventI
           <p className="text-xs text-foreground-muted mb-3">Used for social sharing & event hero · Recommended 1200×675 (16:9)</p>
           <div className="w-full aspect-video rounded-lg bg-background-tertiary border border-border overflow-hidden mb-3">
             {event.landscape_poster_url ? (
-              <Image src={event.landscape_poster_url} alt="Landscape poster" width={480} height={270} className="w-full h-full object-cover" />
+              <Image src={event.landscape_poster_url} alt="Landscape poster" width={480} height={270} className="w-full h-full object-cover" sizes="480px" unoptimized />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted">
                 <ImageIcon className="w-10 h-10 mb-2" />
@@ -679,7 +679,7 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
                 </button>
               </div>
               {t.wrestlers?.photo_url ? (
-                <Image src={t.wrestlers.photo_url} alt={t.wrestlers?.name || ''} width={32} height={32} className="w-8 h-8 rounded-lg object-cover object-top" />
+                <Image src={t.wrestlers.photo_url} alt={t.wrestlers?.name || ''} width={32} height={32} className="w-8 h-8 rounded-lg object-cover object-top" unoptimized />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center">
                   <User className="w-4 h-4 text-foreground-muted" />
@@ -918,7 +918,7 @@ function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; in
   const renderParticipant = (p: any) => (
     <div key={p.id} className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background border border-border text-sm group">
       {p.wrestlers?.photo_url ? (
-        <Image src={p.wrestlers.photo_url} alt={p.wrestlers?.name || ''} width={20} height={20} className="w-5 h-5 rounded-lg object-cover object-top" />
+        <Image src={p.wrestlers.photo_url} alt={p.wrestlers?.name || ''} width={20} height={20} className="w-5 h-5 rounded-lg object-cover object-top" unoptimized />
       ) : (
         <User className="w-4 h-4 text-foreground-muted" />
       )}
@@ -1076,7 +1076,7 @@ function WrestlerSearchBox({ onSelect, onClose, excludeIds }: { onSelect: (id: s
             <button key={wrestler.id} onClick={() => { onSelect(wrestler.id); setQuery(''); setResults([]) }}
               className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left text-sm">
               {wrestler.photo_url ? (
-                <Image src={wrestler.photo_url} alt={wrestler.name} width={24} height={24} className="w-6 h-6 rounded-lg object-cover object-top" />
+                <Image src={wrestler.photo_url} alt={wrestler.name} width={24} height={24} className="w-6 h-6 rounded-lg object-cover object-top" unoptimized />
               ) : (
                 <User className="w-5 h-5 text-foreground-muted" />
               )}

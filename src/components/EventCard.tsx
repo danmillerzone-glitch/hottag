@@ -138,6 +138,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
               alt={event.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/20 to-background-tertiary">
@@ -148,6 +149,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
                   width={120}
                   height={60}
                   className="opacity-50"
+                  unoptimized
                 />
               ) : (
                 <span className="text-4xl font-display font-bold text-foreground/20">

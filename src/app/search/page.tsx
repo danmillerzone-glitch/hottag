@@ -280,6 +280,8 @@ function SearchContent() {
                         width={48}
                         height={48}
                         className="object-cover w-full h-full"
+                        sizes="48px"
+                        unoptimized
                       />
                     ) : result.type === 'event' ? (
                       <Calendar className="w-6 h-6 text-accent" />

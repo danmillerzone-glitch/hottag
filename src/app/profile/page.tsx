@@ -405,6 +405,8 @@ export default function ProfilePage() {
                         width={64}
                         height={64}
                         className="object-cover w-full h-full"
+                        sizes="64px"
+                        unoptimized
                       />
                     ) : (
                       <User className="w-8 h-8 text-foreground-muted" />
@@ -444,6 +446,8 @@ export default function ProfilePage() {
                         width={64}
                         height={64}
                         className="object-contain w-full h-full p-1"
+                        sizes="64px"
+                        unoptimized
                       />
                     ) : (
                       <Building2 className="w-8 h-8 text-foreground-muted" />
