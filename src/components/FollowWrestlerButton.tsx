@@ -76,6 +76,16 @@ export default function FollowWrestlerButton({
         setFollowerCount(c => c + 1)
         trackEvent('Follow Wrestler', { wrestler: wrestlerName })
       }
+
+      // Sync denormalized follower_count on wrestlers table
+      const { count } = await supabase
+        .from('user_follows_wrestler')
+        .select('id', { count: 'exact', head: true })
+        .eq('wrestler_id', wrestlerId)
+      await supabase
+        .from('wrestlers')
+        .update({ follower_count: count ?? 0 })
+        .eq('id', wrestlerId)
     } catch (error) {
       console.error('Error updating follow:', error)
     }

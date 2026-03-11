@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, CalendarCheck, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -48,6 +48,7 @@ export default function WrestlersPage() {
   // Section data
   const [verified, setVerified] = useState<WrestlerCard[]>([])
   const [popular, setPopular] = useState<WrestlerCard[]>([])
+  const [mostFollowed, setMostFollowed] = useState<WrestlerCard[]>([])
   const [champions, setChampions] = useState<{ wrestler: WrestlerCard; title: string }[]>([])
   const [vegasWrestlers, setVegasWrestlers] = useState<WrestlerCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,6 +89,11 @@ export default function WrestlersPage() {
         .not('current_champion_id', 'is', null)
         .order('won_date', { ascending: false, nullsFirst: false })
         .limit(20),
+      // Most Followed
+      supabase.from('wrestlers').select(SELECT_COLS)
+        .gt('follower_count', 0)
+        .order('follower_count', { ascending: false })
+        .limit(18),
     ]
 
     // Vegas Weekend talent (only query if within date range)
@@ -101,10 +107,11 @@ export default function WrestlersPage() {
     }
 
     const results = await Promise.all(queries)
-    const [verifiedRes, popularRes, champRes] = results
+    const [verifiedRes, popularRes, champRes, followedRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
+    setMostFollowed(followedRes.data || [])
 
     // Process champions — fetch wrestler cards for champion IDs
     if (champRes.data && champRes.data.length > 0) {
@@ -146,8 +153,8 @@ export default function WrestlersPage() {
     }
 
     // Vegas Weekend talent
-    if (showVegas && results[3]?.data) {
-      const vegasIds = Array.from(new Set(results[3].data.map((r: any) => r.wrestler_id))) as string[]
+    if (showVegas && results[4]?.data) {
+      const vegasIds = Array.from(new Set(results[4].data.map((r: any) => r.wrestler_id))) as string[]
       if (vegasIds.length > 0) {
         const { data: vegasData } = await supabase
           .from('wrestlers').select(SELECT_COLS)
@@ -387,6 +394,19 @@ export default function WrestlersPage() {
                 </div>
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {popular.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
+                </div>
+              </section>
+            )}
+
+            {/* Most Followed */}
+            {mostFollowed.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-display font-bold">Most Followed</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {mostFollowed.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
                 </div>
               </section>
             )}

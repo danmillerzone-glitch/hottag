@@ -69,6 +69,18 @@ export default function OnboardingPage() {
       }, { onConflict: 'user_id,wrestler_id' })
     }
 
+    // Sync denormalized follower_count for each followed wrestler
+    for (const wrestlerId of selectedWrestlers) {
+      const { count } = await supabase
+        .from('user_follows_wrestler')
+        .select('id', { count: 'exact', head: true })
+        .eq('wrestler_id', wrestlerId)
+      await supabase
+        .from('wrestlers')
+        .update({ follower_count: count ?? 0 })
+        .eq('id', wrestlerId)
+    }
+
     await supabase.from('user_profiles').update({
       onboarding_completed: true, onboarding_step: 99,
     }).eq('id', user.id)
