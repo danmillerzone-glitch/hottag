@@ -328,31 +328,13 @@ export default function WrestlersPage() {
               </section>
             )}
 
-            {/* Vegas Weekend Talent */}
-            {showVegas && vegasWrestlers.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    <h2 className="text-xl font-display font-bold text-yellow-400">Vegas Weekend Talent</h2>
-                  </div>
-                  <Link href="/vegas-weekend" className="text-yellow-400 hover:text-yellow-300 font-medium text-sm">
-                    View all &rarr;
-                  </Link>
-                </div>
-                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {vegasWrestlers.slice(0, 12).map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
-                </div>
-              </section>
-            )}
-
-            {/* Wrestling in Your Area */}
+            {/* Wrestlers in Your Area */}
             {locationStatus === 'granted' && nearYouWrestlers && nearYouWrestlers.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Navigation className="w-5 h-5 text-blue-400" />
-                    <h2 className="text-xl font-display font-bold">Wrestling in Your Area</h2>
+                    <h2 className="text-xl font-display font-bold">Wrestlers in Your Area</h2>
                   </div>
                   <select
                     value={radius}
@@ -367,6 +349,22 @@ export default function WrestlersPage() {
                   </select>
                 </div>
                 <WrestlerCarousel wrestlers={nearYouWrestlers} />
+              </section>
+            )}
+
+            {/* Vegas Weekend Talent */}
+            {showVegas && vegasWrestlers.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                    <h2 className="text-xl font-display font-bold text-yellow-400">Vegas Weekend Talent</h2>
+                  </div>
+                  <Link href="/vegas-weekend" className="text-yellow-400 hover:text-yellow-300 font-medium text-sm">
+                    View all &rarr;
+                  </Link>
+                </div>
+                <WrestlerCarousel wrestlers={vegasWrestlers} />
               </section>
             )}
 
@@ -519,7 +517,7 @@ function WrestlerCarousel({ wrestlers }: { wrestlers: WrestlerCard[] }) {
   function scroll(dir: 'left' | 'right') {
     const el = scrollRef.current
     if (!el) return
-    const cardWidth = el.querySelector(':scope > a')?.clientWidth || 150
+    const cardWidth = el.querySelector(':scope > div')?.clientWidth || 180
     const distance = cardWidth * 3
     el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' })
   }
@@ -556,7 +554,7 @@ function WrestlerCarousel({ wrestlers }: { wrestlers: WrestlerCard[] }) {
         onKeyDown={handleKeyDown}
       >
         {wrestlers.map(w => (
-          <div key={w.id} className="flex-shrink-0 w-[120px] sm:w-[140px] md:w-[160px]">
+          <div key={w.id} className="flex-shrink-0 w-[calc((100%-2*0.75rem)/3)] sm:w-[calc((100%-3*0.75rem)/4)] md:w-[calc((100%-4*0.75rem)/5)] lg:w-[calc((100%-5*0.75rem)/6)]">
             <WrestlerHeroCard wrestler={w} />
           </div>
         ))}
