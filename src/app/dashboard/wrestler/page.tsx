@@ -671,33 +671,38 @@ export default function WrestlerDashboardPage() {
             Upload a photo of yourself for your profile picture and trading card. <strong>We recommend a transparent PNG</strong> for the best look on your profile picture. Recommended size: 800×1000px or larger.
           </p>
 
-          {wrestler.render_url && (
-            <div className="mb-4 p-4 rounded-lg bg-background-tertiary inline-block">
-              <Image src={wrestler.render_url} alt="Current photo" width={200} height={250} className="object-cover object-top" unoptimized />
-            </div>
-          )}
-
-          <label className="btn btn-secondary text-sm cursor-pointer inline-flex">
-            <Upload className="w-4 h-4 mr-1.5" />
-            {wrestler.render_url ? 'Replace Photo' : 'Upload Photo'}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0]
-                if (!file) return
-                try {
-                  const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
-                  setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
-                } catch (err) {
-                  console.error('Error uploading photo:', err)
-                  alert('Failed to upload. Please try an image file under 5MB.')
-                }
-              }}
-            />
-          </label>
-          <p className="text-xs text-foreground-muted mt-3">Recommended size: 800×1000px or larger. Max 5MB.</p>
+          <div className="relative inline-block mb-4">
+            {wrestler.render_url ? (
+              <div className="p-4 rounded-lg bg-background-tertiary">
+                <Image src={wrestler.render_url} alt="Current photo" width={200} height={250} className="object-cover object-top" unoptimized />
+              </div>
+            ) : (
+              <div className="w-[200px] h-[250px] rounded-lg bg-background-tertiary flex items-center justify-center">
+                <ImageIcon className="w-10 h-10 text-foreground-muted/30" />
+              </div>
+            )}
+            <label className="absolute bottom-2 left-1/2 -translate-x-1/2 btn btn-secondary text-xs cursor-pointer inline-flex whitespace-nowrap">
+              <Upload className="w-3.5 h-3.5 mr-1" />
+              {wrestler.render_url ? 'Replace' : 'Upload'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  try {
+                    const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
+                    setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
+                  } catch (err) {
+                    console.error('Error uploading photo:', err)
+                    alert('Failed to upload. Please try an image file under 5MB.')
+                  }
+                }}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-foreground-muted">Max 5MB.</p>
         </section>
 
         {/* Page Theme */}
