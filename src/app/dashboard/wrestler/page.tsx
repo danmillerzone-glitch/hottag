@@ -22,6 +22,7 @@ import {
 import { COUNTRIES, getFlag, getCountryName } from '@/lib/countries'
 import { WRESTLING_STYLES, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import HeroThemePicker from '@/components/HeroThemePicker'
+import { getHeroCSS } from '@/lib/hero-themes'
 import MerchManager from '@/components/MerchManager'
 import VideoManager from '@/components/VideoManager'
 import ImageCropUploader from '@/components/ImageCropUploader'
@@ -714,6 +715,52 @@ export default function WrestlerDashboardPage() {
             }}
           />
           <p className="text-sm text-foreground-muted mt-4">Choose a background theme for your profile hero section. This replaces the default grey background behind your hero image.</p>
+
+          {/* Live card preview */}
+          {(() => {
+            const heroCSS = getHeroCSS(wrestler.hero_style || null)
+            const hasTheme = wrestler.hero_style && wrestler.hero_style.type !== 'solid'
+            const imageUrl = wrestler.render_url || wrestler.photo_url
+            return (
+              <div className="mt-6">
+                <p className="text-xs font-medium text-foreground-muted mb-2 uppercase tracking-wider">Card Preview</p>
+                <div className="relative w-40 aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary">
+                  {hasTheme && (
+                    <div className="absolute inset-0 z-[0]">
+                      {wrestler.hero_style?.type === 'flag' ? (
+                        <img src={`https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags/${wrestler.hero_style.value.toLowerCase()}.jpg`}
+                          alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                      ) : (
+                        <>
+                          <div className="absolute inset-0" style={{ background: heroCSS.background, opacity: 0.5 }} />
+                          {heroCSS.texture && <div className="absolute inset-0" style={{ background: heroCSS.texture, opacity: 0.3 }} />}
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {imageUrl ? (
+                    <>
+                      <Image src={imageUrl} alt={wrestler.name} fill
+                        className={`${wrestler.render_url ? 'object-contain object-bottom' : 'object-cover object-top'} relative z-[1]`}
+                        sizes="160px" unoptimized />
+                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-[2]" />
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center"><User className="w-10 h-10 text-foreground-muted/30" /></div>
+                  )}
+                  {wrestler.verification_status === 'verified' && (
+                    <ShieldCheck className="absolute top-2 right-2 z-[3] w-4 h-4 text-accent" />
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 p-2.5 z-[3]">
+                    {wrestler.moniker && (
+                      <span className="block text-[9px] font-bold italic text-accent/80 drop-shadow-lg">&ldquo;{wrestler.moniker}&rdquo;</span>
+                    )}
+                    <span className="block text-xs font-bold text-white drop-shadow-lg line-clamp-2">{wrestler.name}</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
         </section>
 
         {/* Videos */}
