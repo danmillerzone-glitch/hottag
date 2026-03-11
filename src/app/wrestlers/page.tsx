@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, Calendar, TrendingUp, Loader2 } from 'lucide-react'
+import { User, Search, ShieldCheck, TrendingUp, Loader2, Navigation, Star, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
+import { getTodayHawaii } from '@/lib/utils'
 import RequestPageButton from '@/components/RequestPageButton'
 
 interface WrestlerCard {
@@ -24,36 +25,224 @@ interface WrestlerCard {
 
 const SELECT_COLS = 'id, name, slug, photo_url, render_url, hometown, moniker, hero_style, verification_status, follower_count, upcoming_events_count'
 
+// Vegas Weekend auto-hide (same cutoff as NavigationAuth)
+const VEGAS_WEEKEND_END = new Date('2026-04-21T06:00:00Z')
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3959
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 export default function WrestlersPage() {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<WrestlerCard[]>([])
   const [searching, setSearching] = useState(false)
+
+  // Section data
   const [verified, setVerified] = useState<WrestlerCard[]>([])
   const [popular, setPopular] = useState<WrestlerCard[]>([])
-  const [active, setActive] = useState<WrestlerCard[]>([])
+  const [champions, setChampions] = useState<{ wrestler: WrestlerCard; title: string }[]>([])
+  const [vegasWrestlers, setVegasWrestlers] = useState<WrestlerCard[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Near You state
+  const [nearYouWrestlers, setNearYouWrestlers] = useState<WrestlerCard[] | null>(null)
+  const [nearYouLoading, setNearYouLoading] = useState(true)
+  const [locationStatus, setLocationStatus] = useState<'loading' | 'granted' | 'denied' | 'unavailable'>('loading')
+  const [radius, setRadius] = useState(100)
+  const [allNearEvents, setAllNearEvents] = useState<any[] | null>(null)
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+
+  const showVegas = typeof window !== 'undefined' && new Date() < VEGAS_WEEKEND_END
 
   useEffect(() => {
     loadSections()
+    loadNearYou()
   }, [])
 
   const loadSections = async () => {
     const supabase = createClient()
+    const today = getTodayHawaii()
 
-    const [verifiedRes, popularRes, activeRes] = await Promise.all([
+    const queries: any[] = [
+      // Newly Verified — most recently created verified wrestlers
       supabase.from('wrestlers').select(SELECT_COLS)
-        .eq('verification_status', 'verified').order('follower_count', { ascending: false }).limit(12),
+        .eq('verification_status', 'verified')
+        .order('created_at', { ascending: false })
+        .limit(12),
+      // Most Followed
       supabase.from('wrestlers').select(SELECT_COLS)
-        .order('follower_count', { ascending: false }).limit(18),
-      supabase.from('wrestlers').select(SELECT_COLS)
-        .gt('upcoming_events_count', 0).order('upcoming_events_count', { ascending: false }).limit(12),
-    ])
+        .order('follower_count', { ascending: false })
+        .limit(18),
+      // New Champions — recent title holders
+      supabase.from('promotion_championships')
+        .select('id, name, won_date, current_champion_id, current_champion_2_id, promotions(name)')
+        .not('current_champion_id', 'is', null)
+        .order('won_date', { ascending: false, nullsFirst: false })
+        .limit(20),
+    ]
+
+    // Vegas Weekend talent (only query if within date range)
+    if (showVegas) {
+      queries.push(
+        supabase.from('event_announced_talent')
+          .select('wrestler_id, events!inner(id, vegas_weekend, event_date)')
+          .eq('events.vegas_weekend', true)
+          .gte('events.event_date', today)
+      )
+    }
+
+    const results = await Promise.all(queries)
+    const [verifiedRes, popularRes, champRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
-    setActive(activeRes.data || [])
+
+    // Process champions — fetch wrestler cards for champion IDs
+    if (champRes.data && champRes.data.length > 0) {
+      const champIds = new Set<string>()
+      const champMap = new Map<string, string>() // wrestler_id -> title display
+      for (const c of champRes.data) {
+        if (c.current_champion_id) {
+          champIds.add(c.current_champion_id)
+          champMap.set(c.current_champion_id, c.name)
+        }
+        if (c.current_champion_2_id) {
+          champIds.add(c.current_champion_2_id)
+          champMap.set(c.current_champion_2_id, c.name)
+        }
+      }
+      const ids = Array.from(champIds)
+      if (ids.length > 0) {
+        const { data: champWrestlers } = await supabase
+          .from('wrestlers').select(SELECT_COLS)
+          .in('id', ids)
+        if (champWrestlers) {
+          // Sort by the order they appear in champRes (won_date DESC)
+          const ordered: { wrestler: WrestlerCard; title: string }[] = []
+          const seen = new Set<string>()
+          for (const c of champRes.data) {
+            for (const wId of [c.current_champion_id, c.current_champion_2_id]) {
+              if (wId && !seen.has(wId)) {
+                const w = champWrestlers.find((cw: WrestlerCard) => cw.id === wId)
+                if (w) {
+                  ordered.push({ wrestler: w, title: c.name })
+                  seen.add(wId)
+                }
+              }
+            }
+          }
+          setChampions(ordered.slice(0, 12))
+        }
+      }
+    }
+
+    // Vegas Weekend talent
+    if (showVegas && results[3]?.data) {
+      const vegasIds = Array.from(new Set(results[3].data.map((r: any) => r.wrestler_id))) as string[]
+      if (vegasIds.length > 0) {
+        const { data: vegasData } = await supabase
+          .from('wrestlers').select(SELECT_COLS)
+          .in('id', vegasIds)
+          .order('follower_count', { ascending: false })
+        setVegasWrestlers(vegasData || [])
+      }
+    }
+
     setLoading(false)
   }
+
+  const loadNearYou = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setLocationStatus('unavailable')
+      setNearYouLoading(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+        setUserCoords(coords)
+        setLocationStatus('granted')
+        fetchNearbyEvents(coords)
+      },
+      () => {
+        setLocationStatus('denied')
+        setNearYouLoading(false)
+      },
+      { timeout: 10000, maximumAge: 300000 }
+    )
+  }
+
+  const fetchNearbyEvents = async (coords: { lat: number; lng: number }) => {
+    const supabase = createClient()
+    const today = getTodayHawaii()
+
+    const { data: events } = await supabase
+      .from('events')
+      .select('id, latitude, longitude')
+      .gte('event_date', today)
+      .eq('status', 'upcoming')
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null)
+      .limit(200)
+
+    if (events) {
+      const withDistance = events.map((e: any) => ({
+        ...e,
+        distance: calculateDistance(coords.lat, coords.lng, e.latitude, e.longitude),
+      }))
+      setAllNearEvents(withDistance)
+    }
+    setNearYouLoading(false)
+  }
+
+  // Filter nearby events by radius, then fetch wrestlers for those events
+  const nearbyEventIds = useMemo(() => {
+    if (!allNearEvents) return []
+    return allNearEvents
+      .filter((e: any) => e.distance <= radius)
+      .map((e: any) => e.id)
+  }, [allNearEvents, radius])
+
+  // Fetch wrestlers when nearby event IDs change
+  useEffect(() => {
+    if (nearbyEventIds.length === 0) {
+      setNearYouWrestlers(nearbyEventIds.length === 0 && allNearEvents !== null ? [] : null)
+      return
+    }
+
+    const fetchWrestlers = async () => {
+      const supabase = createClient()
+      // Get wrestler IDs from announced talent for nearby events
+      const { data: talent } = await supabase
+        .from('event_announced_talent')
+        .select('wrestler_id')
+        .in('event_id', nearbyEventIds)
+
+      if (!talent || talent.length === 0) {
+        setNearYouWrestlers([])
+        return
+      }
+
+      const wrestlerIds = Array.from(new Set(talent.map((t: any) => t.wrestler_id))) as string[]
+      const { data: wrestlers } = await supabase
+        .from('wrestlers').select(SELECT_COLS)
+        .in('id', wrestlerIds)
+        .order('follower_count', { ascending: false })
+
+      setNearYouWrestlers(wrestlers || [])
+    }
+
+    fetchWrestlers()
+  }, [nearbyEventIds])
 
   const handleSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return }
@@ -117,12 +306,12 @@ export default function WrestlersPage() {
           <WrestlersSkeleton />
         ) : (
           <div className="space-y-10">
-            {/* Verified Wrestlers */}
+            {/* Newly Verified */}
             {verified.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheck className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-display font-bold">Verified Wrestlers</h2>
+                  <h2 className="text-xl font-display font-bold">Newly Verified</h2>
                 </div>
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {verified.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
@@ -130,29 +319,77 @@ export default function WrestlersPage() {
               </section>
             )}
 
-            {/* Most Active */}
-            {active.length > 0 && (
+            {/* Vegas Weekend Talent */}
+            {showVegas && vegasWrestlers.length > 0 && (
               <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-display font-bold">Most Booked</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                    <h2 className="text-xl font-display font-bold text-yellow-400">Vegas Weekend Talent</h2>
+                  </div>
+                  <Link href="/vegas-weekend" className="text-yellow-400 hover:text-yellow-300 font-medium text-sm">
+                    View all &rarr;
+                  </Link>
                 </div>
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {active.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
+                  {vegasWrestlers.slice(0, 12).map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
                 </div>
               </section>
             )}
 
-            {/* Popular */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-accent" />
-                <h2 className="text-xl font-display font-bold">Popular</h2>
-              </div>
-              <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                {popular.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
-              </div>
-            </section>
+            {/* Wrestling in Your Area */}
+            {locationStatus === 'granted' && nearYouWrestlers && nearYouWrestlers.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="w-5 h-5 text-blue-400" />
+                    <h2 className="text-xl font-display font-bold">Wrestling in Your Area</h2>
+                  </div>
+                  <select
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="text-sm bg-background-tertiary border border-border rounded-lg px-3 py-1.5 text-foreground cursor-pointer focus:border-accent outline-none"
+                  >
+                    <option value={25}>25 miles</option>
+                    <option value={50}>50 miles</option>
+                    <option value={100}>100 miles</option>
+                    <option value={200}>200 miles</option>
+                    <option value={500}>500 miles</option>
+                  </select>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {nearYouWrestlers.slice(0, 12).map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
+                </div>
+              </section>
+            )}
+
+            {/* New Champions */}
+            {champions.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  <h2 className="text-xl font-display font-bold">New Champions</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {champions.map(({ wrestler, title }) => (
+                    <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={title} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Most Followed */}
+            {popular.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-display font-bold">Most Followed</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {popular.map(w => <WrestlerHeroCard key={w.id} wrestler={w} />)}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>
@@ -160,7 +397,7 @@ export default function WrestlersPage() {
   )
 }
 
-function WrestlerHeroCard({ wrestler }: { wrestler: WrestlerCard }) {
+function WrestlerHeroCard({ wrestler, badge }: { wrestler: WrestlerCard; badge?: string }) {
   const imageUrl = wrestler.render_url || wrestler.photo_url
   const heroCSS = getHeroCSS(wrestler.hero_style || null)
   const hasTheme = !!wrestler.hero_style
@@ -203,6 +440,14 @@ function WrestlerHeroCard({ wrestler }: { wrestler: WrestlerCard }) {
         {wrestler.verification_status === 'verified' && (
           <div className="absolute top-2 right-2 z-[3]">
             <ShieldCheck className="w-4 h-4 text-accent drop-shadow-lg" />
+          </div>
+        )}
+        {/* Championship badge */}
+        {badge && (
+          <div className="absolute top-2 left-2 z-[3]">
+            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 line-clamp-1 max-w-[90%]">
+              {badge}
+            </span>
           </div>
         )}
         {/* Name + moniker overlay */}
