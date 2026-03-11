@@ -243,6 +243,8 @@ export default function ImageCropUploader({
                   position: 'absolute',
                   width: rendW,
                   height: rendH,
+                  maxWidth: 'none',
+                  maxHeight: 'none',
                   left: (boxW - rendW) / 2,
                   top: (boxH - rendH) / 2,
                   transform: `scale(${zoom}) translate(${initCx / zoom}px, ${initCy / zoom}px)`,
