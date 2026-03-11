@@ -403,7 +403,7 @@ export default function WrestlerDashboardPage() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-accent">
               {wrestler.photo_url ? (
-                <Image src={wrestler.photo_url} alt={wrestler.name} width={64} height={64} className="object-cover w-full h-full" />
+                <Image src={wrestler.photo_url} alt={wrestler.name} width={64} height={64} className="object-cover object-top w-full h-full" />
               ) : (
                 <User className="w-8 h-8 text-foreground-muted" />
               )}

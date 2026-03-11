@@ -433,7 +433,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                             <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
                               <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
                                 {m.wrestlers?.photo_url ? (
-                                  <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
+                                  <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover object-top w-full h-full" unoptimized />
                                 ) : (
                                   <User className="w-7 h-7 text-foreground-muted" />
                                 )}
@@ -464,7 +464,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                           <Link href={`/wrestlers/${champion.slug}`}>
                             <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors relative z-10">
                               {champion.photo_url ? (
-                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
+                                <Image src={champion.photo_url} alt={champion.name} width={64} height={64} className="object-cover object-top w-full h-full" unoptimized />
                               ) : (
                                 <User className="w-8 h-8 text-foreground-muted" />
                               )}
@@ -474,7 +474,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                             <Link href={`/wrestlers/${champion2.slug}`}>
                               <div className="w-16 h-16 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-interested/50 hover:border-interested transition-colors">
                                 {champion2.photo_url ? (
-                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover w-full h-full" unoptimized />
+                                  <Image src={champion2.photo_url} alt={champion2.name} width={64} height={64} className="object-cover object-top w-full h-full" unoptimized />
                                 ) : (
                                   <User className="w-8 h-8 text-foreground-muted" />
                                 )}
@@ -574,7 +574,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                         <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`} className="flex flex-col items-center group">
                           <div className="w-14 h-14 rounded-xl bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-accent transition-colors">
                             {m.wrestlers?.photo_url ? (
-                              <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" unoptimized />
+                              <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={56} height={56} className="object-cover object-top w-full h-full" unoptimized />
                             ) : (
                               <User className="w-7 h-7 text-foreground-muted" />
                             )}

@@ -679,7 +679,7 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
                 </button>
               </div>
               {t.wrestlers?.photo_url ? (
-                <Image src={t.wrestlers.photo_url} alt={t.wrestlers?.name || ''} width={32} height={32} className="w-8 h-8 rounded-lg object-cover" />
+                <Image src={t.wrestlers.photo_url} alt={t.wrestlers?.name || ''} width={32} height={32} className="w-8 h-8 rounded-lg object-cover object-top" />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center">
                   <User className="w-4 h-4 text-foreground-muted" />
@@ -918,7 +918,7 @@ function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; in
   const renderParticipant = (p: any) => (
     <div key={p.id} className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background border border-border text-sm group">
       {p.wrestlers?.photo_url ? (
-        <Image src={p.wrestlers.photo_url} alt={p.wrestlers?.name || ''} width={20} height={20} className="w-5 h-5 rounded-lg object-cover" />
+        <Image src={p.wrestlers.photo_url} alt={p.wrestlers?.name || ''} width={20} height={20} className="w-5 h-5 rounded-lg object-cover object-top" />
       ) : (
         <User className="w-4 h-4 text-foreground-muted" />
       )}
@@ -1076,7 +1076,7 @@ function WrestlerSearchBox({ onSelect, onClose, excludeIds }: { onSelect: (id: s
             <button key={wrestler.id} onClick={() => { onSelect(wrestler.id); setQuery(''); setResults([]) }}
               className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left text-sm">
               {wrestler.photo_url ? (
-                <Image src={wrestler.photo_url} alt={wrestler.name} width={24} height={24} className="w-6 h-6 rounded-lg object-cover" />
+                <Image src={wrestler.photo_url} alt={wrestler.name} width={24} height={24} className="w-6 h-6 rounded-lg object-cover object-top" />
               ) : (
                 <User className="w-5 h-5 text-foreground-muted" />
               )}

@@ -290,7 +290,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 ) : hasPhoto ? (
                   <div className="absolute bottom-0 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
                     <div className="w-full h-full rounded-2xl bg-background-tertiary overflow-hidden border-2 border-border">
-                      <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover" priority unoptimized />
+                      <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover object-top" priority unoptimized />
                     </div>
                   </div>
                 ) : (
@@ -328,7 +328,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {hasRender ? (
                   <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (
-                  <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover" priority unoptimized />
+                  <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover object-top" priority unoptimized />
                 ) : (
                   <div className="flex items-center justify-center w-full h-full"><User className="w-24 h-24 text-foreground-muted/20" /></div>
                 )}
@@ -616,7 +616,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                                 <Link key={m.id} href={`/wrestlers/${m.wrestlers?.slug}`}>
                                   <div className="w-8 h-8 rounded-lg bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-background-secondary hover:border-accent transition-colors">
                                     {m.wrestlers?.photo_url ? (
-                                      <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
+                                      <Image src={m.wrestlers.photo_url} alt={m.wrestlers.name} width={32} height={32} className="object-cover object-top w-full h-full" unoptimized />
                                     ) : (<User className="w-4 h-4 text-foreground-muted" />)}
                                   </div>
                                 </Link>

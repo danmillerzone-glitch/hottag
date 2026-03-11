@@ -369,7 +369,7 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
           <div className="flex -space-x-2 flex-shrink-0">
             <div className="w-12 h-12 rounded-xl bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
               {champ.photo_url ? (
-                <Image src={champ.photo_url} alt={champ.name} width={48} height={48} className="object-cover w-full h-full" />
+                <Image src={champ.photo_url} alt={champ.name} width={48} height={48} className="object-cover object-top w-full h-full" />
               ) : (
                 <User className="w-6 h-6 text-foreground-muted" />
               )}
@@ -377,7 +377,7 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
             {champ2 && (
               <div className="w-12 h-12 rounded-xl bg-background-tertiary border-2 border-interested flex items-center justify-center overflow-hidden">
                 {champ2.photo_url ? (
-                  <Image src={champ2.photo_url} alt={champ2.name} width={48} height={48} className="object-cover w-full h-full" />
+                  <Image src={champ2.photo_url} alt={champ2.name} width={48} height={48} className="object-cover object-top w-full h-full" />
                 ) : (
                   <User className="w-6 h-6 text-foreground-muted" />
                 )}
@@ -449,7 +449,7 @@ function ChampionshipItem({ championship, roster, onUpdate, onDelete }: {
               {searchResults.map((w: any) => (
                 <button key={w.id} onClick={() => handleSetChampion(w.id, { id: w.id, name: w.name, slug: w.slug, photo_url: w.photo_url })}
                   className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background-tertiary transition-colors text-left text-sm">
-                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
+                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover object-top" /> : <User className="w-5 h-5 text-foreground-muted" />}
                   <span>{w.name}</span>
                   {w.hometown && <span className="text-xs text-foreground-muted ml-auto">{w.hometown}</span>}
                 </button>
@@ -547,7 +547,7 @@ function RosterSection({ promotionId, roster, onUpdate }: {
               </button>
               <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center overflow-hidden mb-2">
                 {member.wrestlers?.photo_url ? (
-                  <Image src={member.wrestlers.photo_url} alt={member.wrestlers.name} width={56} height={56} className="object-cover w-full h-full" />
+                  <Image src={member.wrestlers.photo_url} alt={member.wrestlers.name} width={56} height={56} className="object-cover object-top w-full h-full" />
                 ) : (
                   <User className="w-7 h-7 text-foreground-muted" />
                 )}
@@ -585,7 +585,7 @@ function RosterSection({ promotionId, roster, onUpdate }: {
               {searchResults.map((w: any) => (
                 <button key={w.id} onClick={() => handleAdd(w.id)}
                   className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left text-sm">
-                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover" /> : <User className="w-5 h-5 text-foreground-muted" />}
+                  {w.photo_url ? <Image src={w.photo_url} alt={w.name} width={24} height={24} className="w-6 h-6 rounded-md object-cover object-top" /> : <User className="w-5 h-5 text-foreground-muted" />}
                   <span>{w.name}</span>
                   {w.hometown && <span className="text-xs text-foreground-muted ml-auto">{w.hometown}</span>}
                 </button>
