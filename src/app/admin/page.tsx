@@ -347,6 +347,7 @@ function WrestlerClaimsTab() {
     await new Promise(r => setTimeout(r, 0))
     try {
       const claim = claims.find(c => c.id === claimId)
+      console.log('[Admin] Wrestler claim data:', JSON.stringify({ id: claim?.id, user_email: claim?.user_email, wrestlers: claim?.wrestlers }, null, 2))
       await approveWrestlerClaim(claimId)
       if (claim?.user_email && claim?.wrestlers) {
         sendClaimAccessEmailFromClient({
