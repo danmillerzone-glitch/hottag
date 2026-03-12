@@ -35,6 +35,7 @@ import {
   approveProfessionalClaim, rejectProfessionalClaim,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
+import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
   Building2, Calendar, Search, Trash2, ExternalLink,
@@ -244,7 +245,20 @@ function PromoClaimsTab() {
     if (!confirm('Approve this claim? The user will gain control of the promotion page.')) return
     setProcessing(claimId)
     await new Promise(r => setTimeout(r, 0))
-    try { await approvePromotionClaim(claimId); await loadClaims() }
+    try {
+      const claim = claims.find(c => c.id === claimId)
+      await approvePromotionClaim(claimId)
+      if (claim?.user_email && claim?.promotions) {
+        sendClaimAccessEmailFromClient({
+          recipientEmail: claim.user_email,
+          recipientName: claim.contact_name || '',
+          pageName: claim.promotions.name,
+          pageType: 'promoter',
+          pageSlug: claim.promotions.slug,
+        })
+      }
+      await loadClaims()
+    }
     catch (err: any) { alert(`Error: ${err.message}`) }
     setProcessing(null)
   }
@@ -331,7 +345,20 @@ function WrestlerClaimsTab() {
     if (!confirm('Approve this claim?')) return
     setProcessing(claimId)
     await new Promise(r => setTimeout(r, 0))
-    try { await approveWrestlerClaim(claimId); await loadClaims() }
+    try {
+      const claim = claims.find(c => c.id === claimId)
+      await approveWrestlerClaim(claimId)
+      if (claim?.user_email && claim?.wrestlers) {
+        sendClaimAccessEmailFromClient({
+          recipientEmail: claim.user_email,
+          recipientName: claim.contact_name || '',
+          pageName: claim.wrestlers.name,
+          pageType: 'wrestler',
+          pageSlug: claim.wrestlers.slug,
+        })
+      }
+      await loadClaims()
+    }
     catch (err: any) { alert(`Error: ${err.message}`) }
     setProcessing(null)
   }
@@ -1004,7 +1031,20 @@ function CrewClaimsTab() {
     if (!confirm('Approve this claim?')) return
     setProcessing(id)
     await new Promise(r => setTimeout(r, 0))
-    try { await approveProfessionalClaim(id); await loadClaims() }
+    try {
+      const claim = claims.find(c => c.id === id)
+      await approveProfessionalClaim(id)
+      if (claim?.user_email && claim?.professionals) {
+        sendClaimAccessEmailFromClient({
+          recipientEmail: claim.user_email,
+          recipientName: claim.contact_name || '',
+          pageName: claim.professionals.name,
+          pageType: 'crew',
+          pageSlug: claim.professionals.slug,
+        })
+      }
+      await loadClaims()
+    }
     catch (err: any) { alert(`Error: ${err.message}`) }
     setProcessing(null)
   }

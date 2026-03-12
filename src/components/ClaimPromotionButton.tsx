@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { submitPromotionClaim, getExistingClaim, redeemPromotionClaimCode } from '@/lib/promoter'
+import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
 import { Shield, ShieldCheck, Clock, X, Loader2, Key } from 'lucide-react'
 
 function AutoRedirect({ to, delay }: { to: string; delay: number }) {
@@ -16,13 +17,15 @@ function AutoRedirect({ to, delay }: { to: string; delay: number }) {
 interface ClaimPromotionButtonProps {
   promotionId: string
   promotionName: string
+  promotionSlug: string
   verificationStatus: string
 }
 
-export default function ClaimPromotionButton({ 
-  promotionId, 
+export default function ClaimPromotionButton({
+  promotionId,
   promotionName,
-  verificationStatus 
+  promotionSlug,
+  verificationStatus
 }: ClaimPromotionButtonProps) {
   const { user, refreshOnboarding } = useAuth()
   const [showModal, setShowModal] = useState(false)
@@ -86,6 +89,15 @@ export default function ClaimPromotionButton({
       if (result.success) {
         setCodeSuccess(true)
         await refreshOnboarding()
+        if (user?.email) {
+          sendClaimAccessEmailFromClient({
+            recipientEmail: user.email,
+            recipientName: '',
+            pageName: promotionName,
+            pageType: 'promoter',
+            pageSlug: promotionSlug,
+          })
+        }
       } else {
         setError(result.error || 'Invalid claim code.')
       }

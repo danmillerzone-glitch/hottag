@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { submitProfessionalClaim, getExistingProfessionalClaim, redeemProfessionalClaimCode } from '@/lib/professional'
+import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
 import { Shield, ShieldCheck, Clock, X, Loader2, Key } from 'lucide-react'
 
 function AutoRedirect({ to, delay }: { to: string; delay: number }) {
@@ -16,13 +17,15 @@ function AutoRedirect({ to, delay }: { to: string; delay: number }) {
 interface ClaimProfessionalButtonProps {
   professionalId: string
   professionalName: string
+  professionalSlug: string
   verificationStatus: string
 }
 
-export default function ClaimProfessionalButton({ 
-  professionalId, 
+export default function ClaimProfessionalButton({
+  professionalId,
   professionalName,
-  verificationStatus 
+  professionalSlug,
+  verificationStatus
 }: ClaimProfessionalButtonProps) {
   const { user, refreshOnboarding } = useAuth()
   const [showModal, setShowModal] = useState(false)
@@ -92,6 +95,15 @@ export default function ClaimProfessionalButton({
       if (result.success) {
         setCodeSuccess(true)
         await refreshOnboarding()
+        if (user?.email) {
+          sendClaimAccessEmailFromClient({
+            recipientEmail: user.email,
+            recipientName: '',
+            pageName: professionalName,
+            pageType: 'crew',
+            pageSlug: professionalSlug,
+          })
+        }
       } else {
         setError(result.error || 'Invalid claim code.')
       }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { submitWrestlerClaim, getExistingWrestlerClaim, redeemWrestlerClaimCode } from '@/lib/wrestler'
+import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
 import { Shield, ShieldCheck, Clock, X, Loader2, Key } from 'lucide-react'
 
 function AutoRedirect({ to, delay }: { to: string; delay: number }) {
@@ -16,13 +17,15 @@ function AutoRedirect({ to, delay }: { to: string; delay: number }) {
 interface ClaimWrestlerButtonProps {
   wrestlerId: string
   wrestlerName: string
+  wrestlerSlug: string
   verificationStatus: string
 }
 
-export default function ClaimWrestlerButton({ 
-  wrestlerId, 
+export default function ClaimWrestlerButton({
+  wrestlerId,
   wrestlerName,
-  verificationStatus 
+  wrestlerSlug,
+  verificationStatus
 }: ClaimWrestlerButtonProps) {
   const { user, refreshOnboarding } = useAuth()
   const [showModal, setShowModal] = useState(false)
@@ -92,6 +95,15 @@ export default function ClaimWrestlerButton({
       if (result.success) {
         setCodeSuccess(true)
         await refreshOnboarding()
+        if (user?.email) {
+          sendClaimAccessEmailFromClient({
+            recipientEmail: user.email,
+            recipientName: '',
+            pageName: wrestlerName,
+            pageType: 'wrestler',
+            pageSlug: wrestlerSlug,
+          })
+        }
       } else {
         setError(result.error || 'Invalid claim code.')
       }

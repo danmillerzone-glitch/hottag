@@ -261,7 +261,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
 
                 {/* Verified badge */}
                 {wrestler.verification_status === 'verified' && (
-                  <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus="verified" />
+                  <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} wrestlerSlug={wrestler.slug} verificationStatus="verified" />
                 )}
               </div>
 
@@ -536,7 +536,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Claim / Verify */}
                 {wrestler.verification_status !== 'verified' && (
                   <div className="mt-5 pt-4 border-t border-border">
-                    <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />
+                    <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} wrestlerSlug={wrestler.slug} verificationStatus={wrestler.verification_status || 'unverified'} />
                   </div>
                 )}
               </div>
@@ -692,7 +692,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             </div>
           )}
           {wrestler.verification_status !== 'verified' && (
-            <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} verificationStatus={wrestler.verification_status || 'unverified'} />
+            <ClaimWrestlerButton wrestlerId={wrestler.id} wrestlerName={wrestler.name} wrestlerSlug={wrestler.slug} verificationStatus={wrestler.verification_status || 'unverified'} />
           )}
         </div>
 

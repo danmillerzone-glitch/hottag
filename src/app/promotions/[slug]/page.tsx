@@ -268,6 +268,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 <ClaimPromotionButton
                   promotionId={promotion.id}
                   promotionName={promotion.name}
+                  promotionSlug={promotion.slug}
                   verificationStatus={promotion.verification_status}
                 />
                 

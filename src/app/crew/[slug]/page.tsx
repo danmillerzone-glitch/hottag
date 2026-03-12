@@ -254,7 +254,7 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
 
         {/* Claim button */}
         {pro.verification_status !== 'verified' && (
-          <ClaimProfessionalButton professionalId={pro.id} professionalName={pro.name} verificationStatus={pro.verification_status || 'unverified'} />
+          <ClaimProfessionalButton professionalId={pro.id} professionalName={pro.name} professionalSlug={pro.slug} verificationStatus={pro.verification_status || 'unverified'} />
         )}
       </div>
     </div>

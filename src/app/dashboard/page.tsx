@@ -319,68 +319,73 @@ export default function DashboardPage() {
               {upcomingEvents.map((event: any) => {
                 const hasTickets = !!event.ticket_url
                 const hasStreaming = event.event_streaming_links?.length > 0 || !!event.streaming_url
-                const hasPoster = !!event.poster_url
-                
+
                 return (
                   <div key={event.id} className="card p-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       {/* Date block */}
-                      <div className="flex-shrink-0 w-14 text-center">
-                        <div className="text-accent font-bold text-sm">
+                      <div className="flex-shrink-0 w-12 sm:w-14 text-center pt-0.5">
+                        <div className="text-accent font-bold text-xs sm:text-sm leading-tight">
                           {new Date(event.event_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })}
                         </div>
-                        <div className="text-xl font-bold">
+                        <div className="text-lg sm:text-xl font-bold leading-tight">
                           {new Date(event.event_date + 'T00:00:00').getDate()}
                         </div>
                       </div>
 
-                      {/* Event info */}
+                      {/* Event info + actions */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">{event.name}</div>
-                        <div className="text-sm text-foreground-muted flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {formatLocation(event.city, event.state)}
-                          {event.venue_name && ` · ${event.venue_name}`}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm sm:text-base leading-snug line-clamp-2 sm:truncate">{event.name}</div>
+                            <div className="text-xs sm:text-sm text-foreground-muted flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {formatLocation(event.city, event.state)}
+                                {event.venue_name && ` · ${event.venue_name}`}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Delete button - always visible */}
+                          <button
+                            onClick={() => handleDeleteEvent(event.id, event.name)}
+                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors flex-shrink-0 -mt-0.5"
+                            title="Delete event"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        {/* Status badges */}
-                        <div className="flex gap-2 mt-1.5">
-                          {hasTickets ? (
-                            <span className="inline-flex items-center text-xs text-attending">
-                              <Ticket className="w-3 h-3 mr-0.5" /> Tickets ✓
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-xs text-foreground-muted/50">
-                              <Ticket className="w-3 h-3 mr-0.5" /> No tickets
-                            </span>
-                          )}
-                          {hasStreaming ? (
-                            <span className="inline-flex items-center text-xs text-attending">
-                              <Video className="w-3 h-3 mr-0.5" /> Streaming ✓
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-xs text-foreground-muted/50">
-                              <Video className="w-3 h-3 mr-0.5" /> No stream
-                            </span>
-                          )}
-                        </div>
-                      </div>
 
-                      {/* Action buttons */}
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Link
-                          href={`/dashboard/events/${event.id}`}
-                          className="btn btn-secondary text-sm"
-                        >
-                          <Edit3 className="w-4 h-4 mr-1.5" />
-                          Manage
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteEvent(event.id, event.name)}
-                          className="p-2 rounded-lg hover:bg-red-500/10 text-foreground-muted hover:text-red-400 transition-colors"
-                          title="Delete event"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Status badges + Manage */}
+                        <div className="flex items-center justify-between gap-3 mt-2">
+                          <div className="flex gap-3">
+                            {hasTickets ? (
+                              <span className="inline-flex items-center text-xs text-attending">
+                                <Ticket className="w-3 h-3 mr-0.5" /> Tickets ✓
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-xs text-foreground-muted/50">
+                                <Ticket className="w-3 h-3 mr-0.5" /> No tickets
+                              </span>
+                            )}
+                            {hasStreaming ? (
+                              <span className="inline-flex items-center text-xs text-attending">
+                                <Video className="w-3 h-3 mr-0.5" /> Streaming ✓
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-xs text-foreground-muted/50">
+                                <Video className="w-3 h-3 mr-0.5" /> No stream
+                              </span>
+                            )}
+                          </div>
+                          <Link
+                            href={`/dashboard/events/${event.id}`}
+                            className="btn btn-secondary text-xs sm:text-sm py-1.5 px-3"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 mr-1" />
+                            Manage
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
