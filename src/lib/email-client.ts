@@ -11,13 +11,19 @@ interface ClaimAccessEmailData {
 
 export async function sendClaimAccessEmailFromClient(data: ClaimAccessEmailData) {
   try {
-    await fetch('/api/send-claim-email', {
+    console.log('[Email] Sending claim email:', data)
+    const res = await fetch('/api/send-claim-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
+    const json = await res.json().catch(() => null)
+    if (!res.ok) {
+      console.error('[Email] API error:', res.status, json)
+    } else {
+      console.log('[Email] Sent successfully:', json)
+    }
   } catch (err) {
-    // Fire-and-forget — don't block the UI on email failure
-    console.error('Email notification failed:', err)
+    console.error('[Email] Fetch failed:', err)
   }
 }
