@@ -57,9 +57,11 @@ export async function sendClaimAccessEmail(data: ClaimAccessEmailData) {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#1c2228;border-radius:16px;border:1px solid #2d333b;overflow:hidden;">
 
-        <!-- Header -->
+        <!-- Header with Logo -->
         <tr><td style="background-color:#ff6b35;padding:24px 32px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Hot Tag</h1>
+          <a href="${APP_URL}" style="text-decoration:none;">
+            <img src="https://auth.hottag.app/storage/v1/object/public/hottag/HotTagEmail.png" alt="Hot Tag" width="160" style="display:inline-block;max-width:160px;height:auto;" />
+          </a>
         </td></tr>
 
         <!-- Body -->
@@ -70,13 +72,16 @@ export async function sendClaimAccessEmail(data: ClaimAccessEmailData) {
           </p>
 
           <!-- Dashboard CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
             <tr><td align="center">
               <a href="${dashboardUrl}" style="display:inline-block;background-color:#ff6b35;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:10px;">
                 Go to Your Dashboard
               </a>
             </td></tr>
           </table>
+          <p style="color:#8b949e;font-size:13px;margin:0 0 24px;text-align:center;">
+            ${dashboardUrl}
+          </p>
 
           <!-- Instructions -->
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#2a3038;border-radius:10px;margin-bottom:24px;">

@@ -202,6 +202,7 @@ function OverviewTab() {
     { label: 'Wrestlers', value: stats.totalWrestlers, icon: Users, color: 'text-purple-400' },
     { label: 'Pending Promo Claims', value: stats.pendingPromoClaims, icon: Clock, color: stats.pendingPromoClaims > 0 ? 'text-yellow-400' : 'text-foreground-muted' },
     { label: 'Pending Wrestler Claims', value: stats.pendingWrestlerClaims, icon: Clock, color: stats.pendingWrestlerClaims > 0 ? 'text-yellow-400' : 'text-foreground-muted' },
+    { label: 'Pending Page Requests', value: stats.pendingPageRequests, icon: Inbox, color: stats.pendingPageRequests > 0 ? 'text-yellow-400' : 'text-foreground-muted' },
   ]
 
   return (

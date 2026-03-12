@@ -167,6 +167,7 @@ export async function getAdminStats() {
     { count: totalWrestlers },
     { count: pendingPromoClaims },
     { count: pendingWrestlerClaims },
+    { count: pendingPageRequests },
     { count: totalUsers },
   ] = await Promise.all([
     supabase.from('events').select('*', { count: 'exact', head: true }),
@@ -174,6 +175,7 @@ export async function getAdminStats() {
     supabase.from('wrestlers').select('*', { count: 'exact', head: true }),
     supabase.from('promotion_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('wrestler_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('page_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('admin_users').select('*', { count: 'exact', head: true }), // Placeholder - can't count auth.users from client
   ])
 
@@ -183,6 +185,7 @@ export async function getAdminStats() {
     totalWrestlers: totalWrestlers || 0,
     pendingPromoClaims: pendingPromoClaims || 0,
     pendingWrestlerClaims: pendingWrestlerClaims || 0,
+    pendingPageRequests: pendingPageRequests || 0,
     totalUsers: totalUsers || 0,
   }
 }
