@@ -3126,7 +3126,7 @@ function PageRequestsTab() {
         }
       }
 
-      // If granting access, also complete their onboarding
+      // If granting access, also complete their onboarding and send email
       if (grantAccess && req.requested_by) {
         const userType = req.type === 'promotion' ? 'promoter' : req.type === 'crew' ? 'crew' : 'wrestler'
         await supabase.from('user_profiles').update({
@@ -3134,6 +3134,17 @@ function PageRequestsTab() {
           onboarding_completed: true,
           onboarding_step: 99,
         }).eq('id', req.requested_by)
+
+        // Send email notification
+        if (req.requested_by_email) {
+          sendClaimAccessEmailFromClient({
+            recipientEmail: req.requested_by_email,
+            recipientName: req.name,
+            pageName: req.name,
+            pageType: req.type === 'promotion' ? 'promoter' : req.type as 'wrestler' | 'crew',
+            pageSlug: slug,
+          })
+        }
       }
     }
 
