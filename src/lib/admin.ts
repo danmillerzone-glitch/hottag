@@ -161,6 +161,10 @@ export async function rejectWrestlerClaim(claimId: string, notes?: string) {
 export async function getAdminStats() {
   const supabase = createClient()
 
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString()
+
   const [
     { count: totalEvents },
     { count: totalPromotions },
@@ -169,6 +173,8 @@ export async function getAdminStats() {
     { count: pendingWrestlerClaims },
     { count: pendingPageRequests },
     { count: totalUsers },
+    { count: newUsersToday },
+    { count: newUsersThisWeek },
   ] = await Promise.all([
     supabase.from('events').select('*', { count: 'exact', head: true }),
     supabase.from('promotions').select('*', { count: 'exact', head: true }),
@@ -176,7 +182,9 @@ export async function getAdminStats() {
     supabase.from('promotion_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('wrestler_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('page_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('admin_users').select('*', { count: 'exact', head: true }), // Placeholder - can't count auth.users from client
+    supabase.from('user_profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('user_profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfToday),
+    supabase.from('user_profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek),
   ])
 
   return {
@@ -187,6 +195,8 @@ export async function getAdminStats() {
     pendingWrestlerClaims: pendingWrestlerClaims || 0,
     pendingPageRequests: pendingPageRequests || 0,
     totalUsers: totalUsers || 0,
+    newUsersToday: newUsersToday || 0,
+    newUsersThisWeek: newUsersThisWeek || 0,
   }
 }
 
