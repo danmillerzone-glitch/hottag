@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Building2, MapPin, Globe } from 'lucide-react'
+import { Building2, MapPin, Globe, ChevronDown } from 'lucide-react'
 import RequestPageButton from '@/components/RequestPageButton'
 
 // Continent groupings mapping DB region values
@@ -67,10 +67,35 @@ for (const continent of CONTINENTS) {
   }
 }
 
+// Normalize Cagematch country names for UK/Europe display
+const COUNTRY_NORMALIZE: Record<string, string> = {
+  'UK': 'United Kingdom',
+  'Deutschland': 'Germany',
+  'Österreich': 'Austria',
+}
+
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedContinent, setSelectedContinent] = useState<string>('north-america')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(group)) next.delete(group)
+      else next.add(group)
+      return next
+    })
+  }
+
+  const expandAll = (groups: string[]) => {
+    setExpandedGroups(new Set(groups))
+  }
+
+  const collapseAll = () => {
+    setExpandedGroups(new Set())
+  }
 
   useEffect(() => {
     async function fetchPromotions() {
@@ -119,16 +144,29 @@ export default function PromotionsPage() {
       filtered = promotions.filter(p => validRegions.has(p.region || ''))
     }
 
-    // Group by region
-    const byRegion: Record<string, typeof promotions> = {}
+    // Group by sub-region (or by country for UK/Europe)
+    const useCountryGrouping = selectedContinent === 'uk-europe'
+    const byGroup: Record<string, typeof promotions> = {}
     for (const promo of filtered) {
-      const region = promo.region || 'Other'
-      if (!byRegion[region]) byRegion[region] = []
-      byRegion[region].push(promo)
+      let groupKey: string
+      if (useCountryGrouping) {
+        const rawCountry = promo.country || 'Other'
+        groupKey = COUNTRY_NORMALIZE[rawCountry] || rawCountry
+      } else {
+        groupKey = promo.region || 'Other'
+      }
+      if (!byGroup[groupKey]) byGroup[groupKey] = []
+      byGroup[groupKey].push(promo)
     }
 
-    // Sort regions by predefined order
-    const sortedRegions = Object.keys(byRegion).sort((a, b) => {
+    // Sort groups
+    const sortedGroups = Object.keys(byGroup).sort((a, b) => {
+      if (useCountryGrouping) {
+        // United Kingdom first, then alphabetical
+        if (a === 'United Kingdom') return -1
+        if (b === 'United Kingdom') return 1
+        return a.localeCompare(b)
+      }
       const aIndex = REGION_ORDER.indexOf(a)
       const bIndex = REGION_ORDER.indexOf(b)
       if (aIndex === -1 && bIndex === -1) return a.localeCompare(b)
@@ -140,7 +178,7 @@ export default function PromotionsPage() {
     const allCounts: Record<string, number> = { ...counts, all: promotions.length }
 
     return {
-      filteredByRegion: sortedRegions.map(region => ({ region, promotions: byRegion[region] })),
+      filteredByRegion: sortedGroups.map(group => ({ region: group, promotions: byGroup[group] })),
       continentCounts: allCounts,
       filteredCount: filtered.length,
     }
@@ -190,11 +228,30 @@ export default function PromotionsPage() {
           ))}
         </div>
 
-        {/* Results count */}
+        {/* Results count + expand/collapse controls */}
         {!loading && (
-          <p className="text-sm text-foreground-muted mb-6">
-            {filteredCount} promotion{filteredCount !== 1 ? 's' : ''}
-          </p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-foreground-muted">
+              {filteredCount} promotion{filteredCount !== 1 ? 's' : ''}
+            </p>
+            {filteredByRegion.length > 1 && (
+              <div className="flex items-center gap-3 text-sm">
+                <button
+                  onClick={() => expandAll(filteredByRegion.map(g => g.region))}
+                  className="text-foreground-muted hover:text-foreground transition-colors"
+                >
+                  Expand all
+                </button>
+                <span className="text-border">|</span>
+                <button
+                  onClick={collapseAll}
+                  className="text-foreground-muted hover:text-foreground transition-colors"
+                >
+                  Collapse all
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Loading skeleton */}
@@ -235,64 +292,82 @@ export default function PromotionsPage() {
             </button>
           </div>
         ) : (
-          /* Promotions grouped by sub-region */
-          <div className="space-y-12">
-            {filteredByRegion.map(({ region, promotions: regionPromos }) => (
-              <div key={region}>
-                <h2 className="text-xl font-display font-bold mb-4 text-foreground-muted">
-                  {region}
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {regionPromos.map((promo: any) => (
-                    <Link
-                      key={promo.id}
-                      href={`/promotions/${promo.slug}`}
-                      className="card p-5 hover:border-accent/50 transition-colors group"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {promo.logo_url ? (
-                            <Image
-                              src={promo.logo_url}
-                              alt={promo.name}
-                              width={64}
-                              height={64}
-                              className="object-contain"
-                              sizes="64px"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">
-                              <Building2 className="w-8 h-8 text-foreground-muted" />
+          /* Promotions grouped by sub-region — collapsible accordions */
+          <div className="divide-y divide-border">
+            {filteredByRegion.map(({ region, promotions: regionPromos }) => {
+              const isExpanded = expandedGroups.has(region)
+              return (
+                <div key={region} className="py-4 first:pt-0">
+                  <button
+                    onClick={() => toggleGroup(region)}
+                    className="flex items-center gap-2 w-full text-left group/header"
+                  >
+                    <ChevronDown
+                      className={`w-5 h-5 text-foreground-muted transition-transform ${
+                        isExpanded ? '' : '-rotate-90'
+                      }`}
+                    />
+                    <h2 className="text-lg font-display font-bold text-foreground-muted group-hover/header:text-foreground transition-colors">
+                      {region}
+                    </h2>
+                    <span className="text-sm text-foreground-muted opacity-70">
+                      ({regionPromos.length})
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                      {regionPromos.map((promo: any) => (
+                        <Link
+                          key={promo.id}
+                          href={`/promotions/${promo.slug}`}
+                          className="card p-5 hover:border-accent/50 transition-colors group"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {promo.logo_url ? (
+                                <Image
+                                  src={promo.logo_url}
+                                  alt={promo.name}
+                                  width={64}
+                                  height={64}
+                                  className="object-contain"
+                                  sizes="64px"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">
+                                  <Building2 className="w-8 h-8 text-foreground-muted" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
-                            {promo.name}
-                          </h3>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
+                                {promo.name}
+                              </h3>
 
-                          {(promo.city || promo.state) && (
-                            <div className="flex items-center gap-1 text-sm text-foreground-muted mt-1">
-                              <MapPin className="w-3 h-3" />
-                              {promo.city}{promo.city && promo.state && ', '}{promo.state}
+                              {(promo.city || promo.state) && (
+                                <div className="flex items-center gap-1 text-sm text-foreground-muted mt-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {promo.city}{promo.city && promo.state && ', '}{promo.state}
+                                </div>
+                              )}
+
+                              {promo.twitter_handle && (
+                                <div className="mt-2">
+                                  <span className="text-foreground-muted text-xs">
+                                    @{promo.twitter_handle}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
-
-                          <div className="flex items-center gap-3 mt-3">
-                            {promo.twitter_handle && (
-                              <span className="text-foreground-muted text-xs">
-                                @{promo.twitter_handle}
-                              </span>
-                            )}
                           </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
