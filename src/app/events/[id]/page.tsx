@@ -156,9 +156,9 @@ export default async function EventPage({ params }: EventPageProps) {
     if (promoEvents) relatedEvents = promoEvents
   }
 
-  // Build maps query: use street address when available, otherwise venue name + city
+  // Build maps query: always include city/state for disambiguation
   const mapsQuery = event.venue_address && /\d/.test(event.venue_address)
-    ? event.venue_address
+    ? [event.venue_address, event.city, event.state].filter(Boolean).join(', ')
     : [event.venue_name, event.city, event.state, event.country].filter(Boolean).join(', ')
 
   return (
