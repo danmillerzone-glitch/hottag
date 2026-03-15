@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -51,6 +51,7 @@ export default function WrestlersPage() {
   const [mostFollowed, setMostFollowed] = useState<WrestlerCard[]>([])
   const [champions, setChampions] = useState<{ wrestler: WrestlerCard; title: string }[]>([])
   const [beltCollectors, setBeltCollectors] = useState<{ wrestler: WrestlerCard; titleCount: number }[]>([])
+  const [roadWarriors, setRoadWarriors] = useState<{ wrestler: WrestlerCard; promoCount: number }[]>([])
   const [vegasWrestlers, setVegasWrestlers] = useState<WrestlerCard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -100,6 +101,10 @@ export default function WrestlersPage() {
         .select('id, name, current_champion_id, current_champion_2_id')
         .eq('is_active', true)
         .not('current_champion_id', 'is', null),
+      // Road Warriors — wrestlers on multiple rosters
+      supabase.from('wrestler_promotions')
+        .select('wrestler_id')
+        .eq('is_active', true),
     ]
 
     // Vegas Weekend talent (only query if within date range)
@@ -113,7 +118,7 @@ export default function WrestlersPage() {
     }
 
     const results = await Promise.all(queries)
-    const [verifiedRes, popularRes, champRes, followedRes, beltRes] = results
+    const [verifiedRes, popularRes, champRes, followedRes, beltRes, rosterRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
@@ -122,22 +127,20 @@ export default function WrestlersPage() {
     // Process belt collectors — count unique titles per wrestler
     // (dedup by championship name to handle inter-promotional titles)
     if (beltRes?.data && beltRes.data.length > 0) {
-      const titleNames = new Map<string, Set<string>>()
+      const titleNames: Record<string, Record<string, true>> = {}
       for (const c of beltRes.data) {
         if (c.current_champion_id) {
-          const existing = titleNames.get(c.current_champion_id) || new Set<string>()
-          existing.add(c.name)
-          titleNames.set(c.current_champion_id, existing)
+          if (!titleNames[c.current_champion_id]) titleNames[c.current_champion_id] = {}
+          titleNames[c.current_champion_id][c.name] = true
         }
         if (c.current_champion_2_id) {
-          const existing = titleNames.get(c.current_champion_2_id) || new Set<string>()
-          existing.add(c.name)
-          titleNames.set(c.current_champion_2_id, existing)
+          if (!titleNames[c.current_champion_2_id]) titleNames[c.current_champion_2_id] = {}
+          titleNames[c.current_champion_2_id][c.name] = true
         }
       }
       // Sort by unique title count descending, take top 6 with 2+ titles
-      const topCollectors = Array.from(titleNames.entries())
-        .map(([id, names]) => [id, names.size] as [string, number])
+      const topCollectors = Object.entries(titleNames)
+        .map(([id, names]) => [id, Object.keys(names).length] as [string, number])
         .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
@@ -159,36 +162,56 @@ export default function WrestlersPage() {
       }
     }
 
-    // Process champions — fetch wrestler cards for champion IDs
-    if (champRes.data && champRes.data.length > 0) {
-      const champIds = new Set<string>()
-      const champMap = new Map<string, string>() // wrestler_id -> title display
-      for (const c of champRes.data) {
-        if (c.current_champion_id) {
-          champIds.add(c.current_champion_id)
-          champMap.set(c.current_champion_id, c.name)
-        }
-        if (c.current_champion_2_id) {
-          champIds.add(c.current_champion_2_id)
-          champMap.set(c.current_champion_2_id, c.name)
+    // Process road warriors — wrestlers on the most rosters
+    if (rosterRes?.data && rosterRes.data.length > 0) {
+      const promoCounts: Record<string, number> = {}
+      for (const r of rosterRes.data) {
+        promoCounts[r.wrestler_id] = (promoCounts[r.wrestler_id] || 0) + 1
+      }
+      const topRoad = Object.entries(promoCounts)
+        .filter(([, count]) => count >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+
+      if (topRoad.length > 0) {
+        const roadIds = topRoad.map(([id]) => id)
+        const { data: roadWrestlers } = await supabase
+          .from('wrestlers').select(SELECT_COLS)
+          .in('id', roadIds)
+        if (roadWrestlers) {
+          const ordered = topRoad
+            .map(([id, count]) => {
+              const w = roadWrestlers.find((rw: WrestlerCard) => rw.id === id)
+              return w ? { wrestler: w, promoCount: count } : null
+            })
+            .filter(Boolean) as { wrestler: WrestlerCard; promoCount: number }[]
+          setRoadWarriors(ordered)
         }
       }
-      const ids = Array.from(champIds)
+    }
+
+    // Process champions — fetch wrestler cards for champion IDs
+    if (champRes.data && champRes.data.length > 0) {
+      const champIds: Record<string, true> = {}
+      for (const c of champRes.data) {
+        if (c.current_champion_id) champIds[c.current_champion_id] = true
+        if (c.current_champion_2_id) champIds[c.current_champion_2_id] = true
+      }
+      const ids = Object.keys(champIds)
       if (ids.length > 0) {
         const { data: champWrestlers } = await supabase
           .from('wrestlers').select(SELECT_COLS)
           .in('id', ids)
         if (champWrestlers) {
-          // Sort by the order they appear in champRes (won_date DESC)
           const ordered: { wrestler: WrestlerCard; title: string }[] = []
-          const seen = new Set<string>()
+          const seen: Record<string, true> = {}
           for (const c of champRes.data) {
             for (const wId of [c.current_champion_id, c.current_champion_2_id]) {
-              if (wId && !seen.has(wId)) {
+              if (wId && !seen[wId]) {
                 const w = champWrestlers.find((cw: WrestlerCard) => cw.id === wId)
                 if (w) {
                   ordered.push({ wrestler: w, title: c.name })
-                  seen.add(wId)
+                  seen[wId] = true
                 }
               }
             }
@@ -199,7 +222,7 @@ export default function WrestlersPage() {
     }
 
     // Vegas Weekend talent
-    if (showVegas && results[5]?.data) {
+    if (showVegas && results[6]?.data) {
       const vegasIds = Array.from(new Set(results[5].data.map((r: any) => r.wrestler_id))) as string[]
       if (vegasIds.length > 0) {
         const { data: vegasData } = await supabase
@@ -424,6 +447,21 @@ export default function WrestlersPage() {
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {beltCollectors.map(({ wrestler, titleCount }) => (
                     <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${titleCount} Titles`} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Road Warriors — wrestlers on the most rosters */}
+            {roadWarriors.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <Map className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-display font-bold">Road Warriors</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {roadWarriors.map(({ wrestler, promoCount }) => (
+                    <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${promoCount} Rosters`} />
                   ))}
                 </div>
               </section>

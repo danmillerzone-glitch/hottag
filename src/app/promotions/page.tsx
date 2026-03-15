@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Building2, MapPin, Globe, ChevronDown } from 'lucide-react'
+import { Building2, MapPin, Globe, ChevronDown, Flame } from 'lucide-react'
 import RequestPageButton from '@/components/RequestPageButton'
 
 // Continent groupings mapping DB region values
@@ -76,6 +76,7 @@ const COUNTRY_NORMALIZE: Record<string, string> = {
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<any[]>([])
+  const [mostActive, setMostActive] = useState<{ promo: any; eventCount: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedContinent, setSelectedContinent] = useState<string>('north-america')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -98,23 +99,43 @@ export default function PromotionsPage() {
   }
 
   useEffect(() => {
-    async function fetchPromotions() {
+    async function fetchData() {
       const supabase = createClient()
-      const { data, error } = await supabase
-        .from('promotions')
-        .select('id, name, slug, logo_url, region, city, state, country, twitter_handle')
-        .order('name')
-        .limit(1000)
+      const [promoRes, eventRes] = await Promise.all([
+        supabase.from('promotions')
+          .select('id, name, slug, logo_url, region, city, state, country, twitter_handle')
+          .order('name')
+          .limit(1000),
+        supabase.from('events')
+          .select('promotion_id')
+          .gte('event_date', '2025-01-01'),
+      ])
 
-      if (error) {
-        console.error('Error fetching promotions:', error)
+      if (promoRes.error) {
+        console.error('Error fetching promotions:', promoRes.error)
         setPromotions([])
       } else {
-        setPromotions(data || [])
+        setPromotions(promoRes.data || [])
+
+        // Count events per promotion, match with promo data
+        if (eventRes.data && promoRes.data) {
+          const counts: Record<string, number> = {}
+          for (const e of eventRes.data) {
+            if (e.promotion_id) counts[e.promotion_id] = (counts[e.promotion_id] || 0) + 1
+          }
+          const promoLookup: Record<string, any> = {}
+          for (const p of promoRes.data) promoLookup[p.id] = p
+          const top = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map(([id, count]) => ({ promo: promoLookup[id], eventCount: count }))
+            .filter(e => e.promo)
+          setMostActive(top as { promo: any; eventCount: number }[])
+        }
       }
       setLoading(false)
     }
-    fetchPromotions()
+    fetchData()
   }, [])
 
   const { filteredByRegion, continentCounts, filteredCount } = useMemo(() => {
@@ -252,6 +273,46 @@ export default function PromotionsPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Most Active Promotions */}
+        {!loading && mostActive.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Flame className="w-5 h-5 text-accent" />
+              <h2 className="text-lg font-display font-bold">Most Active</h2>
+            </div>
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+              {mostActive.map(({ promo, eventCount }) => (
+                <Link
+                  key={promo.id}
+                  href={`/promotions/${promo.slug}`}
+                  className="card p-4 hover:border-accent/50 transition-colors group text-center"
+                >
+                  <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center overflow-hidden mb-2">
+                    {promo.logo_url ? (
+                      <Image
+                        src={promo.logo_url}
+                        alt={promo.name}
+                        width={48}
+                        height={48}
+                        className="object-contain"
+                        sizes="48px"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">
+                        <Building2 className="w-6 h-6 text-foreground-muted" />
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                    {promo.name}
+                  </h3>
+                  <span className="text-xs text-accent font-medium">{eventCount} Events</span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Loading skeleton */}
