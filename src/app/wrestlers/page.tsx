@@ -119,19 +119,25 @@ export default function WrestlersPage() {
     setPopular(popularRes.data || [])
     setMostFollowed(followedRes.data || [])
 
-    // Process belt collectors — count titles per wrestler
+    // Process belt collectors — count unique titles per wrestler
+    // (dedup by championship name to handle inter-promotional titles)
     if (beltRes?.data && beltRes.data.length > 0) {
-      const titleCounts = new Map<string, number>()
+      const titleNames = new Map<string, Set<string>>()
       for (const c of beltRes.data) {
         if (c.current_champion_id) {
-          titleCounts.set(c.current_champion_id, (titleCounts.get(c.current_champion_id) || 0) + 1)
+          const existing = titleNames.get(c.current_champion_id) || new Set<string>()
+          existing.add(c.name)
+          titleNames.set(c.current_champion_id, existing)
         }
         if (c.current_champion_2_id) {
-          titleCounts.set(c.current_champion_2_id, (titleCounts.get(c.current_champion_2_id) || 0) + 1)
+          const existing = titleNames.get(c.current_champion_2_id) || new Set<string>()
+          existing.add(c.name)
+          titleNames.set(c.current_champion_2_id, existing)
         }
       }
-      // Sort by count descending, take top 6 with 2+ titles
-      const topCollectors = Array.from(titleCounts.entries())
+      // Sort by unique title count descending, take top 6 with 2+ titles
+      const topCollectors = Array.from(titleNames.entries())
+        .map(([id, names]) => [id, names.size] as [string, number])
         .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
