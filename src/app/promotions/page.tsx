@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Building2, MapPin, Globe, ChevronDown, Flame } from 'lucide-react'
+import { Building2, MapPin, Globe, ChevronDown, Flame, Search } from 'lucide-react'
 import RequestPageButton from '@/components/RequestPageButton'
 
 // Continent groupings mapping DB region values
@@ -79,6 +79,7 @@ export default function PromotionsPage() {
   const [mostActive, setMostActive] = useState<{ promo: any; eventCount: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedContinent, setSelectedContinent] = useState<string>('north-america')
+  const [searchQuery, setSearchQuery] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const toggleGroup = (group: string) => {
@@ -205,6 +206,18 @@ export default function PromotionsPage() {
     }
   }, [promotions, selectedContinent])
 
+  const searchResults = useMemo(() => {
+    if (searchQuery.length < 2) return []
+    const q = searchQuery.toLowerCase()
+    return promotions.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.city && p.city.toLowerCase().includes(q)) ||
+      (p.state && p.state.toLowerCase().includes(q))
+    )
+  }, [promotions, searchQuery])
+
+  const isSearching = searchQuery.length >= 2
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -219,8 +232,20 @@ export default function PromotionsPage() {
           <RequestPageButton />
         </div>
 
+        {/* Search */}
+        <div className="mb-8 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-muted" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search promotions by name or location..."
+            className="w-full md:w-96 pl-12 pr-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent text-foreground placeholder-foreground-muted"
+          />
+        </div>
+
         {/* Continent Filter Buttons */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        {!isSearching && <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setSelectedContinent('all')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
@@ -247,7 +272,60 @@ export default function PromotionsPage() {
               {!loading && <span className="opacity-70 ml-1">({continentCounts[continent.id] || 0})</span>}
             </button>
           ))}
-        </div>
+        </div>}
+
+        {/* Search Results */}
+        {isSearching ? (
+          <div>
+            <p className="text-sm text-foreground-muted mb-4">
+              {searchResults.length > 0 ? `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} for "${searchQuery}"` : `No results for "${searchQuery}"`}
+            </p>
+            {searchResults.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {searchResults.map((promo: any) => (
+                  <Link
+                    key={promo.id}
+                    href={`/promotions/${promo.slug}`}
+                    className="card p-5 hover:border-accent/50 transition-colors group"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {promo.logo_url ? (
+                          <Image
+                            src={promo.logo_url}
+                            alt={promo.name}
+                            width={64}
+                            height={64}
+                            className="object-contain"
+                            sizes="64px"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-background-tertiary flex items-center justify-center rounded-lg">
+                            <Building2 className="w-8 h-8 text-foreground-muted" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
+                          {promo.name}
+                        </h3>
+                        {(promo.city || promo.state) && (
+                          <div className="flex items-center gap-1 text-sm text-foreground-muted mt-1">
+                            <MapPin className="w-3 h-3" />
+                            {promo.city}{promo.city && promo.state && ', '}{promo.state}
+                          </div>
+                        )}
+                        {promo.region && (
+                          <span className="text-xs text-foreground-muted">{promo.region}</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (<>
 
         {/* Results count + expand/collapse controls */}
         {!loading && (
@@ -431,6 +509,7 @@ export default function PromotionsPage() {
             })}
           </div>
         )}
+        </>)}
       </div>
     </div>
   )
