@@ -64,11 +64,29 @@ async function getWrestlerChampionships(wrestlerId: string) {
     const { data: groupChamps } = await supabase.from('promotion_championships').select(`id, name, short_name, won_date, is_active, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey (id, name, type, promotion_group_members (id, wrestler_id, wrestlers (id, name, slug))), promotions (id, name, slug, logo_url)`).in('champion_group_id', groupIds).eq('is_active', true)
     groupChampionships = (groupChamps || []).map((c: any) => ({ ...c, isGroupChampionship: true, groupName: c.champion_group?.name, partners: (c.champion_group?.promotion_group_members || []).filter((m: any) => m.wrestler_id !== wrestlerId).map((m: any) => m.wrestlers) }))
   }
-  return [
+  const allChamps = [
     ...(asChamp1 || []).map((c: any) => ({ ...c, partner: c.current_champion_2 })),
     ...(asChamp2 || []).map((c: any) => ({ ...c, partner: c.current_champion })),
     ...groupChampionships,
   ]
+
+  // Deduplicate inter-promotional championships (same title recognized by multiple promotions)
+  // Group by championship name + partner combo, merge promotion names
+  const grouped: Record<string, any> = {}
+  for (const c of allChamps) {
+    const partnerKey = c.partner?.id || c.groupName || ''
+    const key = `${c.name}||${partnerKey}`
+    if (!grouped[key]) {
+      grouped[key] = { ...c, allPromotions: [c.promotions] }
+    } else {
+      grouped[key].allPromotions.push(c.promotions)
+      // Keep the earliest won_date
+      if (c.won_date && (!grouped[key].won_date || c.won_date < grouped[key].won_date)) {
+        grouped[key].won_date = c.won_date
+      }
+    }
+  }
+  return Object.values(grouped)
 }
 
 async function getWrestlerGroups(wrestlerId: string) {
@@ -555,22 +573,33 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 <div className="mb-6">
                   <h2 className="text-lg font-display font-bold mb-3">Championships</h2>
                   <div className="flex flex-wrap gap-3">
-                    {championships.map((champ: any) => (
-                      <Link key={champ.id} href={`/promotions/${champ.promotions?.slug}`}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border-2 border-yellow-500/60 hover:border-yellow-400 transition-colors group">
-                        <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                        <div>
-                          <div className="font-semibold text-sm group-hover:text-accent transition-colors">{champ.name}</div>
-                          <div className="text-xs text-foreground-muted">
-                            {champ.promotions?.name}
-                            {champ.partner && <> &middot; w/ {champ.partner.name}</>}
-                            {champ.isGroupChampionship && champ.groupName && <> &middot; {champ.groupName}</>}
-                            {champ.partners && champ.partners.length > 0 && !champ.partner && (<> &middot; w/ {champ.partners.map((p: any) => p.name).join(' & ')}</>)}
-                            {champ.won_date && (<> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>)}
+                    {championships.map((champ: any) => {
+                      const promos = champ.allPromotions || [champ.promotions]
+                      const isInterPromotional = promos.length > 1
+                      const firstPromo = promos[0]
+                      return (
+                        <div key={champ.id}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border-2 border-yellow-500/60 hover:border-yellow-400 transition-colors group">
+                          <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                          <div>
+                            <div className="font-semibold text-sm">{champ.name}</div>
+                            <div className="text-xs text-foreground-muted">
+                              {isInterPromotional ? (
+                                <>{promos.length} promotions</>
+                              ) : (
+                                <Link href={`/promotions/${firstPromo?.slug}`} className="hover:text-accent transition-colors">
+                                  {firstPromo?.name}
+                                </Link>
+                              )}
+                              {champ.partner && <> &middot; w/ <Link href={`/wrestlers/${champ.partner.slug}`} className="hover:text-accent transition-colors">{champ.partner.name}</Link></>}
+                              {champ.isGroupChampionship && champ.groupName && <> &middot; {champ.groupName}</>}
+                              {champ.partners && champ.partners.length > 0 && !champ.partner && (<> &middot; w/ {champ.partners.map((p: any) => p.name).join(' & ')}</>)}
+                              {champ.won_date && (<> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>)}
+                            </div>
                           </div>
                         </div>
-                      </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -656,16 +685,25 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
             <div>
               <h2 className="text-lg font-display font-bold mb-3">Championships</h2>
               <div className="space-y-2">
-                {championships.map((champ: any) => (
-                  <Link key={champ.id} href={`/promotions/${champ.promotions?.slug}`}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border-2 border-yellow-500/60">
-                    <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                    <div>
-                      <div className="font-semibold text-sm">{champ.name}</div>
-                      <div className="text-xs text-foreground-muted">{champ.promotions?.name}</div>
+                {championships.map((champ: any) => {
+                  const promos = champ.allPromotions || [champ.promotions]
+                  const isInterPromotional = promos.length > 1
+                  const firstPromo = promos[0]
+                  return (
+                    <div key={champ.id}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-background-secondary border-2 border-yellow-500/60">
+                      <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">{champ.name}</div>
+                        <div className="text-xs text-foreground-muted">
+                          {isInterPromotional ? `${promos.length} promotions` : firstPromo?.name}
+                          {champ.partner && <> &middot; w/ {champ.partner.name}</>}
+                          {champ.won_date && (<> &middot; Since {new Date(champ.won_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>)}
+                        </div>
+                      </div>
                     </div>
-                  </Link>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

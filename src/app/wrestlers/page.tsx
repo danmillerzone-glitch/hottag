@@ -100,7 +100,7 @@ export default function WrestlersPage() {
       supabase.from('promotion_championships')
         .select('id, name, current_champion_id, current_champion_2_id')
         .eq('is_active', true)
-        .not('current_champion_id', 'is', null),
+        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null'),
       // Road Warriors — wrestlers on multiple rosters
       supabase.from('wrestler_promotions')
         .select('wrestler_id')
@@ -455,9 +455,12 @@ export default function WrestlersPage() {
             {/* Road Warriors — wrestlers on the most rosters */}
             {roadWarriors.length > 0 && (
               <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Map className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-display font-bold">Road Warriors</h2>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2">
+                    <Map className="w-5 h-5 text-accent" />
+                    <h2 className="text-xl font-display font-bold">Road Warriors</h2>
+                  </div>
+                  <p className="text-sm text-foreground-muted mt-1 ml-7">Wrestlers appearing on the most promotion rosters</p>
                 </div>
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {roadWarriors.map(({ wrestler, promoCount }) => (
@@ -562,7 +565,7 @@ function WrestlerHeroCard({ wrestler, badge }: { wrestler: WrestlerCard; badge?:
         {/* Championship badge */}
         {badge && (
           <div className="absolute top-2 left-2 z-[3]">
-            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 line-clamp-1 max-w-[90%]">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 whitespace-nowrap">
               {badge}
             </span>
           </div>
