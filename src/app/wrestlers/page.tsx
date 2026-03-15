@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, Flame, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -51,7 +51,6 @@ export default function WrestlersPage() {
   const [mostFollowed, setMostFollowed] = useState<WrestlerCard[]>([])
   const [champions, setChampions] = useState<{ wrestler: WrestlerCard; title: string }[]>([])
   const [beltCollectors, setBeltCollectors] = useState<{ wrestler: WrestlerCard; titleCount: number }[]>([])
-  const [mostActive, setMostActive] = useState<{ wrestler: WrestlerCard; eventCount: number }[]>([])
   const [vegasWrestlers, setVegasWrestlers] = useState<WrestlerCard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -151,54 +150,6 @@ export default function WrestlersPage() {
             .filter(Boolean) as { wrestler: WrestlerCard; titleCount: number }[]
           setBeltCollectors(ordered)
         }
-      }
-    }
-
-    // Process most active — wrestlers with most events in next 30 days
-    const thirtyDaysOut = new Date()
-    thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30)
-    const thirtyDayStr = thirtyDaysOut.toISOString().split('T')[0]
-
-    const [{ data: activeScraped }, { data: activeAnnounced }] = await Promise.all([
-      supabase.from('event_wrestlers')
-        .select('wrestler_id, events!inner(event_date)')
-        .gte('events.event_date', today)
-        .lte('events.event_date', thirtyDayStr),
-      supabase.from('event_announced_talent')
-        .select('wrestler_id, events!inner(event_date)')
-        .gte('events.event_date', today)
-        .lte('events.event_date', thirtyDayStr),
-    ])
-
-    const eventCounts = new Map<string, Set<string>>()
-    for (const row of [...(activeScraped || []), ...(activeAnnounced || [])]) {
-      const wId = row.wrestler_id
-      const eventDate = (row as any).events?.event_date
-      if (!wId) continue
-      if (!eventCounts.has(wId)) eventCounts.set(wId, new Set())
-      // Use event_date as a dedup key per wrestler (counts distinct events)
-      eventCounts.get(wId)!.add(eventDate || Math.random().toString())
-    }
-
-    const topActive = Array.from(eventCounts.entries())
-      .map(([id, events]) => ({ id, count: events.size }))
-      .filter(e => e.count >= 2)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
-
-    if (topActive.length > 0) {
-      const activeIds = topActive.map(e => e.id)
-      const { data: activeWrestlers } = await supabase
-        .from('wrestlers').select(SELECT_COLS)
-        .in('id', activeIds)
-      if (activeWrestlers) {
-        const ordered = topActive
-          .map(({ id, count }) => {
-            const w = activeWrestlers.find((aw: WrestlerCard) => aw.id === id)
-            return w ? { wrestler: w, eventCount: count } : null
-          })
-          .filter(Boolean) as { wrestler: WrestlerCard; eventCount: number }[]
-        setMostActive(ordered)
       }
     }
 
@@ -467,21 +418,6 @@ export default function WrestlersPage() {
                 <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {beltCollectors.map(({ wrestler, titleCount }) => (
                     <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${titleCount} Titles`} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Most Active — most events in next 30 days */}
-            {mostActive.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Flame className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-display font-bold">Most Active</h2>
-                </div>
-                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {mostActive.map(({ wrestler, eventCount }) => (
-                    <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${eventCount} Shows`} />
                   ))}
                 </div>
               </section>
