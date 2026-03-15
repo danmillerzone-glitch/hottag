@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, Flame, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { getTodayHawaii } from '@/lib/utils'
@@ -50,6 +50,8 @@ export default function WrestlersPage() {
   const [popular, setPopular] = useState<WrestlerCard[]>([])
   const [mostFollowed, setMostFollowed] = useState<WrestlerCard[]>([])
   const [champions, setChampions] = useState<{ wrestler: WrestlerCard; title: string }[]>([])
+  const [beltCollectors, setBeltCollectors] = useState<{ wrestler: WrestlerCard; titleCount: number }[]>([])
+  const [mostActive, setMostActive] = useState<{ wrestler: WrestlerCard; eventCount: number }[]>([])
   const [vegasWrestlers, setVegasWrestlers] = useState<WrestlerCard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -94,6 +96,11 @@ export default function WrestlersPage() {
         .gt('follower_count', 0)
         .order('follower_count', { ascending: false })
         .limit(18),
+      // Belt Collectors — all active championships to count per wrestler
+      supabase.from('promotion_championships')
+        .select('id, name, current_champion_id, current_champion_2_id')
+        .eq('is_active', true)
+        .not('current_champion_id', 'is', null),
     ]
 
     // Vegas Weekend talent (only query if within date range)
@@ -107,11 +114,93 @@ export default function WrestlersPage() {
     }
 
     const results = await Promise.all(queries)
-    const [verifiedRes, popularRes, champRes, followedRes] = results
+    const [verifiedRes, popularRes, champRes, followedRes, beltRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
     setMostFollowed(followedRes.data || [])
+
+    // Process belt collectors — count titles per wrestler
+    if (beltRes?.data && beltRes.data.length > 0) {
+      const titleCounts = new Map<string, number>()
+      for (const c of beltRes.data) {
+        if (c.current_champion_id) {
+          titleCounts.set(c.current_champion_id, (titleCounts.get(c.current_champion_id) || 0) + 1)
+        }
+        if (c.current_champion_2_id) {
+          titleCounts.set(c.current_champion_2_id, (titleCounts.get(c.current_champion_2_id) || 0) + 1)
+        }
+      }
+      // Sort by count descending, take top 6 with 2+ titles
+      const topCollectors = Array.from(titleCounts.entries())
+        .filter(([, count]) => count >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+
+      if (topCollectors.length > 0) {
+        const collectorIds = topCollectors.map(([id]) => id)
+        const { data: collectorWrestlers } = await supabase
+          .from('wrestlers').select(SELECT_COLS)
+          .in('id', collectorIds)
+        if (collectorWrestlers) {
+          const ordered = topCollectors
+            .map(([id, count]) => {
+              const w = collectorWrestlers.find((cw: WrestlerCard) => cw.id === id)
+              return w ? { wrestler: w, titleCount: count } : null
+            })
+            .filter(Boolean) as { wrestler: WrestlerCard; titleCount: number }[]
+          setBeltCollectors(ordered)
+        }
+      }
+    }
+
+    // Process most active — wrestlers with most events in next 30 days
+    const thirtyDaysOut = new Date()
+    thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30)
+    const thirtyDayStr = thirtyDaysOut.toISOString().split('T')[0]
+
+    const [{ data: activeScraped }, { data: activeAnnounced }] = await Promise.all([
+      supabase.from('event_wrestlers')
+        .select('wrestler_id, events!inner(event_date)')
+        .gte('events.event_date', today)
+        .lte('events.event_date', thirtyDayStr),
+      supabase.from('event_announced_talent')
+        .select('wrestler_id, events!inner(event_date)')
+        .gte('events.event_date', today)
+        .lte('events.event_date', thirtyDayStr),
+    ])
+
+    const eventCounts = new Map<string, Set<string>>()
+    for (const row of [...(activeScraped || []), ...(activeAnnounced || [])]) {
+      const wId = row.wrestler_id
+      const eventDate = (row as any).events?.event_date
+      if (!wId) continue
+      if (!eventCounts.has(wId)) eventCounts.set(wId, new Set())
+      // Use event_date as a dedup key per wrestler (counts distinct events)
+      eventCounts.get(wId)!.add(eventDate || Math.random().toString())
+    }
+
+    const topActive = Array.from(eventCounts.entries())
+      .map(([id, events]) => ({ id, count: events.size }))
+      .filter(e => e.count >= 2)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6)
+
+    if (topActive.length > 0) {
+      const activeIds = topActive.map(e => e.id)
+      const { data: activeWrestlers } = await supabase
+        .from('wrestlers').select(SELECT_COLS)
+        .in('id', activeIds)
+      if (activeWrestlers) {
+        const ordered = topActive
+          .map(({ id, count }) => {
+            const w = activeWrestlers.find((aw: WrestlerCard) => aw.id === id)
+            return w ? { wrestler: w, eventCount: count } : null
+          })
+          .filter(Boolean) as { wrestler: WrestlerCard; eventCount: number }[]
+        setMostActive(ordered)
+      }
+    }
 
     // Process champions — fetch wrestler cards for champion IDs
     if (champRes.data && champRes.data.length > 0) {
@@ -153,8 +242,8 @@ export default function WrestlersPage() {
     }
 
     // Vegas Weekend talent
-    if (showVegas && results[4]?.data) {
-      const vegasIds = Array.from(new Set(results[4].data.map((r: any) => r.wrestler_id))) as string[]
+    if (showVegas && results[5]?.data) {
+      const vegasIds = Array.from(new Set(results[5].data.map((r: any) => r.wrestler_id))) as string[]
       if (vegasIds.length > 0) {
         const { data: vegasData } = await supabase
           .from('wrestlers').select(SELECT_COLS)
@@ -365,6 +454,36 @@ export default function WrestlersPage() {
                   </Link>
                 </div>
                 <WrestlerCarousel wrestlers={vegasWrestlers} />
+              </section>
+            )}
+
+            {/* Belt Collectors */}
+            {beltCollectors.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  <h2 className="text-xl font-display font-bold">Belt Collectors</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {beltCollectors.map(({ wrestler, titleCount }) => (
+                    <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${titleCount} Titles`} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Most Active — most events in next 30 days */}
+            {mostActive.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <Flame className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-display font-bold">Most Active</h2>
+                </div>
+                <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {mostActive.map(({ wrestler, eventCount }) => (
+                    <WrestlerHeroCard key={wrestler.id} wrestler={wrestler} badge={`${eventCount} Shows`} />
+                  ))}
+                </div>
               </section>
             )}
 
