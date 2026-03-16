@@ -57,37 +57,45 @@ export default function OnboardingPage() {
     if (!user) return
     setSaving(true)
 
-    for (const promoId of selectedPromotions) {
-      await supabase.from('user_follows_promotion').upsert({
-        user_id: user.id, promotion_id: promoId,
-      }, { onConflict: 'user_id,promotion_id' })
+    try {
+      for (const promoId of selectedPromotions) {
+        const { error } = await supabase.from('user_follows_promotion').upsert({
+          user_id: user.id, promotion_id: promoId,
+        }, { onConflict: 'user_id,promotion_id' })
+        if (error) console.error('Follow promotion failed:', error)
+      }
+
+      for (const wrestlerId of selectedWrestlers) {
+        const { error } = await supabase.from('user_follows_wrestler').upsert({
+          user_id: user.id, wrestler_id: wrestlerId,
+        }, { onConflict: 'user_id,wrestler_id' })
+        if (error) console.error('Follow wrestler failed:', error)
+      }
+
+      // Sync denormalized follower_count for each followed wrestler
+      for (const wrestlerId of selectedWrestlers) {
+        const { count } = await supabase
+          .from('user_follows_wrestler')
+          .select('id', { count: 'exact', head: true })
+          .eq('wrestler_id', wrestlerId)
+        await supabase
+          .from('wrestlers')
+          .update({ follower_count: count ?? 0 })
+          .eq('id', wrestlerId)
+      }
+
+      await supabase.from('user_profiles').update({
+        onboarding_completed: true, onboarding_step: 99,
+      }).eq('id', user.id)
+
+      await refreshOnboarding()
+      router.replace('/')
+    } catch (err) {
+      console.error('Onboarding error:', err)
+      alert('Something went wrong saving your preferences. Please try again.')
+    } finally {
+      setSaving(false)
     }
-
-    for (const wrestlerId of selectedWrestlers) {
-      await supabase.from('user_follows_wrestler').upsert({
-        user_id: user.id, wrestler_id: wrestlerId,
-      }, { onConflict: 'user_id,wrestler_id' })
-    }
-
-    // Sync denormalized follower_count for each followed wrestler
-    for (const wrestlerId of selectedWrestlers) {
-      const { count } = await supabase
-        .from('user_follows_wrestler')
-        .select('id', { count: 'exact', head: true })
-        .eq('wrestler_id', wrestlerId)
-      await supabase
-        .from('wrestlers')
-        .update({ follower_count: count ?? 0 })
-        .eq('id', wrestlerId)
-    }
-
-    await supabase.from('user_profiles').update({
-      onboarding_completed: true, onboarding_step: 99,
-    }).eq('id', user.id)
-
-    await refreshOnboarding()
-    setSaving(false)
-    router.replace('/')
   }
 
   function handleSelectType(type: UserType) {

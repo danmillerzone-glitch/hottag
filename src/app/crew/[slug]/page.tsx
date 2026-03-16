@@ -45,7 +45,7 @@ interface CrewPageProps {
 export async function generateMetadata({ params }: CrewPageProps) {
   const { data: pro } = await supabase
     .from('professionals')
-    .select('name, role, residence')
+    .select('name, role, residence, photo_url')
     .eq('slug', params.slug)
     .single()
 
@@ -54,6 +54,7 @@ export async function generateMetadata({ params }: CrewPageProps) {
   return {
     title: `${pro.name} - ${formatRoles(pro.role)} | Hot Tag`,
     description: `${pro.name} is a ${formatRoles(pro.role)}${pro.residence ? ` based in ${pro.residence}` : ''}`,
+    openGraph: { title: `${pro.name} | Hot Tag`, images: pro.photo_url ? [pro.photo_url] : undefined },
   }
 }
 

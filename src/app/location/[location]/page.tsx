@@ -86,6 +86,7 @@ export async function generateMetadata({ params }: LocationPageProps) {
   return {
     title: `Wrestling Events in ${locationName} | Hot Tag`,
     description: `Find ${events.length} upcoming indie wrestling events in ${locationName}.`,
+    openGraph: { title: `Wrestling Events in ${locationName} | Hot Tag` },
   }
 }
 

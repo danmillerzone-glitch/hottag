@@ -70,6 +70,7 @@ export async function generateMetadata({ params }: VenuePageProps) {
   return {
     title: `${venueName} - Wrestling Events | Hot Tag`,
     description: `Find wrestling events at ${venueName}${location ? ` in ${location}` : ''}. ${events.length} events listed.`,
+    openGraph: { title: `${venueName} - Wrestling Events | Hot Tag` },
   }
 }
 

@@ -96,13 +96,17 @@ export default function ClaimProfessionalButton({
         setCodeSuccess(true)
         await refreshOnboarding()
         if (user?.email) {
-          sendClaimAccessEmailFromClient({
-            recipientEmail: user.email,
-            recipientName: '',
-            pageName: professionalName,
-            pageType: 'crew',
-            pageSlug: professionalSlug,
-          })
+          try {
+            await sendClaimAccessEmailFromClient({
+              recipientEmail: user.email,
+              recipientName: '',
+              pageName: professionalName,
+              pageType: 'crew',
+              pageSlug: professionalSlug,
+            })
+          } catch (emailErr) {
+            console.error('Claim email failed:', emailErr)
+          }
         }
       } else {
         setError(result.error || 'Invalid claim code.')

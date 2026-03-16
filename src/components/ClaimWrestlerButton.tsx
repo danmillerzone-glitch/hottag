@@ -96,13 +96,17 @@ export default function ClaimWrestlerButton({
         setCodeSuccess(true)
         await refreshOnboarding()
         if (user?.email) {
-          sendClaimAccessEmailFromClient({
-            recipientEmail: user.email,
-            recipientName: '',
-            pageName: wrestlerName,
-            pageType: 'wrestler',
-            pageSlug: wrestlerSlug,
-          })
+          try {
+            await sendClaimAccessEmailFromClient({
+              recipientEmail: user.email,
+              recipientName: '',
+              pageName: wrestlerName,
+              pageType: 'wrestler',
+              pageSlug: wrestlerSlug,
+            })
+          } catch (emailErr) {
+            console.error('Claim email failed:', emailErr)
+          }
         }
       } else {
         setError(result.error || 'Invalid claim code.')

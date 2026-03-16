@@ -397,7 +397,7 @@ export default function DashboardPage() {
               <Calendar className="w-10 h-10 text-foreground-muted mx-auto mb-3" />
               <p className="text-foreground-muted">No upcoming events found.</p>
               <p className="text-sm text-foreground-muted/70 mt-1">
-                Events from external sources will appear here automatically.
+                Create an event above, or events from external sources will sync automatically.
               </p>
             </div>
           )}
