@@ -16,6 +16,7 @@ const PUBLIC_ROUTES = [
   '/terms',
   '/vegas-weekend',
   '/reset-password',
+  '/for-promotions',
 ]
 
 // Routes that are public for SEO/sharing (individual pages)

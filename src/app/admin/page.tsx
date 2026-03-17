@@ -33,6 +33,7 @@ import {
   searchProfessionalsAdmin, getProfessionalFull, updateProfessionalAdmin, deleteProfessional,
   verifyProfessional, unverifyProfessional, getPendingProfessionalClaims, getAllProfessionalClaims,
   approveProfessionalClaim, rejectProfessionalClaim,
+  getOutreachPromotions, getOutreachStats, upsertOutreach, getPromotionEventCounts,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
@@ -42,7 +43,7 @@ import {
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper,
+  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper, Send, Download, MessageSquare, ClipboardCopy,
 } from 'lucide-react'
 
 const REGION_OPTIONS = [
@@ -51,7 +52,7 @@ const REGION_OPTIONS = [
   'Asia', 'Latin America', 'Middle East', 'Africa',
 ]
 
-type Tab = 'overview' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
+type Tab = 'overview' | 'outreach' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -97,6 +98,7 @@ export default function AdminPage() {
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'outreach', label: 'Outreach', icon: Send },
     { id: 'promo-claims', label: 'Promo Claims', icon: Building2 },
     { id: 'wrestler-claims', label: 'Wrestler Claims', icon: Users },
     { id: 'crew-claims', label: 'Crew Claims', icon: Briefcase },
@@ -151,6 +153,7 @@ export default function AdminPage() {
         </div>
 
         <LazyTab active={activeTab === 'overview'}><OverviewTab /></LazyTab>
+        <LazyTab active={activeTab === 'outreach'}><OutreachTab /></LazyTab>
         <LazyTab active={activeTab === 'promo-claims'}><PromoClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'wrestler-claims'}><WrestlerClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'crew-claims'}><CrewClaimsTab /></LazyTab>
@@ -222,6 +225,526 @@ function OverviewTab() {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ============================================
+// OUTREACH TAB
+// ============================================
+
+const OUTREACH_STATUSES = [
+  { value: 'not_contacted', label: 'Not Contacted', color: 'text-foreground-muted' },
+  { value: 'contacted', label: 'Contacted', color: 'text-yellow-400' },
+  { value: 'follow_up', label: 'Follow Up', color: 'text-orange-400' },
+  { value: 'interested', label: 'Interested', color: 'text-green-400' },
+  { value: 'claimed', label: 'Claimed', color: 'text-emerald-400' },
+  { value: 'declined', label: 'Declined', color: 'text-red-400' },
+  { value: 'no_response', label: 'No Response', color: 'text-gray-400' },
+]
+
+const CONTACT_METHODS = [
+  { value: 'twitter_dm', label: 'Twitter/X DM' },
+  { value: 'instagram_dm', label: 'Instagram DM' },
+  { value: 'email', label: 'Email' },
+  { value: 'in_person', label: 'In Person' },
+  { value: 'other', label: 'Other' },
+]
+
+function OutreachTab() {
+  const [promotions, setPromotions] = useState<any[]>([])
+  const [stats, setStats] = useState<any>(null)
+  const [eventCounts, setEventCounts] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState({
+    region: 'all',
+    hasTwitter: false,
+    outreachStatus: 'all',
+    verificationStatus: 'all',
+  })
+  const [editingPromo, setEditingPromo] = useState<any>(null)
+  const [editStatus, setEditStatus] = useState('contacted')
+  const [editMethod, setEditMethod] = useState('twitter_dm')
+  const [editNotes, setEditNotes] = useState('')
+  const [editFollowUp, setEditFollowUp] = useState('')
+  const [editPriority, setEditPriority] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  useEffect(() => { loadData() }, [filters])
+
+  async function loadData() {
+    setLoading(true)
+    const [promos, outreachStats, counts] = await Promise.all([
+      getOutreachPromotions(filters),
+      getOutreachStats(),
+      getPromotionEventCounts(),
+    ])
+    setPromotions(promos)
+    setStats(outreachStats)
+    setEventCounts(counts)
+    setLoading(false)
+  }
+
+  function getOutreachInfo(promo: any) {
+    return promo.promotion_outreach?.[0] || null
+  }
+
+  function getStatusBadge(status: string) {
+    const s = OUTREACH_STATUSES.find(os => os.value === status) || OUTREACH_STATUSES[0]
+    const bgMap: Record<string, string> = {
+      not_contacted: 'bg-gray-800',
+      contacted: 'bg-yellow-900/50',
+      follow_up: 'bg-orange-900/50',
+      interested: 'bg-green-900/50',
+      claimed: 'bg-emerald-900/50',
+      declined: 'bg-red-900/50',
+      no_response: 'bg-gray-800',
+    }
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.color} ${bgMap[status] || 'bg-gray-800'}`}>
+        {s.label}
+      </span>
+    )
+  }
+
+  async function handleQuickContact(promo: any) {
+    try {
+      await upsertOutreach(promo.id, {
+        outreach_status: 'contacted',
+        contact_method: 'twitter_dm',
+      })
+      await loadData()
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    }
+  }
+
+  function openEditModal(promo: any) {
+    const outreach = getOutreachInfo(promo)
+    setEditingPromo(promo)
+    setEditStatus(outreach?.outreach_status || 'contacted')
+    setEditMethod(outreach?.contact_method || 'twitter_dm')
+    setEditNotes(outreach?.notes || '')
+    setEditFollowUp(outreach?.follow_up_date || '')
+    setEditPriority(outreach?.priority || 0)
+  }
+
+  async function handleSaveOutreach() {
+    if (!editingPromo) return
+    setSaving(true)
+    try {
+      await upsertOutreach(editingPromo.id, {
+        outreach_status: editStatus,
+        contact_method: editMethod,
+        notes: editNotes || undefined,
+        follow_up_date: editFollowUp || null,
+        priority: editPriority,
+      })
+      setEditingPromo(null)
+      await loadData()
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function copyDM(promo: any) {
+    const dm = `Hey! I built Hot Tag — a free event discovery platform for indie wrestling. Your promotion already has a page: hottag.app/promotions/${promo.slug}\n\nClaim it to manage your events, showcase your roster, and help fans find your shows. More info: hottag.app/for-promotions`
+    navigator.clipboard.writeText(dm)
+    setCopiedId(promo.id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  async function handleExportCSV() {
+    setExporting(true)
+    try {
+      const headers = [
+        'Name', 'Slug', 'X Handle', 'Instagram', 'Region', 'City', 'State',
+        'Country', 'Upcoming Events', 'Claimed', 'Verification Status',
+        'Outreach Status', 'Contact Method', 'Contacted At', 'Last Contact',
+        'Follow Up Date', 'Contact Count', 'Notes', 'Priority', 'Hot Tag URL'
+      ]
+
+      const rows = promotions.map(p => {
+        const outreach = getOutreachInfo(p)
+        return [
+          p.name,
+          p.slug,
+          p.twitter_handle || '',
+          p.instagram_handle || '',
+          p.region || '',
+          p.city || '',
+          p.state || '',
+          p.country || '',
+          eventCounts[p.id] || 0,
+          p.claimed_by ? 'Yes' : 'No',
+          p.verification_status,
+          outreach?.outreach_status || 'not_contacted',
+          outreach?.contact_method || '',
+          outreach?.contacted_at ? new Date(outreach.contacted_at).toLocaleDateString() : '',
+          outreach?.last_contact_at ? new Date(outreach.last_contact_at).toLocaleDateString() : '',
+          outreach?.follow_up_date || '',
+          outreach?.contact_count || 0,
+          outreach?.notes || '',
+          outreach?.priority || 0,
+          `https://www.hottag.app/promotions/${p.slug}`,
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`)
+      })
+
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `hottag-outreach-${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  // Group promotions by region
+  const grouped = promotions.reduce((acc: Record<string, any[]>, p) => {
+    const region = p.region || 'Unknown'
+    if (!acc[region]) acc[region] = []
+    acc[region].push(p)
+    return acc
+  }, {})
+
+  // Sort regions, putting the selected filter first if applicable
+  const sortedRegions = Object.keys(grouped).sort((a, b) => {
+    if (filters.region !== 'all') {
+      if (a === filters.region) return -1
+      if (b === filters.region) return 1
+    }
+    return a.localeCompare(b)
+  })
+
+  return (
+    <div>
+      {/* Stats */}
+      {stats && (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 mb-6">
+          {[
+            { label: 'Total', value: stats.totalPromotions, color: 'text-blue-400' },
+            { label: 'Has X', value: stats.withTwitter, color: 'text-blue-400' },
+            { label: 'Contacted', value: stats.contacted, color: 'text-yellow-400' },
+            { label: 'Interested', value: stats.interested, color: 'text-green-400' },
+            { label: 'No Reply', value: stats.noResponse, color: 'text-gray-400' },
+            { label: 'Declined', value: stats.declined, color: 'text-red-400' },
+            { label: 'Claimed', value: stats.claimed, color: 'text-emerald-400' },
+            { label: 'Follow Up', value: stats.needsFollowUp, color: stats.needsFollowUp > 0 ? 'text-orange-400' : 'text-foreground-muted' },
+          ].map(card => (
+            <div key={card.label} className="card p-3 text-center">
+              <div className={`text-2xl font-display font-bold ${card.color}`}>{card.value}</div>
+              <div className="text-xs text-foreground-muted mt-1">{card.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Filters + Export */}
+      <div className="card p-4 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filters.region}
+            onChange={e => setFilters(f => ({ ...f, region: e.target.value }))}
+            className="bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Regions</option>
+            {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+
+          <select
+            value={filters.outreachStatus}
+            onChange={e => setFilters(f => ({ ...f, outreachStatus: e.target.value }))}
+            className="bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Statuses</option>
+            {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+
+          <select
+            value={filters.verificationStatus}
+            onChange={e => setFilters(f => ({ ...f, verificationStatus: e.target.value }))}
+            className="bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Verification</option>
+            <option value="unverified">Unverified</option>
+            <option value="verified">Verified</option>
+          </select>
+
+          <label className="flex items-center gap-2 text-sm text-foreground-muted cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.hasTwitter}
+              onChange={e => setFilters(f => ({ ...f, hasTwitter: e.target.checked }))}
+              className="rounded border-border"
+            />
+            Has X Handle
+          </label>
+
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm text-foreground-muted">{promotions.length} promotions</span>
+            <button
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className="flex items-center gap-2 px-3 py-2 bg-background-tertiary hover:bg-border rounded-lg text-sm transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              {exporting ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Promotion List */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : promotions.length === 0 ? (
+        <EmptyState text="No promotions match the current filters" />
+      ) : (
+        <div className="space-y-6">
+          {sortedRegions.map(region => (
+            <div key={region}>
+              <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider mb-3">
+                {region} ({grouped[region].length})
+              </h3>
+              <div className="card overflow-hidden">
+                <div className="divide-y divide-border">
+                  {grouped[region]
+                    .sort((a: any, b: any) => (eventCounts[b.id] || 0) - (eventCounts[a.id] || 0))
+                    .map((promo: any) => {
+                      const outreach = getOutreachInfo(promo)
+                      const status = outreach?.outreach_status || 'not_contacted'
+                      const events = eventCounts[promo.id] || 0
+
+                      return (
+                        <div key={promo.id} className="px-4 py-3 hover:bg-background-tertiary/50 transition-colors">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {/* Name + link */}
+                            <div className="flex items-center gap-2 min-w-[200px]">
+                              {promo.logo_url && (
+                                <img src={promo.logo_url} alt="" className="w-6 h-6 rounded object-contain bg-background-tertiary" />
+                              )}
+                              <a
+                                href={`/promotions/${promo.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-sm hover:text-accent transition-colors truncate max-w-[180px]"
+                                title={promo.name}
+                              >
+                                {promo.name}
+                              </a>
+                              {promo.claimed_by && (
+                                <span title="Claimed"><BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" /></span>
+                              )}
+                            </div>
+
+                            {/* X handle */}
+                            <div className="w-[140px]">
+                              {promo.twitter_handle ? (
+                                <a
+                                  href={`https://x.com/${promo.twitter_handle}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                  @{promo.twitter_handle}
+                                </a>
+                              ) : (
+                                <span className="text-sm text-foreground-muted">No X handle</span>
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <div className="text-sm text-foreground-muted w-[120px] truncate" title={`${promo.city || ''}, ${promo.state || ''}`}>
+                              {promo.city}{promo.state ? `, ${promo.state}` : ''}
+                            </div>
+
+                            {/* Events */}
+                            <div className="w-[60px] text-center">
+                              {events > 0 ? (
+                                <span className="text-sm font-medium text-accent">{events} evt</span>
+                              ) : (
+                                <span className="text-sm text-foreground-muted">0 evt</span>
+                              )}
+                            </div>
+
+                            {/* Status badge */}
+                            <div className="w-[110px]">
+                              {getStatusBadge(status)}
+                            </div>
+
+                            {/* Last contacted */}
+                            <div className="text-xs text-foreground-muted w-[80px]">
+                              {outreach?.last_contact_at
+                                ? new Date(outreach.last_contact_at).toLocaleDateString()
+                                : '—'}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-1 ml-auto">
+                              {status === 'not_contacted' && promo.twitter_handle && (
+                                <button
+                                  onClick={() => handleQuickContact(promo)}
+                                  className="px-2 py-1 text-xs bg-yellow-900/50 text-yellow-400 rounded hover:bg-yellow-900 transition-colors"
+                                  title="Mark as Contacted"
+                                >
+                                  <Send className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => copyDM(promo)}
+                                className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                                title="Copy DM Template"
+                              >
+                                {copiedId === promo.id ? (
+                                  <CheckCircle className="w-3 h-3 text-green-400" />
+                                ) : (
+                                  <ClipboardCopy className="w-3 h-3" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => openEditModal(promo)}
+                                className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                                title="Edit Outreach Details"
+                              >
+                                <MessageSquare className="w-3 h-3" />
+                              </button>
+                              {promo.twitter_handle && (
+                                <a
+                                  href={`https://x.com/${promo.twitter_handle}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                                  title="Open X Profile"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Notes preview */}
+                          {outreach?.notes && (
+                            <div className="mt-1 ml-8 text-xs text-foreground-muted truncate max-w-[500px]" title={outreach.notes}>
+                              {outreach.notes}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Edit Outreach Modal */}
+      {editingPromo && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditingPromo(null)}>
+          <div className="bg-background-secondary rounded-xl border border-border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-bold text-lg">{editingPromo.name}</h3>
+              <button onClick={() => setEditingPromo(null)} className="text-foreground-muted hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editingPromo.twitter_handle && (
+              <a
+                href={`https://x.com/${editingPromo.twitter_handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-400 hover:text-blue-300 mb-4 block"
+              >
+                @{editingPromo.twitter_handle}
+              </a>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={e => setEditStatus(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Contact Method</label>
+                <select
+                  value={editMethod}
+                  onChange={e => setEditMethod(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  {CONTACT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Notes</label>
+                <textarea
+                  value={editNotes}
+                  onChange={e => setEditNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Any notes about this outreach..."
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Follow-up Date</label>
+                <input
+                  type="date"
+                  value={editFollowUp}
+                  onChange={e => setEditFollowUp(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Priority</label>
+                <select
+                  value={editPriority}
+                  onChange={e => setEditPriority(Number(e.target.value))}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value={0}>Normal</option>
+                  <option value={1}>High</option>
+                  <option value={2}>Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setEditingPromo(null)}
+                className="px-4 py-2 text-sm text-foreground-muted hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveOutreach}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

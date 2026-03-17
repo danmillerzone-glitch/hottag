@@ -1007,3 +1007,159 @@ export async function rejectProfessionalClaim(claimId: string, notes?: string) {
     .eq('id', claimId)
   if (error) throw error
 }
+
+// ============================================
+// PROMOTION OUTREACH
+// ============================================
+
+export async function getOutreachPromotions(filters?: {
+  region?: string
+  hasTwitter?: boolean
+  outreachStatus?: string
+  verificationStatus?: string
+}) {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('promotions')
+    .select(`
+      id, name, slug, logo_url, twitter_handle, instagram_handle,
+      region, city, state, country, claimed_by, verification_status, claim_code,
+      promotion_outreach (
+        id, outreach_status, contact_method, contacted_at,
+        last_contact_at, follow_up_date, contact_count,
+        notes, priority
+      )
+    `)
+    .order('name')
+
+  if (filters?.region && filters.region !== 'all') {
+    query = query.eq('region', filters.region)
+  }
+  if (filters?.hasTwitter) {
+    query = query.not('twitter_handle', 'is', null)
+  }
+  if (filters?.verificationStatus && filters.verificationStatus !== 'all') {
+    query = query.eq('verification_status', filters.verificationStatus)
+  }
+
+  const { data, error } = await query
+  if (error) { console.error(error); return [] }
+
+  let results = data || []
+
+  // Client-side filter by outreach status (joined table)
+  if (filters?.outreachStatus && filters.outreachStatus !== 'all') {
+    if (filters.outreachStatus === 'not_contacted') {
+      results = results.filter((p: any) =>
+        !p.promotion_outreach || p.promotion_outreach.length === 0 ||
+        p.promotion_outreach[0]?.outreach_status === 'not_contacted'
+      )
+    } else {
+      results = results.filter((p: any) =>
+        p.promotion_outreach?.length > 0 &&
+        p.promotion_outreach[0]?.outreach_status === filters.outreachStatus
+      )
+    }
+  }
+
+  return results
+}
+
+export async function getOutreachStats() {
+  const supabase = createClient()
+
+  const [
+    { count: totalPromotions },
+    { count: withTwitter },
+    { count: claimed },
+  ] = await Promise.all([
+    supabase.from('promotions').select('*', { count: 'exact', head: true }),
+    supabase.from('promotions').select('*', { count: 'exact', head: true })
+      .not('twitter_handle', 'is', null),
+    supabase.from('promotions').select('*', { count: 'exact', head: true })
+      .not('claimed_by', 'is', null),
+  ])
+
+  // Outreach-specific counts
+  const { data: outreachData } = await supabase
+    .from('promotion_outreach')
+    .select('outreach_status, follow_up_date')
+
+  const counts = { contacted: 0, interested: 0, noResponse: 0, declined: 0, needsFollowUp: 0 }
+  const today = new Date().toISOString().split('T')[0]
+
+  for (const row of outreachData || []) {
+    if (row.outreach_status === 'contacted') counts.contacted++
+    if (row.outreach_status === 'interested') counts.interested++
+    if (row.outreach_status === 'no_response') counts.noResponse++
+    if (row.outreach_status === 'declined') counts.declined++
+    if (row.follow_up_date && row.follow_up_date <= today) counts.needsFollowUp++
+  }
+
+  return {
+    totalPromotions: totalPromotions || 0,
+    withTwitter: withTwitter || 0,
+    claimed: claimed || 0,
+    ...counts,
+  }
+}
+
+export async function upsertOutreach(promotionId: string, data: {
+  outreach_status: string
+  contact_method?: string
+  notes?: string
+  follow_up_date?: string | null
+  priority?: number
+}) {
+  const supabase = createClient()
+  const now = new Date().toISOString()
+
+  const { data: existing } = await supabase
+    .from('promotion_outreach')
+    .select('id, contact_count')
+    .eq('promotion_id', promotionId)
+    .maybeSingle()
+
+  if (existing) {
+    const updates: Record<string, any> = {
+      ...data,
+      last_contact_at: now,
+      contact_count: (existing.contact_count || 0) + (data.outreach_status !== 'not_contacted' ? 1 : 0),
+    }
+    const { error } = await supabase
+      .from('promotion_outreach')
+      .update(updates)
+      .eq('promotion_id', promotionId)
+    if (error) throw error
+  } else {
+    const { error } = await supabase
+      .from('promotion_outreach')
+      .insert({
+        promotion_id: promotionId,
+        ...data,
+        contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
+        last_contact_at: now,
+        contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
+      })
+    if (error) throw error
+  }
+}
+
+export async function getPromotionEventCounts(): Promise<Record<string, number>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('events')
+    .select('promotion_id')
+    .gte('event_date', new Date().toISOString().split('T')[0])
+
+  if (error || !data) return {}
+
+  const counts: Record<string, number> = {}
+  for (const e of data) {
+    if (e.promotion_id) {
+      counts[e.promotion_id] = (counts[e.promotion_id] || 0) + 1
+    }
+  }
+  return counts
+}
