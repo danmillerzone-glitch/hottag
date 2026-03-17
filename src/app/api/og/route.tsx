@@ -141,12 +141,12 @@ export async function GET(request: NextRequest) {
           {/* Hot Tag logo watermark */}
           <img
             src={LOGO_URL}
-            width={60}
-            height={45}
+            width={100}
+            height={75}
             style={{
               position: 'absolute',
-              bottom: '20px',
-              right: '32px',
+              bottom: '16px',
+              right: '24px',
             }}
           />
         </div>
@@ -305,12 +305,12 @@ export async function GET(request: NextRequest) {
           {/* Hot Tag logo watermark */}
           <img
             src={LOGO_URL}
-            width={60}
-            height={45}
+            width={100}
+            height={75}
             style={{
               position: 'absolute',
-              bottom: '20px',
-              right: '32px',
+              bottom: '16px',
+              right: '24px',
             }}
           />
         </div>

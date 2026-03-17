@@ -277,6 +277,7 @@ function OutreachTab() {
   const [exporting, setExporting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [editingPromoDetails, setEditingPromoDetails] = useState<any>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [filters])
 
@@ -316,6 +317,7 @@ function OutreachTab() {
   }
 
   async function handleQuickContact(promo: any) {
+    setSaveError(null)
     // Optimistic update
     const now = new Date().toISOString()
     setPromotions(prev => prev.map(p =>
@@ -331,7 +333,8 @@ function OutreachTab() {
       // Refresh stats in background
       getOutreachStats().then(s => setStats(s))
     } catch (err: any) {
-      alert('Error: ' + err.message)
+      console.error('[outreach] save error:', err)
+      setSaveError(`Failed to save: ${err.message}`)
       await loadData()
     }
   }
@@ -358,6 +361,7 @@ function OutreachTab() {
   async function handleSaveOutreach() {
     if (!editingPromo) return
     setSaving(true)
+    setSaveError(null)
     try {
       await upsertOutreach(editingPromo.id, {
         outreach_status: editStatus,
@@ -377,7 +381,8 @@ function OutreachTab() {
       // Refresh stats in background
       getOutreachStats().then(s => setStats(s))
     } catch (err: any) {
-      alert('Error: ' + err.message)
+      console.error('[outreach] save error:', err)
+      setSaveError(`Failed to save: ${err.message}`)
       await loadData()
     } finally {
       setSaving(false)
@@ -460,6 +465,13 @@ function OutreachTab() {
 
   return (
     <div>
+      {/* Error banner */}
+      {saveError && (
+        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg flex items-center justify-between">
+          <span className="text-red-300 text-sm">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="text-red-400 hover:text-red-300 ml-4"><X className="w-4 h-4" /></button>
+        </div>
+      )}
       {/* Stats */}
       {stats && (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 mb-6">

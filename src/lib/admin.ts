@@ -1114,18 +1114,29 @@ export async function upsertOutreach(promotionId: string, data: {
 }) {
   const now = new Date().toISOString()
 
-  await adminApi({
+  const payload = {
+    promotion_id: promotionId,
+    outreach_status: data.outreach_status,
+    contact_method: data.contact_method || 'twitter_dm',
+    contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
+    last_contact_at: now,
+    contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
+    notes: data.notes || null,
+    follow_up_date: data.follow_up_date || null,
+    priority: data.priority ?? 0,
+  }
+
+  console.warn('[outreach] upserting:', JSON.stringify(payload))
+
+  const result = await adminApi({
     action: 'upsert',
     table: 'promotion_outreach',
-    data: {
-      promotion_id: promotionId,
-      ...data,
-      contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
-      last_contact_at: now,
-      contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
-    },
+    data: payload,
     filter: { onConflict: 'promotion_id' },
   })
+
+  console.warn('[outreach] result:', JSON.stringify(result))
+  return result
 }
 
 export async function getPromotionEventCounts(): Promise<Record<string, number>> {
