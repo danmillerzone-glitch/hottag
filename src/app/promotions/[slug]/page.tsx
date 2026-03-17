@@ -177,16 +177,21 @@ export async function generateMetadata({ params }: PromotionPageProps) {
   }
 
   const ogImage = `https://www.hottag.app/api/og?type=promotion&slug=${params.slug}`
+  const pageUrl = `https://www.hottag.app/promotions/${params.slug}`
   return {
     title: `${promotion.name} | Hot Tag`,
     description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
     openGraph: {
       title: `${promotion.name} | Hot Tag`,
+      description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
+      url: pageUrl,
+      type: 'website',
       images: [{ url: ogImage, width: 1200, height: 630, alt: promotion.name }],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${promotion.name} | Hot Tag`,
+      description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
       images: [ogImage],
     },
   }
