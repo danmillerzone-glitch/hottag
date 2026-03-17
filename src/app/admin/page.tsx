@@ -276,6 +276,7 @@ function OutreachTab() {
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingPromoDetails, setEditingPromoDetails] = useState<any>(null)
 
   useEffect(() => { loadData() }, [filters])
 
@@ -315,12 +316,30 @@ function OutreachTab() {
   }
 
   async function handleQuickContact(promo: any) {
+    // Optimistic update
+    const now = new Date().toISOString()
+    setPromotions(prev => prev.map(p =>
+      p.id === promo.id
+        ? { ...p, promotion_outreach: [{ outreach_status: 'contacted', contact_method: 'twitter_dm', contacted_at: now, last_contact_at: now, contact_count: 1, notes: null, priority: 0, follow_up_date: null }] }
+        : p
+    ))
     try {
       await upsertOutreach(promo.id, {
         outreach_status: 'contacted',
         contact_method: 'twitter_dm',
       })
+      // Refresh stats in background
+      getOutreachStats().then(s => setStats(s))
+    } catch (err: any) {
+      alert('Error: ' + err.message)
       await loadData()
+    }
+  }
+
+  async function openPromoEdit(promo: any) {
+    try {
+      const data = await getPromotionFull(promo.id)
+      setEditingPromoDetails(data)
     } catch (err: any) {
       alert('Error: ' + err.message)
     }
@@ -347,10 +366,19 @@ function OutreachTab() {
         follow_up_date: editFollowUp || null,
         priority: editPriority,
       })
+      // Optimistic update
+      const now = new Date().toISOString()
+      setPromotions(prev => prev.map(p =>
+        p.id === editingPromo.id
+          ? { ...p, promotion_outreach: [{ ...getOutreachInfo(p), outreach_status: editStatus, contact_method: editMethod, notes: editNotes || null, follow_up_date: editFollowUp || null, priority: editPriority, last_contact_at: now }] }
+          : p
+      ))
       setEditingPromo(null)
-      await loadData()
+      // Refresh stats in background
+      getOutreachStats().then(s => setStats(s))
     } catch (err: any) {
       alert('Error: ' + err.message)
+      await loadData()
     } finally {
       setSaving(false)
     }
@@ -623,10 +651,7 @@ function OutreachTab() {
                                 <MessageSquare className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => {
-                                  sessionStorage.setItem('admin_promo_search', promo.name)
-                                  window.location.hash = 'promotions'
-                                }}
+                                onClick={() => openPromoEdit(promo)}
                                 className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
                                 title="Edit Promotion"
                               >
@@ -760,6 +785,15 @@ function OutreachTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Promotion Modal (inline, same as Promotions tab) */}
+      {editingPromoDetails && (
+        <EditPromotionModal
+          promo={editingPromoDetails}
+          onClose={() => setEditingPromoDetails(null)}
+          onSaved={() => { setEditingPromoDetails(null); loadData() }}
+        />
       )}
     </div>
   )
