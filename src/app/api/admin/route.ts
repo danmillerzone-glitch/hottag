@@ -63,6 +63,11 @@ export async function POST(req: NextRequest) {
         if (error) return NextResponse.json({ error: error.message }, { status: 400 })
         return NextResponse.json({ success: true, data: result })
       }
+      case 'upsert': {
+        const { data: result, error } = await supabase.from(table).upsert(data, { onConflict: filter?.onConflict || 'id' }).select().single()
+        if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+        return NextResponse.json({ success: true, data: result })
+      }
       default:
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }

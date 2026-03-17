@@ -1112,38 +1112,20 @@ export async function upsertOutreach(promotionId: string, data: {
   follow_up_date?: string | null
   priority?: number
 }) {
-  const supabase = createClient()
   const now = new Date().toISOString()
 
-  const { data: existing } = await supabase
-    .from('promotion_outreach')
-    .select('id, contact_count')
-    .eq('promotion_id', promotionId)
-    .maybeSingle()
-
-  if (existing) {
-    const updates: Record<string, any> = {
+  await adminApi({
+    action: 'upsert',
+    table: 'promotion_outreach',
+    data: {
+      promotion_id: promotionId,
       ...data,
+      contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
       last_contact_at: now,
-      contact_count: (existing.contact_count || 0) + (data.outreach_status !== 'not_contacted' ? 1 : 0),
-    }
-    const { error } = await supabase
-      .from('promotion_outreach')
-      .update(updates)
-      .eq('promotion_id', promotionId)
-    if (error) throw error
-  } else {
-    const { error } = await supabase
-      .from('promotion_outreach')
-      .insert({
-        promotion_id: promotionId,
-        ...data,
-        contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
-        last_contact_at: now,
-        contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
-      })
-    if (error) throw error
-  }
+      contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
+    },
+    filter: { onConflict: 'promotion_id' },
+  })
 }
 
 export async function getPromotionEventCounts(): Promise<Record<string, number>> {
