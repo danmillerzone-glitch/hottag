@@ -1020,17 +1020,11 @@ export async function getOutreachPromotions(filters?: {
 }) {
   const supabase = createClient()
 
+  // Query promotions and outreach separately, then join client-side
+  // (avoids reliance on PostgREST schema cache for FK detection)
   let query = supabase
     .from('promotions')
-    .select(`
-      id, name, slug, logo_url, twitter_handle, instagram_handle,
-      region, city, state, country, claimed_by, verification_status, claim_code,
-      promotion_outreach (
-        id, outreach_status, contact_method, contacted_at,
-        last_contact_at, follow_up_date, contact_count,
-        notes, priority
-      )
-    `)
+    .select('id, name, slug, logo_url, twitter_handle, instagram_handle, region, city, state, country, claimed_by, verification_status, claim_code')
     .order('name')
 
   if (filters?.region && filters.region !== 'all') {
@@ -1043,21 +1037,36 @@ export async function getOutreachPromotions(filters?: {
     query = query.eq('verification_status', filters.verificationStatus)
   }
 
-  const { data, error } = await query
-  if (error) { console.error(error); return [] }
+  const [{ data: promos, error: promosErr }, { data: outreach, error: outreachErr }] = await Promise.all([
+    query,
+    supabase.from('promotion_outreach').select('*'),
+  ])
 
-  let results = data || []
+  if (promosErr) { console.error('promotions query error:', promosErr); return [] }
+  if (outreachErr) { console.error('outreach query error:', outreachErr) }
 
-  // Client-side filter by outreach status (joined table)
+  // Build outreach lookup by promotion_id
+  const outreachMap = new Map<string, any>()
+  for (const row of (outreach || [])) {
+    outreachMap.set(row.promotion_id, row)
+  }
+
+  // Merge outreach into promotions (same shape as the old JOIN)
+  let results = (promos || []).map((p: any) => {
+    const o = outreachMap.get(p.id)
+    return { ...p, promotion_outreach: o ? [o] : [] }
+  })
+
+  // Client-side filter by outreach status
   if (filters?.outreachStatus && filters.outreachStatus !== 'all') {
     if (filters.outreachStatus === 'not_contacted') {
       results = results.filter((p: any) =>
-        !p.promotion_outreach || p.promotion_outreach.length === 0 ||
+        p.promotion_outreach.length === 0 ||
         p.promotion_outreach[0]?.outreach_status === 'not_contacted'
       )
     } else {
       results = results.filter((p: any) =>
-        p.promotion_outreach?.length > 0 &&
+        p.promotion_outreach.length > 0 &&
         p.promotion_outreach[0]?.outreach_status === filters.outreachStatus
       )
     }
