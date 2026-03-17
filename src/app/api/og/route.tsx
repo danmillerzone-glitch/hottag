@@ -151,7 +151,11 @@ export async function GET(request: NextRequest) {
           />
         </div>
       ),
-      { width: 1200, height: 630 }
+      {
+        width: 1200,
+        height: 630,
+        headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+      }
     )
   }
 
@@ -311,7 +315,11 @@ export async function GET(request: NextRequest) {
           />
         </div>
       ),
-      { width: 1200, height: 630 }
+      {
+        width: 1200,
+        height: 630,
+        headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+      }
     )
   }
 

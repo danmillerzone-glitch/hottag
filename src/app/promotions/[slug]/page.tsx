@@ -176,7 +176,7 @@ export async function generateMetadata({ params }: PromotionPageProps) {
     return { title: 'Promotion Not Found | Hot Tag' }
   }
 
-  const ogImage = `https://www.hottag.app/api/og?type=promotion&slug=${params.slug}`
+  const ogImage = `https://www.hottag.app/api/og?type=promotion&slug=${params.slug}&v=2`
   const pageUrl = `https://www.hottag.app/promotions/${params.slug}`
   return {
     title: `${promotion.name} | Hot Tag`,
