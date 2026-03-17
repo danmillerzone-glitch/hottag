@@ -176,10 +176,19 @@ export async function generateMetadata({ params }: PromotionPageProps) {
     return { title: 'Promotion Not Found | Hot Tag' }
   }
 
+  const ogImage = `https://www.hottag.app/api/og?type=promotion&slug=${params.slug}`
   return {
     title: `${promotion.name} | Hot Tag`,
     description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
-    openGraph: { title: `${promotion.name} | Hot Tag` },
+    openGraph: {
+      title: `${promotion.name} | Hot Tag`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: promotion.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${promotion.name} | Hot Tag`,
+      images: [ogImage],
+    },
   }
 }
 

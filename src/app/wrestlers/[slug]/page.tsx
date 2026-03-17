@@ -134,10 +134,19 @@ async function getWrestlerPromotions(wrestlerId: string) {
 export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   if (!wrestler) return { title: 'Wrestler Not Found | Hot Tag' }
+  const ogImage = `https://www.hottag.app/api/og?type=wrestler&slug=${params.slug}`
   return {
     title: `${wrestler.name} | Hot Tag`,
     description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
-    openGraph: { title: `${wrestler.name} | Hot Tag` },
+    openGraph: {
+      title: `${wrestler.name} | Hot Tag`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: wrestler.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${wrestler.name} | Hot Tag`,
+      images: [ogImage],
+    },
   }
 }
 
