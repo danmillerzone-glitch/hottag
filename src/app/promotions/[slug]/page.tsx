@@ -179,7 +179,7 @@ export async function generateMetadata({ params }: PromotionPageProps) {
   return {
     title: `${promotion.name} | Hot Tag`,
     description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
-    openGraph: { title: `${promotion.name} | Hot Tag`, images: promotion.logo_url ? [promotion.logo_url] : undefined },
+    openGraph: { title: `${promotion.name} | Hot Tag` },
   }
 }
 

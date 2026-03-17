@@ -137,7 +137,7 @@ export async function generateMetadata({ params }: WrestlerPageProps) {
   return {
     title: `${wrestler.name} | Hot Tag`,
     description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
-    openGraph: { title: `${wrestler.name} | Hot Tag`, images: wrestler.render_url || wrestler.photo_url ? [wrestler.render_url || wrestler.photo_url] : undefined },
+    openGraph: { title: `${wrestler.name} | Hot Tag` },
   }
 }
 
