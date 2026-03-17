@@ -62,10 +62,15 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const adminChecked = useRef(false)
 
-  // Restore tab from URL hash on mount
+  // Restore tab from URL hash on mount + listen for hash changes
   useEffect(() => {
-    const hash = window.location.hash.replace('#', '')
-    if (hash) setActiveTab(hash as Tab)
+    const readHash = () => {
+      const hash = window.location.hash.replace('#', '')
+      if (hash) setActiveTab(hash as Tab)
+    }
+    readHash()
+    window.addEventListener('hashchange', readHash)
+    return () => window.removeEventListener('hashchange', readHash)
   }, [])
 
   // Persist tab to URL hash
@@ -617,6 +622,16 @@ function OutreachTab() {
                               >
                                 <MessageSquare className="w-3 h-3" />
                               </button>
+                              <button
+                                onClick={() => {
+                                  sessionStorage.setItem('admin_promo_search', promo.name)
+                                  window.location.hash = 'promotions'
+                                }}
+                                className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                                title="Edit Promotion"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
                               {promo.twitter_handle && (
                                 <a
                                   href={`https://x.com/${promo.twitter_handle}`}
@@ -1033,6 +1048,17 @@ function PromotionsTab() {
   const [viewingChamps, setViewingChamps] = useState<{ promoId: string, promoName: string, championships: any[] } | null>(null)
   const [viewingRoster, setViewingRoster] = useState<{ promoId: string, promoName: string, roster: any[] } | null>(null)
   const [viewingGroups, setViewingGroups] = useState<{ promoId: string, promoName: string, groups: any[] } | null>(null)
+
+  // Auto-search if navigated from Outreach tab
+  useEffect(() => {
+    const pending = sessionStorage.getItem('admin_promo_search')
+    if (pending) {
+      sessionStorage.removeItem('admin_promo_search')
+      setQuery(pending)
+      setLoading(true)
+      searchPromotions(pending).then(data => { setResults(data); setLoading(false) })
+    }
+  }, [])
 
   async function handleSearch() {
     if (!query.trim()) return
