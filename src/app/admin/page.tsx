@@ -352,7 +352,8 @@ function OutreachTab() {
   }
 
   function copyDM(promo: any) {
-    const dm = `Hey! I built Hot Tag — a free event discovery platform for indie wrestling. Your promotion already has a page: hottag.app/promotions/${promo.slug}\n\nClaim it to manage your events, showcase your roster, and help fans find your shows. More info: hottag.app/for-promotions`
+    const claimCode = promo.claim_code ? `\n\nYour claim code is: ${promo.claim_code}` : ''
+    const dm = `Hello, I'm Dan Miller and I'm the producer for New Texas Pro. I also built Hot Tag, a free event discovery platform for indie wrestling. Your promotion already has a page: hottag.app/promotions/${promo.slug}\n\nClaim it to manage your events, showcase your roster, and help fans find your shows. More info: hottag.app/for-promotions${claimCode}`
     navigator.clipboard.writeText(dm)
     setCopiedId(promo.id)
     setTimeout(() => setCopiedId(null), 2000)
