@@ -327,37 +327,74 @@ export async function GET(request: NextRequest) {
   if (type === 'event') {
     if (!id) return new Response('Missing id for event', { status: 400 })
 
-    try {
-      const { data: event } = await supabase
-        .from('events')
-        .select('name, event_date, city, state, venue_name, poster_url, promotion_id')
-        .eq('id', id)
+    const { data: event } = await supabase
+      .from('events')
+      .select('name, event_date, city, state, venue_name, promotion_id')
+      .eq('id', id)
+      .single()
+
+    let logoUrl: string | null = null
+    let subtitle = ''
+    if (event?.promotion_id) {
+      const { data: promo } = await supabase
+        .from('promotions')
+        .select('name, logo_url')
+        .eq('id', event.promotion_id)
         .single()
+      logoUrl = promo?.logo_url || null
+      if (promo?.name) subtitle = promo.name
+    }
 
-      let promoName: string | null = null
-      let promoLogo: string | null = null
-      if (event?.promotion_id) {
-        const { data: promo } = await supabase
-          .from('promotions')
-          .select('name, logo_url')
-          .eq('id', event.promotion_id)
-          .single()
-        promoName = promo?.name || null
-        promoLogo = promo?.logo_url || null
-      }
+    const name = event?.name || 'Event'
+    const dateLine = event?.event_date
+      ? new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      : ''
+    const locationLine = [event?.venue_name, event?.city, event?.state].filter(Boolean).join(', ')
+    const location = [dateLine, locationLine].filter(Boolean).join(' • ')
 
-      const name = event?.name || 'Event'
-      const date = event?.event_date
-        ? new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-        : null
-      const loc = [event?.venue_name, event?.city, event?.state].filter(Boolean).join(', ')
-
-      return new ImageResponse(
-        (
-          <div
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          }}
+        >
+          {/* Background image */}
+          <img
+            src={BG_URL}
+            width={1200}
+            height={630}
             style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
               width: '100%',
               height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+
+          {/* Dark overlay for readability */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(20, 24, 28, 0.75)',
+            }}
+          />
+
+          {/* Content */}
+          <div
+            style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -365,125 +402,93 @@ export async function GET(request: NextRequest) {
               position: 'relative',
             }}
           >
-            <img
-              src={BG_URL}
-              width={1200}
-              height={630}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(20, 24, 28, 0.8)',
-              }}
-            />
-
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                maxWidth: '1000px',
-                padding: '0 40px',
-              }}
-            >
-              {promoLogo ? (
-                <img
-                  src={promoLogo}
-                  width={80}
-                  height={80}
-                  style={{
-                    objectFit: 'contain',
-                    marginBottom: '16px',
-                    borderRadius: '12px',
-                  }}
-                />
-              ) : null}
-
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                width={120}
+                height={120}
+                style={{
+                  objectFit: 'contain',
+                  marginBottom: '24px',
+                  borderRadius: '16px',
+                }}
+              />
+            ) : (
               <div
                 style={{
-                  fontSize: name.length > 40 ? '32px' : name.length > 25 ? '40px' : '52px',
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  textAlign: 'center',
-                  lineHeight: 1.2,
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '16px',
+                  backgroundColor: '#2a3038',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '24px',
+                  fontSize: '50px',
+                  color: '#ff6b35',
                 }}
               >
-                {name}
+                {name.charAt(0)}
               </div>
+            )}
 
-              {date ? (
-                <div
-                  style={{
-                    fontSize: '26px',
-                    color: '#ff6b35',
-                    marginTop: '16px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {date}
-                </div>
-              ) : null}
-
-              {loc ? (
-                <div
-                  style={{
-                    fontSize: '22px',
-                    color: '#9ca3af',
-                    marginTop: '8px',
-                  }}
-                >
-                  {loc}
-                </div>
-              ) : null}
-
-              {promoName ? (
-                <div
-                  style={{
-                    fontSize: '20px',
-                    color: '#6b7280',
-                    marginTop: '12px',
-                  }}
-                >
-                  Presented by {promoName}
-                </div>
-              ) : null}
+            <div
+              style={{
+                fontSize: name.length > 40 ? '32px' : name.length > 25 ? '40px' : '48px',
+                fontWeight: 800,
+                color: '#ffffff',
+                textAlign: 'center',
+                maxWidth: '900px',
+                lineHeight: 1.2,
+              }}
+            >
+              {name}
             </div>
 
-            <img
-              src={LOGO_URL}
-              width={100}
-              height={75}
-              style={{
-                position: 'absolute',
-                bottom: '16px',
-                right: '24px',
-              }}
-            />
+            {location && (
+              <div
+                style={{
+                  fontSize: '22px',
+                  color: '#ff6b35',
+                  marginTop: '12px',
+                }}
+              >
+                {location}
+              </div>
+            )}
+
+            {subtitle && (
+              <div
+                style={{
+                  fontSize: '20px',
+                  color: '#9ca3af',
+                  marginTop: '8px',
+                }}
+              >
+                {subtitle}
+              </div>
+            )}
           </div>
-        ),
-        {
-          width: 1200,
-          height: 630,
-          headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
-        }
-      )
-    } catch (e: any) {
-      return new Response(`Event OG error: ${e?.message || 'unknown'}`, { status: 500 })
-    }
+
+          {/* Hot Tag logo watermark */}
+          <img
+            src={LOGO_URL}
+            width={100}
+            height={75}
+            style={{
+              position: 'absolute',
+              bottom: '16px',
+              right: '24px',
+            }}
+          />
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+      }
+    )
   }
 
   return new Response('Invalid type', { status: 400 })
