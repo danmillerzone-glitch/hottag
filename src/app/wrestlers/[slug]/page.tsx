@@ -217,8 +217,32 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   const heroCSS = getHeroCSS(wrestler.hero_style || null)
   const hasTheme = !!wrestler.hero_style
 
+  // Schema.org JSON-LD
+  const jsonLd: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: wrestler.name,
+    url: `https://www.hottag.app/wrestlers/${wrestler.slug}`,
+    ...(wrestler.render_url || wrestler.photo_url ? { image: wrestler.render_url || wrestler.photo_url } : {}),
+    ...(wrestler.bio ? { description: wrestler.bio } : {}),
+    ...(wrestler.moniker ? { alternateName: wrestler.moniker } : {}),
+    ...(wrestler.birthplace || wrestler.hometown ? { birthPlace: wrestler.birthplace || wrestler.hometown } : {}),
+    ...(wrestler.height ? { height: wrestler.height } : {}),
+    ...(wrestler.weight ? { weight: wrestler.weight } : {}),
+    ...(wrestler.website ? { sameAs: [wrestler.website, ...(wrestler.twitter_handle ? [`https://x.com/${wrestler.twitter_handle}`] : []), ...(wrestler.instagram_handle ? [`https://instagram.com/${wrestler.instagram_handle}`] : [])].filter(Boolean) } : (wrestler.twitter_handle || wrestler.instagram_handle) ? { sameAs: [...(wrestler.twitter_handle ? [`https://x.com/${wrestler.twitter_handle}`] : []), ...(wrestler.instagram_handle ? [`https://instagram.com/${wrestler.instagram_handle}`] : [])] } : {}),
+    ...(wrestlerPromotions.length > 0 ? { memberOf: wrestlerPromotions.map((p: any) => ({ '@type': 'SportsOrganization', name: p.name, url: `https://www.hottag.app/promotions/${p.slug}` })) } : {}),
+    hasOccupation: {
+      '@type': 'Occupation',
+      name: 'Professional Wrestler',
+    },
+  }
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <RecentlyViewedTracker
         type="wrestler"
         id={wrestler.id}

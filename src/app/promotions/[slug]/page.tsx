@@ -229,8 +229,52 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
   const upcomingEvents = events.filter((e: any) => e.event_date >= today)
   const pastEvents = events.filter((e: any) => e.event_date < today)
 
+  // Schema.org JSON-LD
+  const jsonLd: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsOrganization',
+    name: promotion.name,
+    url: `https://www.hottag.app/promotions/${promotion.slug}`,
+    sport: 'Professional Wrestling',
+    ...(promotion.logo_url ? { logo: promotion.logo_url, image: promotion.logo_url } : {}),
+    ...(promotion.description ? { description: promotion.description } : {}),
+    ...((promotion.city || promotion.state) ? {
+      location: {
+        '@type': 'Place',
+        address: {
+          '@type': 'PostalAddress',
+          ...(promotion.city ? { addressLocality: promotion.city } : {}),
+          ...(promotion.state ? { addressRegion: promotion.state } : {}),
+          addressCountry: 'US',
+        },
+      },
+    } : {}),
+    ...((() => {
+      const links = [
+        promotion.website,
+        promotion.twitter_handle && `https://x.com/${promotion.twitter_handle}`,
+        promotion.instagram_handle && `https://instagram.com/${promotion.instagram_handle}`,
+        promotion.facebook_url,
+        promotion.youtube_url,
+      ].filter(Boolean)
+      return links.length > 0 ? { sameAs: links } : {}
+    })()),
+    ...(upcomingEvents.length > 0 ? {
+      event: upcomingEvents.slice(0, 5).map((e: any) => ({
+        '@type': 'SportsEvent',
+        name: e.name,
+        startDate: e.event_date,
+        url: `https://www.hottag.app/events/${e.id}`,
+      })),
+    } : {}),
+  }
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <RecentlyViewedTracker
         type="promotion"
         id={promotion.id}
