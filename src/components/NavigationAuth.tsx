@@ -231,71 +231,71 @@ export default function Navigation() {
       </header>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-        <div className="flex items-center justify-around h-16">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="flex items-center justify-around h-14">
           <Link
             href="/"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/' ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-[10px]">Home</span>
+            <span className="text-[11px] leading-tight">Home</span>
           </Link>
           <Link
             href="/events"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/events' || pathname.startsWith('/events/') ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Calendar className="w-5 h-5" />
-            <span className="text-[10px]">Events</span>
+            <span className="text-[11px] leading-tight">Events</span>
           </Link>
           <Link
             href="/map"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/map' ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Map className="w-5 h-5" />
-            <span className="text-[10px]">Map</span>
+            <span className="text-[11px] leading-tight">Map</span>
           </Link>
           <Link
             href="/wrestlers"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/wrestlers' || pathname.startsWith('/wrestlers/') ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Users className="w-5 h-5" />
-            <span className="text-[10px]">Wrestlers</span>
+            <span className="text-[11px] leading-tight">Wrestlers</span>
           </Link>
           <Link
             href="/promotions"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/promotions' || pathname.startsWith('/promotions/') ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Building2 className="w-5 h-5" />
-            <span className="text-[10px]">Promos</span>
+            <span className="text-[11px] leading-tight">Promos</span>
           </Link>
           <Link
             href="/crew"
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/crew' || pathname.startsWith('/crew/') ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <Briefcase className="w-5 h-5" />
-            <span className="text-[10px]">Crew</span>
+            <span className="text-[11px] leading-tight">Crew</span>
           </Link>
           <button
             onClick={() => setShowMobileMenu(true)}
             aria-label={user ? 'Open account menu' : 'Sign in'}
-            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 ${
               pathname === '/profile' || pathname.startsWith('/dashboard') ? 'text-accent' : 'text-foreground-muted'
             }`}
           >
             <User className="w-5 h-5" />
-            <span className="text-[10px]">{user ? 'You' : 'Sign In'}</span>
+            <span className="text-[11px] leading-tight">{user ? 'You' : 'Sign In'}</span>
           </button>
         </div>
       </nav>
@@ -306,7 +306,7 @@ export default function Navigation() {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60" role="presentation" onClick={() => setShowMobileMenu(false)} />
           {/* Panel */}
-          <div className="absolute bottom-0 left-0 right-0 bg-background-secondary rounded-t-2xl border-t border-border p-5 pb-8 animate-in slide-in-from-bottom">
+          <div className="absolute bottom-0 left-0 right-0 bg-background-secondary rounded-t-2xl border-t border-border p-5 animate-in slide-in-from-bottom" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display font-bold text-lg">
                 {user ? 'Account' : 'Sign In'}

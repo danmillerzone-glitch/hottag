@@ -17,6 +17,10 @@ database/
 # Vercel
 .vercel
 
+# Capacitor native projects (generated, rebuild with `npx cap add`)
+src/android/
+src/ios/
+
 # Claude Code config
 .claude/
 

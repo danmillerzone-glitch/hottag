@@ -72,9 +72,9 @@ export default function RosterCarousel({ roster }: { roster: RosterMember[] }) {
       ) : (
         /* Carousel view */
         <div className="relative">
-          <div ref={scrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2">
+          <div ref={scrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 snap-x snap-mandatory">
             {sorted.map((member) => (
-              <div key={member.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
+              <div key={member.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] snap-start">
                 <RosterCard member={member} />
               </div>
             ))}
