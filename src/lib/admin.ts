@@ -1135,8 +1135,6 @@ export async function upsertOutreach(promotionId: string, data: {
     priority: data.priority ?? 0,
   }
 
-  console.warn('[outreach] upserting:', JSON.stringify(payload))
-
   const result = await adminApi({
     action: 'upsert',
     table: 'promotion_outreach',
@@ -1144,7 +1142,6 @@ export async function upsertOutreach(promotionId: string, data: {
     filter: { onConflict: 'promotion_id' },
   })
 
-  console.warn('[outreach] result:', JSON.stringify(result))
   return result
 }
 

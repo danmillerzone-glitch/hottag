@@ -31,6 +31,21 @@ async function verifyAdmin(): Promise<string | null> {
   return data ? user.id : null
 }
 
+// Tables that admin operations are allowed to modify
+const ALLOWED_TABLES = new Set([
+  'events',
+  'wrestlers',
+  'promotions',
+  'professionals',
+  'promotion_championships',
+  'promotion_groups',
+  'promotion_outreach',
+  'site_announcements',
+  'homepage_news',
+  'hero_slides',
+  'vegas_weekend_collectives',
+])
+
 // POST /api/admin — generic admin operations
 export async function POST(req: NextRequest) {
   const adminId = await verifyAdmin()
@@ -40,6 +55,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const { action, table, id, data, filter } = body
+
+  if (!table || !ALLOWED_TABLES.has(table)) {
+    return NextResponse.json({ error: 'Forbidden table' }, { status: 403 })
+  }
 
   const supabase = getServiceClient()
 
