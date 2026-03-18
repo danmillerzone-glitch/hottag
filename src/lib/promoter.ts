@@ -282,6 +282,7 @@ export async function updateEvent(eventId: string, updates: {
   state?: string | null
   coupon_code?: string | null
   coupon_label?: string | null
+  hashtag?: string | null
   venue_amenities?: Record<string, any> | null
   event_tags?: string[] | null
 }) {

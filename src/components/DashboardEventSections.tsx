@@ -217,12 +217,14 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
   const [venueAddress, setVenueAddress] = useState(event.venue_address || '')
   const [city, setCity] = useState(event.city || '')
   const [state, setState] = useState(event.state || '')
+  const [hashtag, setHashtag] = useState(event.hashtag || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     setSaving(true); setSaved(false)
     try {
+      const cleanHashtag = hashtag.trim().replace(/^#/, '')
       const updated = await updateEvent(event.id, {
         description: description || null,
         event_time: eventTime || null,
@@ -231,6 +233,7 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
         venue_address: venueAddress || null,
         city: city || null,
         state: state || null,
+        hashtag: cleanHashtag || null,
       })
       onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
     } catch (err) { console.error('Error saving:', err) }
@@ -284,6 +287,15 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
           <label className="block text-sm font-medium mb-1.5">Event Description</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your event..." rows={5}
             className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors resize-none" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Event Hashtag</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted">#</span>
+            <input type="text" value={hashtag} onChange={(e) => setHashtag(e.target.value.replace(/\s/g, ''))} placeholder="YourEventHashtag"
+              className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+          <p className="text-xs text-foreground-muted mt-1">Added to share text when fans share your event</p>
         </div>
         <div className="flex justify-end pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">

@@ -124,14 +124,15 @@ export default async function EventPage({ params }: EventPageProps) {
   const promotion = event.promotions
   const wrestlers = await getEventWrestlers(event.id)
 
-  // Fetch coupon data directly from events table (view may not include new columns)
-  const { data: couponData } = await supabase
+  // Fetch coupon + hashtag data directly from events table (view may not include new columns)
+  const { data: extraData } = await supabase
     .from('events')
-    .select('coupon_code, coupon_label')
+    .select('coupon_code, coupon_label, hashtag')
     .eq('id', event.id)
     .single()
-  const couponCode = couponData?.coupon_code || null
-  const couponLabel = couponData?.coupon_label || null
+  const couponCode = extraData?.coupon_code || null
+  const couponLabel = extraData?.coupon_label || null
+  const hashtag = extraData?.hashtag || null
 
   // Fetch current championships for this promotion to show champion badges
   let championMap: Record<string, string> = {} // wrestler_id -> championship short_name or name
@@ -272,7 +273,7 @@ export default async function EventPage({ params }: EventPageProps) {
               <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} />
               <ShareButton
                 title={event.name}
-                text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}`}
+                text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}${hashtag ? ` #${hashtag}` : ''}`}
                 url={`https://www.hottag.app/events/${event.id}`}
               />
             </div>
