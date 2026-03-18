@@ -12,11 +12,12 @@ const LOGO_URL = 'https://www.hottag.app/logo.svg'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') // 'promotion' or 'wrestler'
+  const type = searchParams.get('type') // 'promotion', 'wrestler', or 'event'
   const slug = searchParams.get('slug')
+  const id = searchParams.get('id')
 
-  if (!slug || !type) {
-    return new Response('Missing type or slug', { status: 400 })
+  if (!type || (!slug && !id)) {
+    return new Response('Missing type or slug/id', { status: 400 })
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -324,7 +325,6 @@ export async function GET(request: NextRequest) {
   }
 
   if (type === 'event') {
-    const id = searchParams.get('id')
     if (!id) return new Response('Missing id for event', { status: 400 })
 
     const { data: event } = await supabase
