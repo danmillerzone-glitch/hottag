@@ -28,6 +28,14 @@ export default function Footer() {
             >
               @HotTagApp
             </a>
+            <a
+              href="https://x.com/HotTagApp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground-muted hover:text-foreground transition-colors"
+            >
+              Report a Problem
+            </a>
           </nav>
           <span className="text-xs text-foreground-muted">
             &copy; {new Date().getFullYear()} Hot Tag LLC
