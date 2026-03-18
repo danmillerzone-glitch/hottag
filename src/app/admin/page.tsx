@@ -61,6 +61,10 @@ export default function AdminPage() {
   const [checking, setChecking] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const adminChecked = useRef(false)
+  const [pinVerified, setPinVerified] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [pinLoading, setPinLoading] = useState(false)
 
   // Restore tab from URL hash on mount + listen for hash changes
   useEffect(() => {
@@ -73,10 +77,43 @@ export default function AdminPage() {
     return () => window.removeEventListener('hashchange', readHash)
   }, [])
 
+  // Check sessionStorage for existing PIN verification
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('admin_pin_verified') === 'true') {
+      setPinVerified(true)
+    }
+  }, [])
+
   // Persist tab to URL hash
   const switchTab = (tab: Tab) => {
     setActiveTab(tab)
     window.location.hash = tab
+  }
+
+  async function verifyPin(e: React.FormEvent) {
+    e.preventDefault()
+    setPinLoading(true)
+    setPinError('')
+    try {
+      const res = await fetch('/api/admin/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setPinVerified(true)
+        sessionStorage.setItem('admin_pin_verified', 'true')
+      } else if (res.status === 429) {
+        setPinError('Too many attempts. Try again in 10 minutes.')
+      } else {
+        setPinError('Incorrect PIN')
+        setPinInput('')
+      }
+    } catch {
+      setPinError('Verification failed')
+    }
+    setPinLoading(false)
   }
 
   useEffect(() => {
@@ -100,6 +137,39 @@ export default function AdminPage() {
   }
 
   if (!isAdmin) return null
+
+  if (!pinVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <form onSubmit={verifyPin} className="card p-8 w-full max-w-sm text-center">
+          <Shield className="w-12 h-12 text-accent mx-auto mb-4" />
+          <h2 className="text-xl font-display font-bold mb-2">Admin Access</h2>
+          <p className="text-sm text-foreground-muted mb-6">Enter your PIN to continue</p>
+          <input
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={8}
+            value={pinInput}
+            onChange={(e) => setPinInput(e.target.value)}
+            placeholder="Enter PIN"
+            className="input-field w-full text-center text-2xl tracking-[0.5em] mb-4"
+            autoFocus
+          />
+          {pinError && (
+            <p className="text-red-400 text-sm mb-4">{pinError}</p>
+          )}
+          <button
+            type="submit"
+            disabled={!pinInput || pinLoading}
+            className="btn btn-primary w-full"
+          >
+            {pinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Unlock'}
+          </button>
+        </form>
+      </div>
+    )
+  }
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
