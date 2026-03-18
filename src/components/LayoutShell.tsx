@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Navigation from '@/components/NavigationAuth'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
@@ -12,6 +13,12 @@ const CHROMELESS_ROUTES = ['/welcome', '/onboarding', '/signin', '/signup']
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isChromeless = CHROMELESS_ROUTES.some(r => pathname.startsWith(r))
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
+  }, [])
 
   if (isChromeless) {
     return (

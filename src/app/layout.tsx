@@ -21,7 +21,13 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
-    icon: '/icon.svg',
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Hot Tag',
   },
   openGraph: {
     title: 'Hot Tag - Go See A Show',
