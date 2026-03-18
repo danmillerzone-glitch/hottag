@@ -3,6 +3,20 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendClaimAccessEmail } from '@/lib/email'
 
+// Simple in-memory rate limiter: max 5 emails per user per 10 minutes
+const RATE_LIMIT = 5
+const RATE_WINDOW_MS = 10 * 60 * 1000
+const rateLimitMap = new Map<string, number[]>()
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const timestamps = (rateLimitMap.get(userId) || []).filter(t => now - t < RATE_WINDOW_MS)
+  if (timestamps.length >= RATE_LIMIT) return false
+  timestamps.push(now)
+  rateLimitMap.set(userId, timestamps)
+  return true
+}
+
 async function getAuthenticatedUser() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -18,6 +32,10 @@ export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
   }
 
   try {

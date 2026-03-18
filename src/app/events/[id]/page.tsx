@@ -161,8 +161,59 @@ export default async function EventPage({ params }: EventPageProps) {
     ? [event.venue_address, event.city, event.state].filter(Boolean).join(', ')
     : [event.venue_name, event.city, event.state, event.country].filter(Boolean).join(', ')
 
+  // Schema.org JSON-LD for Google Rich Snippets
+  const jsonLd: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: event.name,
+    startDate: event.event_date,
+    ...(event.doors_time && { doorTime: event.doors_time }),
+    location: {
+      '@type': 'Place',
+      name: event.venue_name || formatLocation(event.city, event.state),
+      address: {
+        '@type': 'PostalAddress',
+        ...(event.venue_address && { streetAddress: event.venue_address }),
+        addressLocality: event.city || undefined,
+        addressRegion: event.state || undefined,
+        addressCountry: event.country || 'US',
+      },
+      ...(event.latitude && event.longitude && {
+        geo: { '@type': 'GeoCoordinates', latitude: event.latitude, longitude: event.longitude },
+      }),
+    },
+    ...(event.poster_url && { image: event.poster_url }),
+    ...(event.ticket_url && {
+      offers: {
+        '@type': 'Offer',
+        url: event.ticket_url,
+        ...(event.is_free
+          ? { price: '0', priceCurrency: 'USD' }
+          : event.ticket_price_min
+            ? { price: String(event.ticket_price_min), priceCurrency: 'USD' }
+            : {}),
+        availability: event.is_sold_out
+          ? 'https://schema.org/SoldOut'
+          : 'https://schema.org/InStock',
+      },
+    }),
+    ...(promotion && {
+      organizer: {
+        '@type': 'SportsOrganization',
+        name: promotion.name,
+        url: `https://www.hottag.app/promotions/${promotion.slug}`,
+      },
+    }),
+    url: `https://www.hottag.app/events/${event.id}`,
+    sport: 'Professional Wrestling',
+  }
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <RecentlyViewedTracker
         type="event"
         id={event.id}
