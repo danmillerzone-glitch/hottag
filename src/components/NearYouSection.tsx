@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase-browser'
-import { getTodayHawaii } from '@/lib/utils'
+import { getTodayHawaii, getUserLocation } from '@/lib/utils'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 import EventCarousel from '@/components/EventCarousel'
 import { MapPin, Navigation, ChevronRight, ChevronDown } from 'lucide-react'
@@ -33,28 +33,15 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationStatus('unavailable')
-      setLoading(false)
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        }
+    getUserLocation().then(({ coords, status }) => {
+      setLocationStatus(status)
+      if (coords) {
         setUserCoords(coords)
-        setLocationStatus('granted')
         fetchEvents(coords)
-      },
-      () => {
-        setLocationStatus('denied')
+      } else {
         setLoading(false)
-      },
-      { timeout: 10000, maximumAge: 300000 }
-    )
+      }
+    })
   }, [])
 
   async function fetchEvents(coords: { lat: number; lng: number }) {

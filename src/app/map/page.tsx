@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { formatEventDate, formatLocation, getTodayHawaii } from '@/lib/utils'
+import { formatEventDate, formatLocation, getTodayHawaii, getCachedLocation, getUserLocation } from '@/lib/utils'
 import { MapPin, Calendar, List, X } from 'lucide-react'
 import Link from 'next/link'
 
@@ -71,22 +71,17 @@ export default function MapPage() {
       'top-right'
     )
 
-    // Fly to user location AFTER map loads — no blocking
+    // Fly to user location AFTER map loads — use cache first, then prompt
     map.current.on('load', () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            if (map.current) {
-              map.current.flyTo({
-                center: [position.coords.longitude, position.coords.latitude],
-                zoom: USER_ZOOM,
-                speed: 1.5,
-              })
-            }
-          },
-          () => { /* denied or error — stay at default */ },
-          { timeout: 8000 }
-        )
+      const cached = getCachedLocation()
+      if (cached) {
+        map.current?.flyTo({ center: [cached.lng, cached.lat], zoom: USER_ZOOM, speed: 1.5 })
+      } else {
+        getUserLocation().then(({ coords }) => {
+          if (coords && map.current) {
+            map.current.flyTo({ center: [coords.lng, coords.lat], zoom: USER_ZOOM, speed: 1.5 })
+          }
+        })
       }
     })
 

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { User, Search, ShieldCheck, CalendarCheck, TrendingUp, Loader2, Navigation, Star, Trophy, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
-import { getTodayHawaii } from '@/lib/utils'
+import { getTodayHawaii, getUserLocation } from '@/lib/utils'
 import RequestPageButton from '@/components/RequestPageButton'
 
 interface WrestlerCard {
@@ -237,25 +237,15 @@ export default function WrestlersPage() {
   }
 
   const loadNearYou = () => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      setLocationStatus('unavailable')
-      setNearYouLoading(false)
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+    getUserLocation().then(({ coords, status }) => {
+      setLocationStatus(status)
+      if (coords) {
         setUserCoords(coords)
-        setLocationStatus('granted')
         fetchNearbyEvents(coords)
-      },
-      () => {
-        setLocationStatus('denied')
+      } else {
         setNearYouLoading(false)
-      },
-      { timeout: 10000, maximumAge: 300000 }
-    )
+      }
+    })
   }
 
   const fetchNearbyEvents = async (coords: { lat: number; lng: number }) => {

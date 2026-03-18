@@ -304,3 +304,80 @@ export function formatNumber(num: number): string {
   }
   return num.toString()
 }
+
+/**
+ * Get user's location, using localStorage cache to avoid repeated browser prompts.
+ * Cached coords expire after 1 hour. If the user previously denied, we don't re-prompt
+ * for 24 hours.
+ */
+const LOCATION_CACHE_KEY = 'hottag_user_location'
+const LOCATION_DENIED_KEY = 'hottag_location_denied'
+const CACHE_TTL = 60 * 60 * 1000          // 1 hour
+const DENIED_TTL = 24 * 60 * 60 * 1000    // 24 hours
+
+export interface UserCoords {
+  lat: number
+  lng: number
+}
+
+export function getCachedLocation(): UserCoords | null {
+  try {
+    const raw = localStorage.getItem(LOCATION_CACHE_KEY)
+    if (!raw) return null
+    const { lat, lng, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) return null
+    return { lat, lng }
+  } catch {
+    return null
+  }
+}
+
+function wasRecentlyDenied(): boolean {
+  try {
+    const ts = localStorage.getItem(LOCATION_DENIED_KEY)
+    if (!ts) return false
+    return Date.now() - Number(ts) < DENIED_TTL
+  } catch {
+    return false
+  }
+}
+
+export function getUserLocation(): Promise<{ coords: UserCoords | null; status: 'granted' | 'denied' | 'unavailable' }> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      resolve({ coords: null, status: 'unavailable' })
+      return
+    }
+
+    // Check cache first
+    const cached = getCachedLocation()
+    if (cached) {
+      resolve({ coords: cached, status: 'granted' })
+      return
+    }
+
+    // Don't re-prompt if recently denied
+    if (wasRecentlyDenied()) {
+      resolve({ coords: null, status: 'denied' })
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+        try {
+          localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify({ ...coords, ts: Date.now() }))
+          localStorage.removeItem(LOCATION_DENIED_KEY)
+        } catch { /* storage full or disabled */ }
+        resolve({ coords, status: 'granted' })
+      },
+      () => {
+        try {
+          localStorage.setItem(LOCATION_DENIED_KEY, String(Date.now()))
+        } catch { /* ignore */ }
+        resolve({ coords: null, status: 'denied' })
+      },
+      { timeout: 10000, maximumAge: 300000 }
+    )
+  })
+}
