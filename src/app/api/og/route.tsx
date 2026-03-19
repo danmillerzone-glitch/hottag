@@ -491,7 +491,5 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Today's events OG moved to /api/og-today
-
   return new Response('Invalid type', { status: 400 })
 }

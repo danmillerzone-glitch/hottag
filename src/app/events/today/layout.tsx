@@ -11,9 +11,10 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://www.hottag.app/api/og-today',
+        url: 'https://www.hottag.app/og-image.png',
         width: 1200,
         height: 630,
+        alt: "Today's Events | Hot Tag",
       },
     ],
   },
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Today's Events | Hot Tag",
     description: "Tonight's indie wrestling events — find shows happening today near you.",
-    images: ['https://www.hottag.app/api/og-today'],
+    images: ['https://www.hottag.app/og-image.png'],
   },
 }
 
