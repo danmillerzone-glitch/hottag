@@ -1162,3 +1162,104 @@ export async function getPromotionEventCounts(): Promise<Record<string, number>>
   }
   return counts
 }
+
+// ============================================
+// SOCIAL / TWEET GENERATION
+// ============================================
+
+export async function getTonightEvents() {
+  const supabase = createClient()
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      id, name, event_date, event_time, city, state, venue_name,
+      ticket_url, hashtag, attending_count, interested_count,
+      promotions (id, name, slug, twitter_handle)
+    `)
+    .eq('event_date', today)
+    .eq('status', 'upcoming')
+    .order('event_time', { ascending: true })
+
+  if (error) { console.error('getTonightEvents error:', error); return [] }
+  return data || []
+}
+
+export async function getRecentChampionChanges(hoursBack = 48) {
+  const supabase = createClient()
+  const cutoff = new Date(Date.now() - hoursBack * 3600000).toISOString()
+  const wonCutoff = new Date(Date.now() - 14 * 86400000).toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('promotion_championships')
+    .select(`
+      id, name, won_date, updated_at, is_active,
+      current_champion:wrestlers!promotion_championships_current_champion_id_fkey (
+        id, name, slug, twitter_handle
+      ),
+      current_champion_2:wrestlers!promotion_championships_current_champion_2_id_fkey (
+        id, name, slug, twitter_handle
+      ),
+      promotions (id, name, slug, twitter_handle)
+    `)
+    .gte('updated_at', cutoff)
+    .gte('won_date', wonCutoff)
+    .eq('is_active', true)
+    .not('current_champion_id', 'is', null)
+
+  if (error) { console.error('getRecentChampionChanges error:', error); return [] }
+  return data || []
+}
+
+export async function getNewlyAddedEvents(days = 7) {
+  const supabase = createClient()
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString()
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      id, name, event_date, event_time, city, state, venue_name,
+      ticket_url, hashtag,
+      promotions (id, name, slug, twitter_handle)
+    `)
+    .gte('created_at', cutoff)
+    .gte('event_date', today)
+    .eq('status', 'upcoming')
+    .order('event_date', { ascending: true })
+    .limit(50)
+
+  if (error) { console.error('getNewlyAddedEvents error:', error); return [] }
+  return data || []
+}
+
+export async function getWeekendEvents() {
+  const supabase = createClient()
+  const now = new Date()
+  const day = now.getDay()
+
+  const daysToSat = day === 6 ? 0 : (6 - day)
+  const sat = new Date(now)
+  sat.setDate(sat.getDate() + daysToSat)
+  const satStr = sat.toISOString().split('T')[0]
+
+  const sun = new Date(sat)
+  sun.setDate(sun.getDate() + 1)
+  const sunStr = sun.toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      id, name, event_date, event_time, city, state, venue_name,
+      ticket_url, hashtag,
+      promotions (id, name, slug, twitter_handle)
+    `)
+    .in('event_date', [satStr, sunStr])
+    .eq('status', 'upcoming')
+    .order('event_date', { ascending: true })
+    .order('event_time', { ascending: true })
+
+  if (error) { console.error('getWeekendEvents error:', error); return [] }
+  return data || []
+}

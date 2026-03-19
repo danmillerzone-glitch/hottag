@@ -34,6 +34,7 @@ import {
   verifyProfessional, unverifyProfessional, getPendingProfessionalClaims, getAllProfessionalClaims,
   approveProfessionalClaim, rejectProfessionalClaim,
   getOutreachPromotions, getOutreachStats, upsertOutreach, getPromotionEventCounts,
+  getTonightEvents, getRecentChampionChanges, getNewlyAddedEvents, getWeekendEvents,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
@@ -52,7 +53,7 @@ const REGION_OPTIONS = [
   'Asia', 'Latin America', 'Middle East', 'Africa',
 ]
 
-type Tab = 'overview' | 'outreach' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
+type Tab = 'overview' | 'outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -174,6 +175,7 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'outreach', label: 'Outreach', icon: Send },
+    { id: 'social', label: 'Social', icon: MessageSquare },
     { id: 'promo-claims', label: 'Promo Claims', icon: Building2 },
     { id: 'wrestler-claims', label: 'Wrestler Claims', icon: Users },
     { id: 'crew-claims', label: 'Crew Claims', icon: Briefcase },
@@ -229,6 +231,7 @@ export default function AdminPage() {
 
         <LazyTab active={activeTab === 'overview'}><OverviewTab /></LazyTab>
         <LazyTab active={activeTab === 'outreach'}><OutreachTab /></LazyTab>
+        <LazyTab active={activeTab === 'social'}><SocialTab /></LazyTab>
         <LazyTab active={activeTab === 'promo-claims'}><PromoClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'wrestler-claims'}><WrestlerClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'crew-claims'}><CrewClaimsTab /></LazyTab>
@@ -4368,6 +4371,351 @@ function VegasWeekendTab() {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// SOCIAL TAB — Tweet Content Generator
+// ============================================
+
+function tweetHandle(name: string, handle: string | null): string {
+  if (handle) return `@${handle.replace(/^@/, '')}`
+  return name
+}
+
+function tweetLoc(city: string | null, state: string | null): string {
+  if (city && state) return `${city}, ${state}`
+  return city || state || 'TBA'
+}
+
+function splitTweetThread(header: string, lines: string[], footer: string): string[] {
+  const MAX = 280
+  const tweets: string[] = []
+  let current = header
+
+  for (const line of lines) {
+    if ((current + line + '\n\n' + footer).length > MAX && current !== header) {
+      tweets.push(current.trim())
+      current = ''
+    }
+    current += line
+  }
+
+  if (footer) {
+    if ((current + '\n\n' + footer).length > MAX && current.trim()) {
+      tweets.push(current.trim())
+      tweets.push(footer)
+    } else {
+      tweets.push((current + '\n\n' + footer).trim())
+    }
+  } else if (current.trim()) {
+    tweets.push(current.trim())
+  }
+
+  return tweets
+}
+
+function formatTonightTweets(events: any[]): { id: string; text: string }[] {
+  if (events.length === 0) return []
+
+  const header = "Tonight's indie wrestling\n"
+  const lines = events.map((e: any) =>
+    `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
+  )
+  const footer = 'Find tonight\'s shows: hottag.app/events'
+
+  const single = header + lines.join('') + '\n\n' + footer
+  if (single.length <= 280) {
+    return [{ id: 'tonight-0', text: single }]
+  }
+
+  return splitTweetThread(header, lines, footer).map((t, i) => ({
+    id: `tonight-${i}`, text: t,
+  }))
+}
+
+function formatChampionTweets(champions: any[]): { id: string; text: string }[] {
+  return champions.map((c: any, i: number) => {
+    const w = c.current_champion
+    const w2 = c.current_champion_2
+    const promo = c.promotions
+
+    let text: string
+    if (w2) {
+      text = `\u{1F3C6} NEW CHAMPIONS\n\n${tweetHandle(w?.name || 'Unknown', w?.twitter_handle)} & ${tweetHandle(w2.name, w2.twitter_handle)} are the new ${c.name}!`
+    } else if (w) {
+      text = `\u{1F3C6} NEW CHAMPION\n\n${tweetHandle(w.name, w.twitter_handle)} is the new ${c.name}!`
+    } else {
+      return null
+    }
+
+    if (promo) text += `\n${tweetHandle(promo.name, promo.twitter_handle)}`
+
+    if (w && !w2) {
+      text += `\n\nhottag.app/wrestlers/${w.slug}`
+    } else if (promo) {
+      text += `\n\nhottag.app/promotions/${promo.slug}`
+    }
+
+    return { id: `champ-${i}`, text }
+  }).filter(Boolean) as { id: string; text: string }[]
+}
+
+function formatNewEventsTweets(events: any[]): { id: string; text: string }[] {
+  if (events.length === 0) return []
+
+  const header = 'Just added to Hot Tag this week\n'
+  const lines = events.map((e: any) => {
+    const d = new Date(e.event_date + 'T12:00:00')
+    const ds = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return `\n\u{2022} ${e.name} - ${tweetLoc(e.city, e.state)} - ${ds}`
+  })
+  const footer = 'All upcoming shows: hottag.app/events'
+
+  const single = header + lines.join('') + '\n\n' + footer
+  if (single.length <= 280) {
+    return [{ id: 'new-0', text: single }]
+  }
+
+  return splitTweetThread(header, lines, footer).map((t, i) => ({
+    id: `new-${i}`, text: t,
+  }))
+}
+
+function formatWeekendTweets(events: any[]): { id: string; text: string }[] {
+  if (events.length === 0) return []
+
+  const grouped: Record<string, any[]> = {}
+  for (const e of events) {
+    if (!grouped[e.event_date]) grouped[e.event_date] = []
+    grouped[e.event_date].push(e)
+  }
+
+  const dates = Object.keys(grouped).sort()
+
+  // Try single tweet
+  let text = "This weekend's indie wrestling\n"
+  for (const date of dates) {
+    const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
+    text += `\n${dayName}`
+    for (const e of grouped[date]) {
+      text += `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
+    }
+  }
+  text += '\n\nhottag.app/events'
+
+  if (text.length <= 280) {
+    return [{ id: 'weekend-0', text }]
+  }
+
+  // Split by day
+  const tweets: { id: string; text: string }[] = []
+  let i = 0
+  for (const date of dates) {
+    const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })
+    let t = `${dayName}'s indie wrestling\n`
+    for (const e of grouped[date]) {
+      t += `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
+    }
+    t += '\n\nhottag.app/events'
+
+    if (t.length <= 280) {
+      tweets.push({ id: `weekend-${i++}`, text: t })
+    } else {
+      const lines = grouped[date].map((e: any) => `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`)
+      const split = splitTweetThread(`${dayName}'s indie wrestling\n`, lines, 'hottag.app/events')
+      for (const s of split) {
+        tweets.push({ id: `weekend-${i++}`, text: s })
+      }
+    }
+  }
+  return tweets
+}
+
+function TweetCard({ id, text, copiedId, onCopy }: {
+  id: string; text: string; copiedId: string | null; onCopy: (id: string, text: string) => void
+}) {
+  const len = text.length
+  const over = len > 280
+
+  return (
+    <div className="card p-4">
+      <pre className="whitespace-pre-wrap text-sm font-sans mb-3 text-foreground leading-relaxed">{text}</pre>
+      <div className="flex items-center justify-between">
+        <span className={`text-xs ${over ? 'text-red-400 font-medium' : 'text-foreground-muted'}`}>
+          {len}/280{over && ' — over limit'}
+        </span>
+        <button
+          onClick={() => onCopy(id, text)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background-tertiary hover:bg-border text-sm transition-colors"
+        >
+          {copiedId === id ? <CheckCircle className="w-4 h-4 text-green-400" /> : <ClipboardCopy className="w-4 h-4" />}
+          {copiedId === id ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function TweetSection({ title, count, tweets, copiedId, onCopy, controls }: {
+  title: string; count: number; tweets: { id: string; text: string }[]
+  copiedId: string | null; onCopy: (id: string, text: string) => void
+  controls?: React.ReactNode
+}) {
+  const copyThread = () => {
+    const full = tweets.map(t => t.text).join('\n\n---\n\n')
+    onCopy(`${title}-thread`, full)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-display font-bold">{title}</h3>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-background-tertiary text-foreground-muted">{count}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {controls}
+          {tweets.length > 1 && (
+            <button
+              onClick={copyThread}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 text-xs font-medium transition-colors"
+            >
+              <ClipboardCopy className="w-3.5 h-3.5" />
+              Copy Thread ({tweets.length})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {tweets.length === 0 ? (
+        <div className="card p-6 text-center text-foreground-muted text-sm">
+          No content for this section right now.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {tweets.map((t, i) => (
+            <div key={t.id}>
+              {tweets.length > 1 && (
+                <p className="text-xs text-foreground-muted mb-1">Tweet {i + 1} of {tweets.length}</p>
+              )}
+              <TweetCard id={t.id} text={t.text} copiedId={copiedId} onCopy={onCopy} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SocialTab() {
+  const [tonightEvents, setTonightEvents] = useState<any[]>([])
+  const [champions, setChampions] = useState<any[]>([])
+  const [newEvents, setNewEvents] = useState<any[]>([])
+  const [weekendEvents, setWeekendEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [champHours, setChampHours] = useState(48)
+  const [newDays, setNewDays] = useState(7)
+
+  async function loadAll() {
+    setLoading(true)
+    const [tonight, champs, newEvts, weekend] = await Promise.all([
+      getTonightEvents(),
+      getRecentChampionChanges(champHours),
+      getNewlyAddedEvents(newDays),
+      getWeekendEvents(),
+    ])
+    setTonightEvents(tonight)
+    setChampions(champs)
+    setNewEvents(newEvts)
+    setWeekendEvents(weekend)
+    setLoading(false)
+  }
+
+  useEffect(() => { loadAll() }, [])
+
+  function handleCopy(id: string, text: string) {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-display font-bold">Social Content Generator</h2>
+          <p className="text-sm text-foreground-muted mt-1">Copy-paste ready tweets for @HotTagApp</p>
+        </div>
+        <button onClick={loadAll} className="btn btn-secondary text-sm">
+          <RefreshCw className="w-4 h-4 mr-1.5" />
+          Refresh
+        </button>
+      </div>
+
+      <TweetSection
+        title="Tonight's Events"
+        count={tonightEvents.length}
+        tweets={formatTonightTweets(tonightEvents)}
+        copiedId={copiedId}
+        onCopy={handleCopy}
+      />
+
+      <TweetSection
+        title="New Champions"
+        count={champions.length}
+        tweets={formatChampionTweets(champions)}
+        copiedId={copiedId}
+        onCopy={handleCopy}
+        controls={
+          <select
+            value={champHours}
+            onChange={(e) => { setChampHours(Number(e.target.value)); getRecentChampionChanges(Number(e.target.value)).then(setChampions) }}
+            className="text-xs px-2 py-1 rounded bg-background-tertiary border border-border text-foreground"
+          >
+            <option value={24}>Last 24h</option>
+            <option value={48}>Last 48h</option>
+            <option value={168}>Last 7d</option>
+          </select>
+        }
+      />
+
+      <TweetSection
+        title="New Events This Week"
+        count={newEvents.length}
+        tweets={formatNewEventsTweets(newEvents)}
+        copiedId={copiedId}
+        onCopy={handleCopy}
+        controls={
+          <select
+            value={newDays}
+            onChange={(e) => { setNewDays(Number(e.target.value)); getNewlyAddedEvents(Number(e.target.value)).then(setNewEvents) }}
+            className="text-xs px-2 py-1 rounded bg-background-tertiary border border-border text-foreground"
+          >
+            <option value={3}>Last 3 days</option>
+            <option value={7}>Last 7 days</option>
+            <option value={14}>Last 14 days</option>
+          </select>
+        }
+      />
+
+      <TweetSection
+        title="This Weekend"
+        count={weekendEvents.length}
+        tweets={formatWeekendTweets(weekendEvents)}
+        copiedId={copiedId}
+        onCopy={handleCopy}
+      />
     </div>
   )
 }
