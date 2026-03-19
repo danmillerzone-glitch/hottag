@@ -492,6 +492,25 @@ export async function GET(request: NextRequest) {
   }
 
   if (type === 'today') {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+    const todayFormatted = new Date(today + 'T12:00:00').toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+
+    const { count } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_date', today)
+      .eq('status', 'upcoming')
+
+    const showCount = count || 0
+    const subtitle = showCount > 0
+      ? `${showCount} ${showCount === 1 ? 'show' : 'shows'} tonight`
+      : ''
+
     return new ImageResponse(
       (
         <div
@@ -509,8 +528,13 @@ export async function GET(request: NextRequest) {
             Todays Events
           </div>
           <div style={{ fontSize: '28px', color: '#ff6b35', marginTop: '16px' }}>
-            Hot Tag
+            {todayFormatted}
           </div>
+          {subtitle ? (
+            <div style={{ fontSize: '22px', color: '#9ca3af', marginTop: '12px' }}>
+              {subtitle}
+            </div>
+          ) : null}
         </div>
       ),
       {
