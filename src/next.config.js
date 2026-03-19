@@ -38,6 +38,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.cagematch.net',
       },
+      {
+        protocol: 'https',
+        hostname: 'auth.hottag.app',
+      },
     ],
     // Limit generated sizes to what the app actually needs
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
