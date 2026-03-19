@@ -511,7 +511,7 @@ export async function GET(request: NextRequest) {
       ? `${showCount} ${showCount === 1 ? 'show' : 'shows'} tonight`
       : ''
 
-    return new ImageResponse(
+    const imgRes = new ImageResponse(
       (
         <div
           style={{
@@ -557,6 +557,12 @@ export async function GET(request: NextRequest) {
               position: 'relative',
             }}
           >
+            <img
+              src={LOGO_URL}
+              width={180}
+              height={135}
+              style={{ marginBottom: '24px' }}
+            />
             <div style={{ fontSize: '56px', fontWeight: 800, color: '#ffffff' }}>
               {"Today's Events"}
             </div>
@@ -569,24 +575,21 @@ export async function GET(request: NextRequest) {
               </div>
             ) : null}
           </div>
-          <img
-            src={LOGO_URL}
-            width={100}
-            height={75}
-            style={{
-              position: 'absolute',
-              bottom: '16px',
-              right: '24px',
-            }}
-          />
         </div>
       ),
-      {
-        width: 1200,
-        height: 630,
-        headers: { 'Cache-Control': 'public, max-age=900, s-maxage=900' },
-      }
+      { width: 1200, height: 630 }
     )
+
+    // Buffer the response so we get Content-Length instead of chunked encoding
+    // (Facebook's crawler can't process chunked image responses)
+    const buffer = await imgRes.arrayBuffer()
+    return new Response(buffer, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Content-Length': buffer.byteLength.toString(),
+        'Cache-Control': 'public, max-age=900, s-maxage=900',
+      },
+    })
   }
 
   return new Response('Invalid type', { status: 400 })
