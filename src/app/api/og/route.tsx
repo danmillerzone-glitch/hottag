@@ -12,11 +12,11 @@ const LOGO_URL = 'https://www.hottag.app/logo.svg'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') // 'promotion', 'wrestler', or 'event'
+  const type = searchParams.get('type') // 'promotion', 'wrestler', 'event', or 'today'
   const slug = searchParams.get('slug')
   const id = searchParams.get('id')
 
-  if (!type || (!slug && !id)) {
+  if (!type || (type !== 'today' && !slug && !id)) {
     return new Response('Missing type or slug/id', { status: 400 })
   }
 
@@ -487,6 +487,131 @@ export async function GET(request: NextRequest) {
         width: 1200,
         height: 630,
         headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600' },
+      }
+    )
+  }
+
+  if (type === 'today') {
+    // Get today's date in Hawaii timezone (latest US timezone)
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+    const todayFormatted = new Date(today + 'T12:00:00').toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+
+    const { count } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_date', today)
+      .eq('status', 'upcoming')
+
+    const showCount = count || 0
+
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          }}
+        >
+          {/* Background image */}
+          <img
+            src={BG_URL}
+            width={1200}
+            height={630}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+
+          {/* Dark overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(20, 24, 28, 0.75)',
+            }}
+          />
+
+          {/* Content */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '56px',
+                fontWeight: 800,
+                color: '#ffffff',
+                textAlign: 'center',
+                lineHeight: 1.2,
+              }}
+            >
+              Today's Events
+            </div>
+
+            <div
+              style={{
+                fontSize: '28px',
+                color: '#ff6b35',
+                marginTop: '16px',
+              }}
+            >
+              {todayFormatted}
+            </div>
+
+            {showCount > 0 && (
+              <div
+                style={{
+                  fontSize: '22px',
+                  color: '#9ca3af',
+                  marginTop: '12px',
+                }}
+              >
+                {showCount} {showCount === 1 ? 'show' : 'shows'} tonight
+              </div>
+            )}
+          </div>
+
+          {/* Hot Tag logo watermark */}
+          <img
+            src={LOGO_URL}
+            width={100}
+            height={75}
+            style={{
+              position: 'absolute',
+              bottom: '16px',
+              right: '24px',
+            }}
+          />
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        // Short cache — count changes throughout the day
+        headers: { 'Cache-Control': 'public, max-age=900, s-maxage=900' },
       }
     )
   }
