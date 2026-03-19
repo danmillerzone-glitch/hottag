@@ -6,9 +6,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Today's Events | Hot Tag",
     description: "Tonight's indie wrestling events — find shows happening today near you.",
+    url: 'https://www.hottag.app/events/today',
+    siteName: 'Hot Tag',
+    type: 'website',
     images: [
       {
-        url: '/api/og?type=today',
+        url: 'https://www.hottag.app/api/og?type=today',
         width: 1200,
         height: 630,
       },
@@ -18,7 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Today's Events | Hot Tag",
     description: "Tonight's indie wrestling events — find shows happening today near you.",
-    images: ['/api/og?type=today'],
+    images: ['https://www.hottag.app/api/og?type=today'],
   },
 }
 
