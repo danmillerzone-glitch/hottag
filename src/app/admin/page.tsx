@@ -4420,10 +4420,12 @@ function formatTonightTweets(events: any[]): { id: string; text: string }[] {
   if (events.length === 0) return []
 
   const header = "Tonight's indie wrestling\n"
-  const lines = events.map((e: any) =>
-    `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
-  )
-  const footer = 'Find tonight\'s shows: hottag.app/events'
+  const lines = events.map((e: any) => {
+    const promo = e.promotions
+    const promoTag = promo ? ` (${tweetHandle(promo.name, promo.twitter_handle)})` : ''
+    return `\n- ${e.name}${promoTag} - ${tweetLoc(e.city, e.state)}`
+  })
+  const footer = 'hottag.app/events/today'
 
   const single = header + lines.join('') + '\n\n' + footer
   if (single.length <= 280) {
@@ -4443,9 +4445,9 @@ function formatChampionTweets(champions: any[]): { id: string; text: string }[] 
 
     let text: string
     if (w2) {
-      text = `\u{1F3C6} NEW CHAMPIONS\n\n${tweetHandle(w?.name || 'Unknown', w?.twitter_handle)} & ${tweetHandle(w2.name, w2.twitter_handle)} are the new ${c.name}!`
+      text = `NEW CHAMPIONS\n\n${tweetHandle(w?.name || 'Unknown', w?.twitter_handle)} & ${tweetHandle(w2.name, w2.twitter_handle)} are the new ${c.name}!`
     } else if (w) {
-      text = `\u{1F3C6} NEW CHAMPION\n\n${tweetHandle(w.name, w.twitter_handle)} is the new ${c.name}!`
+      text = `NEW CHAMPION\n\n${tweetHandle(w.name, w.twitter_handle)} is the new ${c.name}!`
     } else {
       return null
     }
@@ -4469,7 +4471,9 @@ function formatNewEventsTweets(events: any[]): { id: string; text: string }[] {
   const lines = events.map((e: any) => {
     const d = new Date(e.event_date + 'T12:00:00')
     const ds = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    return `\n\u{2022} ${e.name} - ${tweetLoc(e.city, e.state)} - ${ds}`
+    const promo = e.promotions
+    const promoTag = promo ? ` (${tweetHandle(promo.name, promo.twitter_handle)})` : ''
+    return `\n- ${e.name}${promoTag} - ${tweetLoc(e.city, e.state)} - ${ds}`
   })
   const footer = 'All upcoming shows: hottag.app/events'
 
@@ -4500,7 +4504,7 @@ function formatWeekendTweets(events: any[]): { id: string; text: string }[] {
     const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
     text += `\n${dayName}`
     for (const e of grouped[date]) {
-      text += `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
+      text += `\n- ${e.name}${e.promotions ? ` (${tweetHandle(e.promotions.name, e.promotions.twitter_handle)})` : ''} - ${tweetLoc(e.city, e.state)}`
     }
   }
   text += '\n\nhottag.app/events'
@@ -4516,14 +4520,14 @@ function formatWeekendTweets(events: any[]): { id: string; text: string }[] {
     const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })
     let t = `${dayName}'s indie wrestling\n`
     for (const e of grouped[date]) {
-      t += `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`
+      t += `\n- ${e.name}${e.promotions ? ` (${tweetHandle(e.promotions.name, e.promotions.twitter_handle)})` : ''} - ${tweetLoc(e.city, e.state)}`
     }
     t += '\n\nhottag.app/events'
 
     if (t.length <= 280) {
       tweets.push({ id: `weekend-${i++}`, text: t })
     } else {
-      const lines = grouped[date].map((e: any) => `\n\u{1F4CD} ${e.name} - ${tweetLoc(e.city, e.state)}`)
+      const lines = grouped[date].map((e: any) => `\n- ${e.name}${e.promotions ? ` (${tweetHandle(e.promotions.name, e.promotions.twitter_handle)})` : ''} - ${tweetLoc(e.city, e.state)}`)
       const split = splitTweetThread(`${dayName}'s indie wrestling\n`, lines, 'hottag.app/events')
       for (const s of split) {
         tweets.push({ id: `weekend-${i++}`, text: s })
