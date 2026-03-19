@@ -558,7 +558,7 @@ export async function GET(request: NextRequest) {
             }}
           >
             <div style={{ fontSize: '56px', fontWeight: 800, color: '#ffffff' }}>
-              Todays Events
+              {"Today's Events"}
             </div>
             <div style={{ fontSize: '28px', color: '#ff6b35', marginTop: '16px' }}>
               {todayFormatted}
