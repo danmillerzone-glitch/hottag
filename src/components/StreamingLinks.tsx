@@ -164,8 +164,10 @@ function StreamingButton({ link }: { link: StreamingLink }) {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-2 rounded-lg text-sm font-medium transition-colors ${config.btnClass} ${
-        showLogo ? 'px-3 py-1.5' : 'px-4 py-2'
+      className={`inline-flex items-center gap-2 rounded-lg text-sm font-medium transition-colors ${
+        showLogo
+          ? 'px-3 py-1.5 hover:bg-white/10 border border-border'
+          : `px-4 py-2 ${config.btnClass}`
       }`}
     >
       {showLogo ? (
@@ -173,7 +175,7 @@ function StreamingButton({ link }: { link: StreamingLink }) {
         <img
           src={`${LOGO_BASE}/${config.logoFile}`}
           alt={link.platform}
-          className="h-7 w-auto"
+          className="h-8 w-auto max-w-[160px]"
           onError={() => setImgFailed(true)}
         />
       ) : (
