@@ -56,7 +56,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
       .order('event_date', { ascending: true })
-      .limit(100)
+      .limit(500)
 
     if (data) {
       const withDistance = data.map((e: any) => ({
@@ -78,8 +78,8 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
       .sort((a: any, b: any) => a.distance - b.distance)
   }, [allEvents, radius])
 
-  // Don't show section if no nearby events (but location was granted)
-  if (!loading && events.length === 0 && locationStatus === 'granted') {
+  // Don't show section if location was granted but no events exist at all (even at max radius)
+  if (!loading && locationStatus === 'granted' && allEvents !== null && allEvents.length === 0) {
     return null
   }
 
@@ -135,6 +135,10 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
           </div>
         ) : loading ? (
           <EventCarousel events={[]} loading={true} skeletonCount={6} />
+        ) : events.length === 0 ? (
+          <p className="text-foreground-muted text-center py-4">
+            No events within {radius} miles. Try increasing the radius.
+          </p>
         ) : (
           <EventCarousel
             events={events.slice(0, 12)}
