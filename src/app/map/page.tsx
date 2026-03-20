@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { formatEventDate, formatLocation, getTodayHawaii, getCachedLocation, getUserLocation } from '@/lib/utils'
@@ -16,10 +16,11 @@ const USER_ZOOM = 9
 export default function MapPage() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const markersAdded = useRef(false)
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showList, setShowList] = useState(false)
+  const [timeFilter, setTimeFilter] = useState<'weekend' | 'week' | 'month' | 'all'>('all')
+  const markersOnMap = useRef<mapboxgl.Marker[]>([])
 
   useEffect(() => {
     async function fetchEvents() {
@@ -49,6 +50,39 @@ export default function MapPage() {
     }
     fetchEvents()
   }, [])
+
+  const filteredEvents = useMemo(() => {
+    if (timeFilter === 'all') return events
+    const today = new Date(getTodayHawaii() + 'T12:00:00')
+    const dayOfWeek = today.getDay() // 0=Sun, 6=Sat
+
+    if (timeFilter === 'weekend') {
+      // This weekend: Friday through Sunday
+      // If today is Mon-Thu, jump to this coming Friday
+      // If today is Fri-Sun, use today through Sunday
+      const fri = new Date(today)
+      if (dayOfWeek < 5) fri.setDate(fri.getDate() + (5 - dayOfWeek))
+      else if (dayOfWeek > 5) fri.setDate(fri.getDate() - (dayOfWeek - 5))
+      const sun = new Date(fri)
+      sun.setDate(sun.getDate() + 2)
+      const friStr = fri.toISOString().slice(0, 10)
+      const sunStr = sun.toISOString().slice(0, 10)
+      return events.filter(e => e.event_date >= friStr && e.event_date <= sunStr)
+    }
+    if (timeFilter === 'week') {
+      const end = new Date(today)
+      end.setDate(end.getDate() + 7)
+      const endStr = end.toISOString().slice(0, 10)
+      return events.filter(e => e.event_date <= endStr)
+    }
+    if (timeFilter === 'month') {
+      const end = new Date(today)
+      end.setDate(end.getDate() + 30)
+      const endStr = end.toISOString().slice(0, 10)
+      return events.filter(e => e.event_date <= endStr)
+    }
+    return events
+  }, [events, timeFilter])
 
   // Initialize map immediately without waiting for location
   useEffect(() => {
@@ -90,10 +124,18 @@ export default function MapPage() {
     }
   }, [])
 
-  // Add markers when events load
+  // Add/update markers when filteredEvents change
   useEffect(() => {
-    if (!map.current || events.length === 0 || markersAdded.current) return
-    markersAdded.current = true
+    if (!map.current || filteredEvents.length === 0) {
+      // Clear existing markers if filter yields nothing
+      markersOnMap.current.forEach(m => m.remove())
+      markersOnMap.current = []
+      return
+    }
+
+    // Clear previous markers
+    markersOnMap.current.forEach(m => m.remove())
+    markersOnMap.current = []
 
     const now = new Date()
     const msPerDay = 86400000
@@ -101,13 +143,12 @@ export default function MapPage() {
     function getUrgency(eventDate: string) {
       const date = new Date(eventDate + 'T12:00:00')
       const daysAway = Math.floor((date.getTime() - now.getTime()) / msPerDay)
-      if (daysAway <= 7) return 'week'       // This week
-      if (daysAway <= 30) return 'month'      // This month
-      if (daysAway <= 60) return 'soon'       // 1-2 months
-      return 'later'                           // 2+ months
+      if (daysAway <= 7) return 'week'
+      if (daysAway <= 30) return 'month'
+      if (daysAway <= 60) return 'soon'
+      return 'later'
     }
 
-    // Urgency config: size (px), opacity, pulse animation
     const urgencyConfig = {
       week:  { size: 36, opacity: 1.0,  pulse: true  },
       month: { size: 28, opacity: 0.85, pulse: false },
@@ -117,7 +158,7 @@ export default function MapPage() {
 
     // Group events by proximity — round to 3 decimal places (~111m)
     const locationGroups = new Map<string, any[]>()
-    events.forEach(event => {
+    filteredEvents.forEach(event => {
       const roundedLat = Math.round(event.latitude * 1000) / 1000
       const roundedLng = Math.round(event.longitude * 1000) / 1000
       const key = `${roundedLat},${roundedLng}`
@@ -129,7 +170,6 @@ export default function MapPage() {
       const [lat, lng] = key.split(',').map(Number)
       const event = locationEvents[0]
 
-      // Use the most urgent event in the group to determine marker style
       const urgencies = locationEvents.map((e: any) => getUrgency(e.event_date))
       const priority: ('week' | 'month' | 'soon' | 'later')[] = ['week', 'month', 'soon', 'later']
       const bestUrgency = priority.find(p => urgencies.includes(p)) || 'later'
@@ -167,12 +207,14 @@ export default function MapPage() {
             <p class="text-foreground-muted text-sm mb-3">${event.venue_name || formatLocation(event.city, event.state)}</p>
             <a href="/events/${event.id}" class="inline-block px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">View Event</a></div>`
 
-      new mapboxgl.Marker(el)
+      const marker = new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
         .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
         .addTo(map.current!)
+
+      markersOnMap.current.push(marker)
     })
-  }, [events])
+  }, [filteredEvents])
 
   return (
     <div className="relative h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)]">
@@ -186,11 +228,32 @@ export default function MapPage() {
         </div>
       )}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        {/* Time filter */}
+        <div className="flex gap-1 bg-background-secondary/95 backdrop-blur rounded-lg p-1">
+          {([
+            ['weekend', 'Weekend'],
+            ['week', 'Week'],
+            ['month', 'Month'],
+            ['all', 'All'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setTimeFilter(value)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                timeFilter === value
+                  ? 'bg-accent text-white'
+                  : 'text-foreground-muted hover:text-foreground hover:bg-background-tertiary'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button onClick={() => setShowList(!showList)} className="flex items-center gap-2 px-4 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-sm font-medium hover:bg-background-tertiary transition-colors">
           <List className="w-4 h-4" /> {showList ? 'Hide List' : 'Show List'}
         </button>
         <div className="px-3 py-2 bg-background-secondary/95 backdrop-blur rounded-lg text-xs">
-          <span className="text-accent font-bold">{events.length}</span>{' '}
+          <span className="text-accent font-bold">{filteredEvents.length}</span>{' '}
           <span className="text-foreground-muted">events</span>
           <span className="text-foreground-muted/40 mx-1.5">|</span>
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-accent animate-pulse align-middle" />
@@ -208,7 +271,7 @@ export default function MapPage() {
             <button onClick={() => setShowList(false)} className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"><X className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <Link key={event.id} href={`/events/${event.id}`} className="block p-4 rounded-lg bg-background hover:bg-background-tertiary transition-colors">
                 {event.promotions && <div className="text-accent text-xs font-medium mb-1">{event.promotions.name}</div>}
                 <h3 className="font-semibold text-foreground mb-1">{event.name}</h3>
