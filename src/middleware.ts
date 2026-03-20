@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Facebook's crawler sends a Range header that breaks Next.js streaming/edge
+  // responses, causing "Corrupted Image" errors for dynamic OG images.
+  // Strip the Range header and skip auth (crawler has no session).
+  const ua = request.headers.get('user-agent') || ''
+  if (ua.includes('facebookexternalhit')) {
+    const headers = new Headers(request.headers)
+    headers.delete('range')
+    return NextResponse.next({ request: { headers } })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
