@@ -47,7 +47,13 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior-y: contain;
+}
+
+/* Prevent pull-to-refresh on mobile only — breaks scroll wheel in some Chrome versions on desktop */
+@media (pointer: coarse) {
+  body {
+    overscroll-behavior-y: contain;
+  }
 }
 
 /* Eliminate 300ms tap delay on mobile */
