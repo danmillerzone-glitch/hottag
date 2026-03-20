@@ -6,9 +6,6 @@ export const runtime = 'edge'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-const BG_URL = 'https://auth.hottag.app/storage/v1/object/public/hottag/OG-BG.jpg'
-const LOGO_URL = 'https://www.hottag.app/logo.svg'
-
 // Fetch Inter font at build/first-request time
 const interBold = fetch(
   'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf'
@@ -52,48 +49,63 @@ export async function GET() {
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: '#14181c',
-          position: 'relative',
           fontFamily: 'Inter',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <img
-          src={BG_URL}
-          width={1200}
-          height={630}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-        />
+        {/* Subtle radial glow behind content */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(20, 24, 28, 0.75)',
+            top: '-100px',
+            left: '300px',
+            width: '600px',
+            height: '600px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255, 107, 53, 0.12) 0%, transparent 70%)',
           }}
         />
+        {/* Bottom accent line */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, transparent, #ff6b35, transparent)',
+          }}
+        />
+        {/* Content */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            position: 'relative',
           }}
         >
-          <img
-            src={LOGO_URL}
-            width={180}
-            height={135}
-            style={{ marginBottom: '24px' }}
-          />
+          {/* "HT" text logo instead of external image */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '32px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '72px',
+                fontWeight: 700,
+                color: '#ff6b35',
+                letterSpacing: '-2px',
+              }}
+            >
+              HOT TAG
+            </div>
+          </div>
           <div style={{ fontSize: '56px', fontWeight: 700, color: '#ffffff' }}>
             {"Today's Events"}
           </div>
