@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
 import { getTodayHawaii } from '@/lib/utils'
@@ -130,16 +130,64 @@ export default function EventsPage() {
     setLoading(false)
   }
 
-  // Memoize month grouping — avoids re-computation on filter dropdown toggles
-  const byMonth = useMemo(() => {
-    const grouped: Record<string, any[]> = {}
+  // Urgency-based grouping: Today → individual days this week → Next Week → monthly
+  const groupedEvents = useMemo(() => {
+    const todayStr = getTodayHawaii()
+    const todayDate = new Date(todayStr + 'T12:00:00')
+    const dayOfWeek = todayDate.getDay() // 0=Sun ... 6=Sat
+
+    // Calculate date boundaries
+    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+
+    const endOfThisWeek = new Date(todayDate)
+    endOfThisWeek.setDate(todayDate.getDate() + daysUntilSunday)
+    const endOfThisWeekStr = endOfThisWeek.toLocaleDateString('en-CA')
+
+    const endOfNextWeek = new Date(endOfThisWeek)
+    endOfNextWeek.setDate(endOfThisWeek.getDate() + 7)
+    const endOfNextWeekStr = endOfNextWeek.toLocaleDateString('en-CA')
+
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+    // Pre-create this-week day buckets (today + remaining days through Sunday)
+    const groups: { key: string; label: string; events: any[] }[] = []
+    for (let i = 0; i <= daysUntilSunday; i++) {
+      const d = new Date(todayDate)
+      d.setDate(todayDate.getDate() + i)
+      const dateStr = d.toLocaleDateString('en-CA')
+      const label = i === 0 ? 'Today' : dayNames[d.getDay()]
+      groups.push({ key: dateStr, label, events: [] })
+    }
+
+    // Next week bucket
+    groups.push({ key: 'next-week', label: 'Next Week', events: [] })
+
+    // Monthly buckets (created dynamically)
+    const monthGroups: Record<string, { key: string; label: string; events: any[] }> = {}
+
     events.forEach((event) => {
-      const date = new Date(event.event_date + 'T00:00:00')
-      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-      if (!grouped[monthKey]) grouped[monthKey] = []
-      grouped[monthKey].push(event)
+      const eventDateStr = event.event_date as string
+
+      if (eventDateStr <= endOfThisWeekStr) {
+        // This week — find matching day bucket
+        const dayBucket = groups.find(g => g.key === eventDateStr)
+        if (dayBucket) dayBucket.events.push(event)
+      } else if (eventDateStr <= endOfNextWeekStr) {
+        // Next week
+        groups.find(g => g.key === 'next-week')!.events.push(event)
+      } else {
+        // Monthly bucket
+        const eventDate = new Date(eventDateStr + 'T12:00:00')
+        const monthKey = eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+        if (!monthGroups[monthKey]) {
+          monthGroups[monthKey] = { key: monthKey, label: monthKey, events: [] }
+        }
+        monthGroups[monthKey].events.push(event)
+      }
     })
-    return grouped
+
+    // Combine and filter out empty groups
+    return [...groups, ...Object.values(monthGroups)].filter(g => g.events.length > 0)
   }, [events])
 
   const getStateName = (abbrev: string) => {
@@ -359,13 +407,16 @@ export default function EventsPage() {
           </div>
         ) : (
           <div className="space-y-10">
-            {Object.entries(byMonth).map(([month, monthEvents]) => (
-              <div key={month}>
-                <h2 className="text-xl font-display font-semibold mb-4 text-foreground-muted sticky top-14 md:top-16 bg-background py-2 z-10">
-                  {month}
+            {groupedEvents.map((group) => (
+              <div key={group.key}>
+                <h2 className="text-xl font-display font-semibold mb-4 sticky top-14 md:top-16 bg-background py-2 z-10 flex items-center gap-3">
+                  <span className="text-foreground">{group.label}</span>
+                  <span className="text-sm font-normal text-foreground-muted">
+                    {group.events.length} {group.events.length === 1 ? 'show' : 'shows'}
+                  </span>
                 </h2>
                 <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {monthEvents.map((event: any) => (
+                  {group.events.map((event: any) => (
                     <PosterEventCard key={event.id} event={event} />
                   ))}
                 </div>
