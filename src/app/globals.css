@@ -56,11 +56,6 @@ body {
   }
 }
 
-/* Eliminate 300ms tap delay on mobile */
-a, button, [role="button"], input, select, textarea {
-  touch-action: manipulation;
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
