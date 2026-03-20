@@ -9,5 +9,7 @@ Sentry.init({
   ignoreErrors: [
     // Next.js App Router aborts in-flight requests when a new navigation starts
     "Lock broken by another request with the 'steal' option",
+    // Twitter/X in-app browser injects its own scripts that reference internal vars
+    "Can't find variable: CONFIG",
   ],
 })
