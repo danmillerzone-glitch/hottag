@@ -9,7 +9,7 @@ import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEve
 import EventCarousel from '@/components/EventCarousel'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import NearYouSection from '@/components/NearYouSection'
-import ThisWeekendSection from '@/components/ThisWeekendSection'
+
 import RecommendedSection from '@/components/RecommendedSection'
 import WhatsNewSection from '@/components/WhatsNewSection'
 import RecentlyViewedSection from '@/components/RecentlyViewedSection'
@@ -362,9 +362,6 @@ export default function HomePage() {
 
       {/* Near You - geolocation based */}
       <NearYouSection />
-
-      {/* This Weekend / This Week */}
-      <ThisWeekendSection />
 
       {/* Recommended For You - logged in only */}
       {!authLoading && user && <RecommendedSection />}

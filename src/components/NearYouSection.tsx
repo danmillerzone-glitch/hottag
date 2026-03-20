@@ -78,12 +78,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
       .sort((a: any, b: any) => a.distance - b.distance)
   }, [allEvents, radius])
 
-  // Don't render anything if location is denied/unavailable
-  if (locationStatus === 'denied' || locationStatus === 'unavailable') {
-    return null
-  }
-
-  // Don't show section if no nearby events
+  // Don't show section if no nearby events (but location was granted)
   if (!loading && events.length === 0 && locationStatus === 'granted') {
     return null
   }
@@ -96,25 +91,49 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
             <Navigation className="w-6 h-6 text-blue-400" />
             Near You
           </h2>
-          <div className="flex items-center gap-3">
-            <select
-              value={radius}
-              onChange={(e) => setRadius(Number(e.target.value))}
-              className="text-sm bg-background-tertiary border border-border rounded-lg px-3 py-1.5 text-foreground cursor-pointer focus:border-accent outline-none"
-            >
-              <option value={25}>25 miles</option>
-              <option value={50}>50 miles</option>
-              <option value={100}>100 miles</option>
-              <option value={200}>200 miles</option>
-              <option value={500}>500 miles</option>
-            </select>
-            <Link href="/map" className="text-accent hover:text-accent-hover font-medium text-sm flex items-center">
-              Map <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          {locationStatus === 'granted' && (
+            <div className="flex items-center gap-3">
+              <select
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="text-sm bg-background-tertiary border border-border rounded-lg px-3 py-1.5 text-foreground cursor-pointer focus:border-accent outline-none"
+              >
+                <option value={25}>25 miles</option>
+                <option value={50}>50 miles</option>
+                <option value={100}>100 miles</option>
+                <option value={200}>200 miles</option>
+                <option value={500}>500 miles</option>
+              </select>
+              <Link href="/map" className="text-accent hover:text-accent-hover font-medium text-sm flex items-center">
+                Map <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
         </div>
 
-        {loading ? (
+        {(locationStatus === 'denied' || locationStatus === 'unavailable') ? (
+          <div className="card p-6 text-center max-w-lg mx-auto">
+            <MapPin className="w-10 h-10 text-blue-400 mx-auto mb-3" />
+            <p className="text-foreground-muted mb-4">
+              Enable location access to see events near you.
+            </p>
+            <button
+              onClick={() => {
+                getUserLocation().then(({ coords, status }) => {
+                  setLocationStatus(status)
+                  if (coords) {
+                    setUserCoords(coords)
+                    fetchEvents(coords)
+                  }
+                })
+              }}
+              className="btn btn-secondary text-sm"
+            >
+              <Navigation className="w-4 h-4 mr-1.5" />
+              Enable Location
+            </button>
+          </div>
+        ) : loading ? (
           <EventCarousel events={[]} loading={true} skeletonCount={6} />
         ) : (
           <EventCarousel

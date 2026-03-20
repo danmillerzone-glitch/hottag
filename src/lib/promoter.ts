@@ -318,7 +318,7 @@ export async function updateEvent(eventId: string, updates: {
 
   const { data, error } = await supabase
     .from('events')
-    .update({ ...updates, ...coordUpdates })
+    .update({ ...updates, ...coordUpdates, admin_edited: true })
     .eq('id', eventId)
     .select()
     .single()

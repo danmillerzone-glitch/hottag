@@ -429,7 +429,7 @@ export async function removeFromRosterAdmin(memberId: string) {
 
 export async function updateEventStatus(eventId: string, status: string) {
   const supabase = createClient()
-  const { error } = await supabase.from('events').update({ status }).eq('id', eventId)
+  const { error } = await supabase.from('events').update({ status, admin_edited: true }).eq('id', eventId)
   if (error) throw error
 }
 
@@ -633,7 +633,7 @@ export async function updatePromotionAdmin(promotionId: string, updates: Record<
 
 export async function updateEventAdmin(eventId: string, updates: Record<string, any>) {
   const supabase = createClient()
-  const { error } = await supabase.from('events').update(updates).eq('id', eventId)
+  const { error } = await supabase.from('events').update({ ...updates, admin_edited: true }).eq('id', eventId)
   if (error) throw error
 }
 

@@ -44,11 +44,13 @@ export default function EventsPage() {
   const [showRegionDropdown, setShowRegionDropdown] = useState(false)
   const [showStateDropdown, setShowStateDropdown] = useState(false)
   const [availableStates, setAvailableStates] = useState<string[]>([])
-  
+  const [showAll, setShowAll] = useState(false)
+
   const supabase = createClient()
   const fetchIdRef = useRef(0)
 
   useEffect(() => {
+    setShowAll(false)
     fetchEvents()
   }, [selectedRegion, selectedState, timeFilter])
 
@@ -78,7 +80,7 @@ export default function EventsPage() {
       .gte('event_date', todayStr)
       .eq('status', 'upcoming')
       .order('event_date', { ascending: true })
-      .limit(200)
+      .limit(2000)
     
     if (endDate) {
       query = query.lte('event_date', endDate.toISOString().split('T')[0])
@@ -189,6 +191,24 @@ export default function EventsPage() {
     // Combine and filter out empty groups
     return [...groups, ...Object.values(monthGroups)].filter(g => g.events.length > 0)
   }, [events])
+
+  // Progressive rendering: show first ~200 events, hide the rest behind a button
+  const { visibleGroups, hiddenCount } = useMemo(() => {
+    if (showAll) return { visibleGroups: groupedEvents, hiddenCount: 0 }
+
+    const INITIAL_LIMIT = 200
+    let count = 0
+    const visible: typeof groupedEvents = []
+
+    for (const group of groupedEvents) {
+      if (count >= INITIAL_LIMIT) break
+      visible.push(group)
+      count += group.events.length
+    }
+
+    const totalEvents = groupedEvents.reduce((sum, g) => sum + g.events.length, 0)
+    return { visibleGroups: visible, hiddenCount: totalEvents - count }
+  }, [groupedEvents, showAll])
 
   const getStateName = (abbrev: string) => {
     return US_STATES[abbrev] || abbrev
@@ -407,7 +427,7 @@ export default function EventsPage() {
           </div>
         ) : (
           <div className="space-y-10">
-            {groupedEvents.map((group) => (
+            {visibleGroups.map((group) => (
               <div key={group.key}>
                 <h2 className="text-xl font-display font-semibold mb-4 sticky top-14 md:top-16 bg-background py-2 z-10 flex items-center gap-3">
                   <span className="text-foreground">{group.label}</span>
@@ -422,6 +442,17 @@ export default function EventsPage() {
                 </div>
               </div>
             ))}
+
+            {hiddenCount > 0 && (
+              <div className="text-center pt-2">
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="btn btn-secondary"
+                >
+                  Show {hiddenCount} More Events
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

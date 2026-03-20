@@ -174,15 +174,35 @@ export default async function EventPage({ params }: EventPageProps) {
     : [event.venue_name, event.city, event.state, event.country].filter(Boolean).join(', ')
 
   // Schema.org JSON-LD for Google Rich Snippets
+  // Build ISO 8601 startDate — Google requires datetime, not just date
+  const startDate = event.event_time
+    ? `${event.event_date}T${event.event_time}`
+    : `${event.event_date}T19:00:00`
+
+  const eventStatusMap: Record<string, string> = {
+    upcoming: 'https://schema.org/EventScheduled',
+    cancelled: 'https://schema.org/EventCancelled',
+    postponed: 'https://schema.org/EventPostponed',
+    completed: 'https://schema.org/EventScheduled',
+  }
+
+  const locationName = event.venue_name || formatLocation(event.city, event.state) || 'TBA'
+  const eventDescription = event.description
+    || `${event.name} on ${formatEventDateFull(event.event_date)} at ${locationName}`
+  const eventImage = event.poster_url || `https://www.hottag.app/api/og?type=event&id=${event.id}&v=4`
+
   const jsonLd: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name: event.name,
-    startDate: event.event_date,
-    ...(event.doors_time && { doorTime: event.doors_time }),
+    description: eventDescription,
+    startDate,
+    eventStatus: eventStatusMap[event.status] || 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    ...(event.doors_time && { doorTime: `${event.event_date}T${event.doors_time}` }),
     location: {
       '@type': 'Place',
-      name: event.venue_name || formatLocation(event.city, event.state),
+      name: locationName,
       address: {
         '@type': 'PostalAddress',
         ...(event.venue_address && { streetAddress: event.venue_address }),
@@ -194,7 +214,7 @@ export default async function EventPage({ params }: EventPageProps) {
         geo: { '@type': 'GeoCoordinates', latitude: event.latitude, longitude: event.longitude },
       }),
     },
-    ...(event.poster_url && { image: event.poster_url }),
+    image: eventImage,
     ...(event.ticket_url && {
       offers: {
         '@type': 'Offer',
@@ -215,6 +235,14 @@ export default async function EventPage({ params }: EventPageProps) {
         name: promotion.name,
         url: `https://www.hottag.app/promotions/${promotion.slug}`,
       },
+    }),
+    ...(wrestlers && wrestlers.length > 0 && {
+      performer: wrestlers.map((w: any) => ({
+        '@type': 'Person',
+        name: w.wrestlers?.name,
+        url: w.wrestlers?.slug ? `https://www.hottag.app/wrestlers/${w.wrestlers.slug}` : undefined,
+        ...(w.wrestlers?.photo_url && { image: w.wrestlers.photo_url }),
+      })),
     }),
     url: `https://www.hottag.app/events/${event.id}`,
     sport: 'Professional Wrestling',

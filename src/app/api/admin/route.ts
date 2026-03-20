@@ -62,6 +62,11 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceClient()
 
+  // Auto-lock events from script overwrites when edited through the admin UI
+  const payload = (table === 'events' && (action === 'update' || action === 'upsert'))
+    ? { ...data, admin_edited: true }
+    : data
+
   try {
     switch (action) {
       case 'delete': {
@@ -71,8 +76,8 @@ export async function POST(req: NextRequest) {
       }
       case 'update': {
         const query = filter
-          ? supabase.from(table).update(data).match(filter)
-          : supabase.from(table).update(data).eq('id', id)
+          ? supabase.from(table).update(payload).match(filter)
+          : supabase.from(table).update(payload).eq('id', id)
         const { error } = await query
         if (error) return NextResponse.json({ error: error.message }, { status: 400 })
         return NextResponse.json({ success: true })
@@ -83,7 +88,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: result })
       }
       case 'upsert': {
-        const { data: result, error } = await supabase.from(table).upsert(data, { onConflict: filter?.onConflict || 'id' }).select().single()
+        const { data: result, error } = await supabase.from(table).upsert(payload, { onConflict: filter?.onConflict || 'id' }).select().single()
         if (error) return NextResponse.json({ error: error.message }, { status: 400 })
         return NextResponse.json({ success: true, data: result })
       }

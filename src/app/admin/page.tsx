@@ -4160,14 +4160,14 @@ function VegasWeekendTab() {
 
   const toggleVegasWeekend = async (eventId: string, current: boolean) => {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
-    await supabase.from('events').update({ vegas_weekend: !current, ...(!current ? {} : { vegas_collective: null }) }).eq('id', eventId)
+    await supabase.from('events').update({ vegas_weekend: !current, ...(!current ? {} : { vegas_collective: null }), admin_edited: true }).eq('id', eventId)
     loadData()
     if (searchQuery.length >= 2) searchEvents(searchQuery)
   }
 
   const setCollective = async (eventId: string, collectiveKey: string | null) => {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
-    await supabase.from('events').update({ vegas_collective: collectiveKey }).eq('id', eventId)
+    await supabase.from('events').update({ vegas_collective: collectiveKey, admin_edited: true }).eq('id', eventId)
     loadData()
   }
 

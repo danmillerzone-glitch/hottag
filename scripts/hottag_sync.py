@@ -357,15 +357,19 @@ def load_events(events):
     logger.info(f"  {len(promos)} promotions in DB")
 
     logger.info("Fetching existing event IDs...")
-    existing = set()
+    existing = {}  # cagematch_id (str) -> {id, name, admin_edited}
     offset = 0
     while True:
-        batch = db_get(f"events?select=cagematch_id&not.cagematch_id.is.null&limit=1000&offset={offset}")
+        batch = db_get(f"events?select=id,name,cagematch_id,admin_edited&not.cagematch_id.is.null&limit=1000&offset={offset}")
         if not batch:
             break
         for e in batch:
             if e.get('cagematch_id'):
-                existing.add(str(e['cagematch_id']))
+                existing[str(e['cagematch_id'])] = {
+                    'id': e['id'],
+                    'name': e.get('name', ''),
+                    'admin_edited': e.get('admin_edited', False),
+                }
         if len(batch) < 1000:
             break
         offset += 1000
@@ -377,20 +381,20 @@ def load_events(events):
     promoter_events = {}  # (promotion_id, event_date) -> [{id, name}, ...]
     offset = 0
     while True:
-        batch = db_get(f"events?select=id,name,event_date,promotion_id&cagematch_id=is.null&not.promotion_id.is.null&limit=1000&offset={offset}")
+        batch = db_get(f"events?select=id,name,event_date,promotion_id,admin_edited&cagematch_id=is.null&not.promotion_id.is.null&limit=1000&offset={offset}")
         if not batch:
             break
         for e in batch:
             key = (e['promotion_id'], e['event_date'])
             if key not in promoter_events:
                 promoter_events[key] = []
-            promoter_events[key].append({'id': e['id'], 'name': e['name']})
+            promoter_events[key].append({'id': e['id'], 'name': e['name'], 'admin_edited': e.get('admin_edited', False)})
         if len(batch) < 1000:
             break
         offset += 1000
     logger.info(f"  {sum(len(v) for v in promoter_events.values())} promoter-created events loaded")
 
-    created = skipped = linked = errors = new_promos = 0
+    created = skipped = linked = updated = errors = new_promos = 0
     new_event_ids = []
 
     for i, event in enumerate(events):
@@ -398,6 +402,12 @@ def load_events(events):
             logger.info(f"  Loading {i+1}/{len(events)}...")
 
         if event.get('cagematch_id') and str(event['cagematch_id']) in existing:
+            db_event = existing[str(event['cagematch_id'])]
+            # Update name if Cagematch has a different name and admin hasn't edited
+            if not db_event['admin_edited'] and event.get('name') and event['name'] != db_event['name']:
+                if db_patch("events", f"id=eq.{db_event['id']}", {"name": event['name']}):
+                    logger.info(f"  ✏️ Updated name: \"{db_event['name']}\" → \"{event['name']}\"")
+                    updated += 1
             skipped += 1
             continue
 
@@ -435,6 +445,12 @@ def load_events(events):
             if dedup_key in promoter_events:
                 for pe in promoter_events[dedup_key]:
                     if names_match(event['name'], pe['name']):
+                        # Skip events that have been edited by an admin/promoter
+                        if pe.get('admin_edited'):
+                            logger.info(f"  🔒 Skipping admin-edited: {pe['name']}")
+                            skipped += 1
+                            match_found = True
+                            break
                         # Link existing promoter event to Cagematch
                         patch_data = {
                             "cagematch_id": event['cagematch_id'],
@@ -502,7 +518,7 @@ def load_events(events):
         else:
             errors += 1
 
-    logger.info(f"Load complete: {created} created, {linked} linked, {skipped} skipped, {errors} errors, {new_promos} new promotions")
+    logger.info(f"Load complete: {created} created, {linked} linked, {updated} updated, {skipped} skipped, {errors} errors, {new_promos} new promotions")
     return new_event_ids
 
 
@@ -566,7 +582,7 @@ def fetch_venue_details():
     all_events = []
     offset = 0
     while True:
-        batch = db_get(f"events?select=id,name,source_url,venue_name&source_url=not.is.null&venue_name=is.null&limit=500&offset={offset}")
+        batch = db_get(f"events?select=id,name,source_url,venue_name,admin_edited&source_url=not.is.null&venue_name=is.null&admin_edited=not.eq.true&limit=500&offset={offset}")
         if not batch:
             break
         all_events.extend(batch)
@@ -632,7 +648,7 @@ def geocode_events():
     all_events = []
     offset = 0
     while True:
-        batch = db_get(f"events?select=id,name,venue_name,venue_address,city,state,country&or=(latitude.is.null,longitude.is.null)&limit=500&offset={offset}")
+        batch = db_get(f"events?select=id,name,venue_name,venue_address,city,state,country,admin_edited&or=(latitude.is.null,longitude.is.null)&admin_edited=not.eq.true&limit=500&offset={offset}")
         if not batch:
             break
         all_events.extend(batch)
