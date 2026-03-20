@@ -6,7 +6,11 @@ export const runtime = 'edge'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Fetch Inter font at build/first-request time
+// Fetch Inter fonts at build/first-request time
+const interBlack = fetch(
+  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuBWYMZg.ttf'
+).then((res) => res.arrayBuffer())
+
 const interBold = fetch(
   'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf'
 ).then((res) => res.arrayBuffer())
@@ -16,7 +20,7 @@ const interRegular = fetch(
 ).then((res) => res.arrayBuffer())
 
 export async function GET() {
-  const [boldFont, regularFont] = await Promise.all([interBold, interRegular])
+  const [blackFont, boldFont, regularFont] = await Promise.all([interBlack, interBold, interRegular])
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
@@ -97,8 +101,8 @@ export async function GET() {
           >
             <div
               style={{
-                fontSize: '72px',
-                fontWeight: 700,
+                fontSize: '88px',
+                fontWeight: 900,
                 color: '#ff6b35',
                 letterSpacing: '-2px',
               }}
@@ -106,7 +110,7 @@ export async function GET() {
               HOT TAG
             </div>
           </div>
-          <div style={{ fontSize: '56px', fontWeight: 700, color: '#ffffff' }}>
+          <div style={{ fontSize: '56px', fontWeight: 900, color: '#ffffff' }}>
             {"Today's Events"}
           </div>
           <div style={{ fontSize: '28px', fontWeight: 400, color: '#ff6b35', marginTop: '16px' }}>
@@ -125,6 +129,7 @@ export async function GET() {
       height: 630,
       headers: { 'Cache-Control': 'public, max-age=900, s-maxage=900' },
       fonts: [
+        { name: 'Inter', data: blackFont, weight: 900, style: 'normal' },
         { name: 'Inter', data: boldFont, weight: 700, style: 'normal' },
         { name: 'Inter', data: regularFont, weight: 400, style: 'normal' },
       ],
