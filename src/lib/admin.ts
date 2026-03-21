@@ -434,6 +434,33 @@ export async function updateEventStatus(eventId: string, status: string) {
 }
 
 // ============================================
+// PROMOTION ADMINS (multi-user access)
+// ============================================
+
+export async function getPromotionAdmins(promotionId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('promotion_admins')
+    .select('id, user_id, role, created_at')
+    .eq('promotion_id', promotionId)
+    .order('created_at', { ascending: true })
+  if (error) { console.error(error); return [] }
+  return data || []
+}
+
+export async function addPromotionAdmin(promotionId: string, userId: string, role: string = 'editor') {
+  await adminApi({ action: 'insert', table: 'promotion_admins', data: { promotion_id: promotionId, user_id: userId, role } })
+}
+
+export async function removePromotionAdmin(adminId: string) {
+  await adminApi({ action: 'delete', table: 'promotion_admins', id: adminId })
+}
+
+export async function updatePromotionAdminRole(adminId: string, role: string) {
+  await adminApi({ action: 'update', table: 'promotion_admins', id: adminId, data: { role } })
+}
+
+// ============================================
 // ANNOUNCEMENTS
 // ============================================
 

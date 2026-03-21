@@ -28,6 +28,7 @@ import {
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
   createChampionshipAdmin, updateChampionshipAdmin,
   getPromotionRosterAdmin, addToRosterAdmin, removeFromRosterAdmin,
+  getPromotionAdmins, addPromotionAdmin, removePromotionAdmin, updatePromotionAdminRole,
   getPromotionGroupsAdmin, createGroupAdmin, updateGroupAdmin, deleteGroupAdmin,
   addGroupMemberAdmin, removeGroupMemberAdmin,
   searchProfessionalsAdmin, getProfessionalFull, updateProfessionalAdmin, deleteProfessional,
@@ -2771,12 +2772,97 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
           </div>
         </div>
         <ClaimCodeSection type="promotions" id={promo.id} currentCode={promo.claim_code} claimedBy={promo.claimed_by} />
+        <PromotionAdminsSection promotionId={promo.id} claimedBy={promo.claimed_by} />
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
         </div>
       </div>
     </Modal>
+  )
+}
+
+function PromotionAdminsSection({ promotionId, claimedBy }: { promotionId: string, claimedBy?: string }) {
+  const [admins, setAdmins] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [newUserId, setNewUserId] = useState('')
+  const [newRole, setNewRole] = useState('editor')
+  const [adding, setAdding] = useState(false)
+
+  async function loadAdmins() {
+    setLoading(true)
+    const data = await getPromotionAdmins(promotionId)
+    setAdmins(data)
+    setLoading(false)
+    setLoaded(true)
+  }
+
+  async function handleAdd() {
+    const uuid = newUserId.trim()
+    if (!uuid) { alert('Enter a user UUID'); return }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+      alert('Invalid UUID format'); return
+    }
+    setAdding(true)
+    try {
+      await addPromotionAdmin(promotionId, uuid, newRole)
+      setNewUserId('')
+      await loadAdmins()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setAdding(false)
+  }
+
+  async function handleRemove(adminId: string, userId: string) {
+    if (userId === claimedBy) {
+      if (!confirm('This is the promotion owner. Are you sure you want to remove their admin access?')) return
+    }
+    try { await removePromotionAdmin(adminId); setAdmins(admins.filter(a => a.id !== adminId)) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleRoleChange(adminId: string, role: string) {
+    try { await updatePromotionAdminRole(adminId, role); setAdmins(admins.map(a => a.id === adminId ? { ...a, role } : a)) }
+    catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  return (
+    <div className="border-t border-border pt-3 mt-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-medium text-foreground-muted">Dashboard Access</p>
+        {!loaded && (
+          <button onClick={loadAdmins} disabled={loading} className="text-xs text-accent hover:underline">
+            {loading ? 'Loading...' : 'Show'}
+          </button>
+        )}
+      </div>
+      {loaded && (
+        <div className="space-y-2">
+          {admins.length === 0 && <p className="text-xs text-foreground-muted">No additional admins</p>}
+          {admins.map(admin => (
+            <div key={admin.id} className="flex items-center gap-2 text-sm bg-background-tertiary rounded px-3 py-2">
+              <code className="text-xs flex-1 truncate text-foreground-muted">{admin.user_id}</code>
+              {admin.user_id === claimedBy && <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded">owner</span>}
+              <select value={admin.role} onChange={e => handleRoleChange(admin.id, e.target.value)} className="text-xs bg-background border border-border rounded px-1.5 py-0.5">
+                <option value="editor">editor</option>
+                <option value="admin">admin</option>
+              </select>
+              <button onClick={() => handleRemove(admin.id, admin.user_id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded" title="Remove"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <input className="flex-1 input-field text-sm" value={newUserId} onChange={e => setNewUserId(e.target.value)} placeholder="User UUID" />
+            <select value={newRole} onChange={e => setNewRole(e.target.value)} className="text-sm bg-background-tertiary border border-border rounded px-2">
+              <option value="editor">editor</option>
+              <option value="admin">admin</option>
+            </select>
+            <button onClick={handleAdd} disabled={adding} className="btn btn-primary text-xs px-3">
+              {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Plus className="w-3.5 h-3.5 mr-1" /> Add</>}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

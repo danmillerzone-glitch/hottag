@@ -38,6 +38,7 @@ const ALLOWED_TABLES = new Set([
   'promotions',
   'professionals',
   'promotion_championships',
+  'promotion_admins',
   'promotion_groups',
   'promotion_outreach',
   'site_announcements',
