@@ -224,7 +224,7 @@ export async function searchPromotions(query: string, limit = 20) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('promotions')
-    .select('id, name, slug, city, state, claimed_by, verification_status, claim_code, onboarding_featured')
+    .select('id, name, slug, logo_url, city, state, claimed_by, verification_status, claim_code, onboarding_featured')
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(limit)
@@ -635,6 +635,56 @@ export async function updateEventAdmin(eventId: string, updates: Record<string, 
   const supabase = createClient()
   const { error } = await supabase.from('events').update({ ...updates, admin_edited: true }).eq('id', eventId)
   if (error) throw error
+}
+
+export async function createEventAdmin(eventData: {
+  name: string
+  event_date: string
+  promotion_id: string
+  venue_name?: string | null
+  venue_address?: string | null
+  city?: string | null
+  state?: string | null
+  country?: string | null
+  doors_time?: string | null
+  event_time?: string | null
+  ticket_url?: string | null
+  ticket_price_min?: number | null
+  ticket_price_max?: number | null
+  is_free?: boolean
+  is_sold_out?: boolean
+  coupon_code?: string | null
+  coupon_label?: string | null
+  poster_url?: string | null
+  landscape_poster_url?: string | null
+  description?: string | null
+  hashtag?: string | null
+  venue_amenities?: Record<string, any> | null
+  event_tags?: string[] | null
+  vegas_weekend?: boolean
+  vegas_collective?: string | null
+  streaming_url?: string | null
+  latitude?: number | null
+  longitude?: number | null
+}) {
+  const slug = eventData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + eventData.event_date
+  const hashtag = eventData.hashtag?.replace(/^#/, '') || null
+
+  const insertData: Record<string, any> = {
+    ...eventData,
+    slug,
+    hashtag,
+    country: eventData.country || 'USA',
+    status: 'upcoming',
+    admin_edited: true,
+  }
+
+  // Clean up empty strings to null
+  for (const key of Object.keys(insertData)) {
+    if (insertData[key] === '') insertData[key] = null
+  }
+
+  await adminApi({ action: 'insert', table: 'events', data: insertData })
 }
 
 export async function getWrestlerFull(wrestlerId: string) {

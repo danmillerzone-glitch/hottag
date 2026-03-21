@@ -23,7 +23,7 @@ import {
   verifyWrestler, unverifyWrestler, verifyPromotion, unverifyPromotion,
   mergeWrestlers,
   bulkImportEvents, getAllPromotionsList,
-  createWrestlerAdmin, createPromotionAdmin,
+  createWrestlerAdmin, createPromotionAdmin, createEventAdmin,
   uploadWrestlerPhotoAdmin, uploadWrestlerRenderAdmin, uploadPromotionLogoAdmin,
   getPromotionChampionshipsAdmin, deleteChampionshipAdmin,
   createChampionshipAdmin, updateChampionshipAdmin,
@@ -37,6 +37,8 @@ import {
   getTonightEvents, getRecentChampionChanges, getNewlyAddedEvents, getWeekendEvents,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
+import { VENUE_AMENITY_GROUPS, EVENT_TAG_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-constants'
+import { geocodeVenue } from '@/lib/geocode'
 import { sendClaimAccessEmailFromClient } from '@/lib/email-client'
 import {
   Shield, BarChart3, CheckCircle, XCircle, Clock, Users,
@@ -1094,6 +1096,7 @@ function EventsTab() {
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<any>(null)
+  const [creating, setCreating] = useState(false)
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -1121,9 +1124,13 @@ function EventsTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-display font-bold mb-6">Manage Events</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-display font-bold">Manage Events</h2>
+        <button onClick={() => setCreating(true)} className="btn btn-primary text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> Add Event</button>
+      </div>
       <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} loading={loading} placeholder="Search events by name..." />
 
+      {creating && <CreateEventModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); if (query.trim()) handleSearch() }} />}
       {editing && <EditEventModal event={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); handleSearch() }} />}
 
       {results.length > 0 && (
@@ -2766,6 +2773,313 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
         <ClaimCodeSection type="promotions" id={promo.id} currentCode={promo.claim_code} claimedBy={promo.claimed_by} />
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
+          <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreated: () => void }) {
+  const [form, setForm] = useState({
+    name: '', event_date: '', promotion_id: '',
+    venue_name: '', venue_address: '', city: '', state: '', country: 'USA',
+    doors_time: '', event_time: '',
+    ticket_url: '', ticket_price_min: '', ticket_price_max: '',
+    is_free: false, is_sold_out: false,
+    coupon_code: '', coupon_label: '',
+    poster_url: '', landscape_poster_url: '',
+    description: '', hashtag: '',
+    vegas_weekend: false, vegas_collective: '',
+    streaming_url: '',
+  })
+  const [venueAmenities, setVenueAmenities] = useState<Record<string, any>>({})
+  const [eventTags, setEventTags] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+
+  // Promotion search
+  const [promoQuery, setPromoQuery] = useState('')
+  const [promoResults, setPromoResults] = useState<any[]>([])
+  const [selectedPromo, setSelectedPromo] = useState<any>(null)
+  const [promoSearching, setPromoSearching] = useState(false)
+  const promoTimerRef = useRef<any>(null)
+
+  // Vegas collectives
+  const [vegasCollectives, setVegasCollectives] = useState<any[]>([])
+  useEffect(() => {
+    if (form.vegas_weekend && vegasCollectives.length === 0) {
+      (async () => {
+        const supabase = (await import('@/lib/supabase-browser')).createClient()
+        const { data } = await supabase.from('vegas_weekend_collectives').select('key, name').order('sort_order')
+        setVegasCollectives(data || [])
+      })()
+    }
+  }, [form.vegas_weekend, vegasCollectives.length])
+
+  // Collapsible sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
+  function toggleSection(key: string) { setOpenSections(prev => ({ ...prev, [key]: !prev[key] })) }
+
+  function handlePromoSearch(q: string) {
+    setPromoQuery(q)
+    if (promoTimerRef.current) clearTimeout(promoTimerRef.current)
+    if (!q.trim()) { setPromoResults([]); return }
+    promoTimerRef.current = setTimeout(async () => {
+      setPromoSearching(true)
+      const results = await searchPromotions(q, 10)
+      setPromoResults(results)
+      setPromoSearching(false)
+    }, 300)
+  }
+
+  function selectPromo(promo: any) {
+    setSelectedPromo(promo)
+    setForm({ ...form, promotion_id: promo.id })
+    setPromoQuery('')
+    setPromoResults([])
+  }
+
+  function clearPromo() {
+    setSelectedPromo(null)
+    setForm({ ...form, promotion_id: '' })
+  }
+
+  function toggleTag(tag: string) {
+    setEventTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
+  function handleAmenityChange(key: string, value: any) {
+    setVenueAmenities(prev => ({ ...prev, [key]: value }))
+  }
+
+  async function handleCreate() {
+    if (!form.name.trim()) { alert('Event name is required'); return }
+    if (!form.event_date) { alert('Event date is required'); return }
+    if (!form.promotion_id) { alert('Please select a promotion'); return }
+
+    setSaving(true)
+    try {
+      // Geocode if location fields present
+      let latitude: number | null = null
+      let longitude: number | null = null
+      if (form.city || form.venue_name || form.venue_address) {
+        const coords = await geocodeVenue({
+          venue_name: form.venue_name || null,
+          venue_address: form.venue_address || null,
+          city: form.city || null,
+          state: form.state || null,
+          country: form.country || 'USA',
+        })
+        if (coords) { latitude = coords.latitude; longitude = coords.longitude }
+      }
+
+      await createEventAdmin({
+        name: form.name.trim(),
+        event_date: form.event_date,
+        promotion_id: form.promotion_id,
+        venue_name: form.venue_name || null,
+        venue_address: form.venue_address || null,
+        city: form.city || null,
+        state: form.state || null,
+        country: form.country || 'USA',
+        doors_time: form.doors_time || null,
+        event_time: form.event_time || null,
+        ticket_url: form.ticket_url || null,
+        ticket_price_min: form.ticket_price_min ? parseFloat(form.ticket_price_min) : null,
+        ticket_price_max: form.ticket_price_max ? parseFloat(form.ticket_price_max) : null,
+        is_free: form.is_free,
+        is_sold_out: form.is_sold_out,
+        coupon_code: form.coupon_code || null,
+        coupon_label: form.coupon_label || null,
+        poster_url: form.poster_url || null,
+        landscape_poster_url: form.landscape_poster_url || null,
+        description: form.description || null,
+        hashtag: form.hashtag || null,
+        venue_amenities: Object.keys(venueAmenities).length > 0 ? venueAmenities : null,
+        event_tags: eventTags.length > 0 ? eventTags : null,
+        vegas_weekend: form.vegas_weekend,
+        vegas_collective: form.vegas_collective || null,
+        streaming_url: form.streaming_url || null,
+        latitude,
+        longitude,
+      })
+      alert('Event created successfully!')
+      onCreated()
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+    setSaving(false)
+  }
+
+  function SectionHeader({ label, sectionKey }: { label: string, sectionKey: string }) {
+    const isOpen = openSections[sectionKey]
+    return (
+      <button type="button" onClick={() => toggleSection(sectionKey)} className="w-full flex items-center justify-between py-2 px-3 bg-background-tertiary rounded text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
+        {label}
+        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+    )
+  }
+
+  return (
+    <Modal title="Create New Event" onClose={onClose}>
+      <div className="space-y-3">
+        {/* Section 1: Core */}
+        <FieldRow label="Event Name *">
+          <input className="w-full input-field" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Friday Night Fights" />
+        </FieldRow>
+        <FieldRow label="Event Date *">
+          <input className="w-full input-field" type="date" value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })} />
+        </FieldRow>
+        <FieldRow label="Promotion *">
+          {selectedPromo ? (
+            <div className="flex items-center gap-2 bg-background-tertiary rounded px-3 py-2">
+              {selectedPromo.logo_url && <img src={selectedPromo.logo_url} alt="" className="w-6 h-6 rounded object-cover" />}
+              <span className="text-sm font-medium flex-1">{selectedPromo.name}</span>
+              <button onClick={clearPromo} className="p-1 hover:bg-background rounded"><X className="w-4 h-4" /></button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input className="w-full input-field" value={promoQuery} onChange={e => handlePromoSearch(e.target.value)} placeholder="Search promotions..." />
+              {promoSearching && <Loader2 className="absolute right-3 top-2.5 w-4 h-4 animate-spin text-foreground-muted" />}
+              {promoResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-background-secondary border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {promoResults.map(p => (
+                    <button key={p.id} onClick={() => selectPromo(p)} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-background-tertiary text-left text-sm">
+                      {p.logo_url && <img src={p.logo_url} alt="" className="w-5 h-5 rounded object-cover" />}
+                      <span>{p.name}</span>
+                      {p.city && <span className="text-foreground-muted text-xs">({p.city}, {p.state})</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </FieldRow>
+
+        {/* Section 2: Location */}
+        <SectionHeader label="Location" sectionKey="location" />
+        {openSections.location && (
+          <div className="space-y-3 pl-1">
+            <FieldRow label="Venue Name"><input className="w-full input-field" value={form.venue_name} onChange={e => setForm({ ...form, venue_name: e.target.value })} /></FieldRow>
+            <FieldRow label="Venue Address"><input className="w-full input-field" value={form.venue_address} onChange={e => setForm({ ...form, venue_address: e.target.value })} placeholder="Street address for map pin" /></FieldRow>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></FieldRow>
+              <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} /></FieldRow>
+            </div>
+            <FieldRow label="Country"><input className="w-full input-field" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} /></FieldRow>
+          </div>
+        )}
+
+        {/* Section 3: Times & Tickets */}
+        <SectionHeader label="Times & Tickets" sectionKey="tickets" />
+        {openSections.tickets && (
+          <div className="space-y-3 pl-1">
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Doors"><input className="w-full input-field" type="time" value={form.doors_time} onChange={e => setForm({ ...form, doors_time: e.target.value })} /></FieldRow>
+              <FieldRow label="Bell Time"><input className="w-full input-field" type="time" value={form.event_time} onChange={e => setForm({ ...form, event_time: e.target.value })} /></FieldRow>
+            </div>
+            <FieldRow label="Ticket URL"><input className="w-full input-field" value={form.ticket_url} onChange={e => setForm({ ...form, ticket_url: e.target.value })} /></FieldRow>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Min Price"><input className="w-full input-field" type="number" step="0.01" value={form.ticket_price_min} onChange={e => setForm({ ...form, ticket_price_min: e.target.value })} placeholder="$" /></FieldRow>
+              <FieldRow label="Max Price"><input className="w-full input-field" type="number" step="0.01" value={form.ticket_price_max} onChange={e => setForm({ ...form, ticket_price_max: e.target.value })} placeholder="$" /></FieldRow>
+            </div>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_free} onChange={e => setForm({ ...form, is_free: e.target.checked })} className="rounded" /> Free Event</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_sold_out} onChange={e => setForm({ ...form, is_sold_out: e.target.checked })} className="rounded" /> Sold Out</label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Coupon Code"><input className="w-full input-field" value={form.coupon_code} onChange={e => setForm({ ...form, coupon_code: e.target.value })} /></FieldRow>
+              <FieldRow label="Coupon Label"><input className="w-full input-field" value={form.coupon_label} onChange={e => setForm({ ...form, coupon_label: e.target.value })} placeholder='e.g. "20% off"' /></FieldRow>
+            </div>
+          </div>
+        )}
+
+        {/* Section 4: Media & Description */}
+        <SectionHeader label="Media & Description" sectionKey="media" />
+        {openSections.media && (
+          <div className="space-y-3 pl-1">
+            <FieldRow label="Poster URL"><input className="w-full input-field" value={form.poster_url} onChange={e => setForm({ ...form, poster_url: e.target.value })} placeholder="600x800, 3:4 ratio" /></FieldRow>
+            <FieldRow label="Landscape Poster URL"><input className="w-full input-field" value={form.landscape_poster_url} onChange={e => setForm({ ...form, landscape_poster_url: e.target.value })} /></FieldRow>
+            <FieldRow label="Description"><textarea className="w-full input-field min-h-[80px]" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></FieldRow>
+            <FieldRow label="Hashtag"><input className="w-full input-field" value={form.hashtag} onChange={e => setForm({ ...form, hashtag: e.target.value })} placeholder="Without #" /></FieldRow>
+          </div>
+        )}
+
+        {/* Section 5: Venue Amenities */}
+        <SectionHeader label="Venue Amenities" sectionKey="amenities" />
+        {openSections.amenities && (
+          <div className="space-y-4 pl-1">
+            {VENUE_AMENITY_GROUPS.map(group => (
+              <div key={group.label}>
+                <p className="text-xs font-medium text-foreground-muted mb-2">{group.label}</p>
+                {group.type === 'radio' && 'key' in group ? (
+                  <div className="flex flex-wrap gap-2">
+                    {group.options.map((opt: any) => (
+                      <label key={opt.value} className="flex items-center gap-1.5 text-sm">
+                        <input type="radio" name={group.key} checked={venueAmenities[group.key] === opt.value} onChange={() => handleAmenityChange(group.key, opt.value)} />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {group.options.map((opt: any) => (
+                      <label key={opt.key} className="flex items-center gap-1.5 text-sm">
+                        <input type="checkbox" checked={!!venueAmenities[opt.key]} onChange={e => handleAmenityChange(opt.key, e.target.checked)} className="rounded" />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Section 6: Event Tags */}
+        <SectionHeader label="Event Tags" sectionKey="tags" />
+        {openSections.tags && (
+          <div className="space-y-3 pl-1">
+            {EVENT_TAG_GROUPS.map(group => (
+              <div key={group.label}>
+                <p className="text-xs font-medium text-foreground-muted mb-2">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.tags.map(tag => (
+                    <button key={tag} type="button" onClick={() => toggleTag(tag)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${eventTags.includes(tag) ? 'bg-accent text-white' : 'bg-background-tertiary text-foreground-muted hover:text-foreground'}`}>
+                      {EVENT_TAG_LABELS[tag] || tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Section 7: Special */}
+        <SectionHeader label="Special" sectionKey="special" />
+        {openSections.special && (
+          <div className="space-y-3 pl-1">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.vegas_weekend} onChange={e => setForm({ ...form, vegas_weekend: e.target.checked, vegas_collective: '' })} className="rounded" />
+              Vegas Weekend Event
+            </label>
+            {form.vegas_weekend && vegasCollectives.length > 0 && (
+              <FieldRow label="Vegas Collective">
+                <select className="w-full input-field" value={form.vegas_collective} onChange={e => setForm({ ...form, vegas_collective: e.target.value })}>
+                  <option value="">None</option>
+                  {vegasCollectives.map(c => <option key={c.key} value={c.key}>{c.name}</option>)}
+                </select>
+              </FieldRow>
+            )}
+            <FieldRow label="Streaming URL"><input className="w-full input-field" value={form.streaming_url} onChange={e => setForm({ ...form, streaming_url: e.target.value })} /></FieldRow>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleCreate} disabled={saving} className="btn btn-primary text-sm">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Create Event</>}
+          </button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
         </div>
       </div>
