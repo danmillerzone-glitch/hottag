@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -4416,10 +4416,39 @@ function splitTweetThread(header: string, lines: string[], footer: string): stri
   return tweets
 }
 
-function formatTonightTweets(events: any[]): { id: string; text: string }[] {
-  if (events.length === 0) return []
+const NA_COUNTRIES = new Set(['USA', 'US', 'Canada', 'Mexico', 'México', 'Puerto Rico'])
+const EUROPE_COUNTRIES = new Set([
+  'UK', 'United Kingdom', 'England', 'Scotland', 'Wales', 'Northern Ireland',
+  'Ireland', 'Germany', 'Deutschland', 'France', 'Italy', 'Spain',
+  'Austria', 'Österreich', 'Switzerland', 'Netherlands', 'Belgium',
+  'Poland', 'Czech Republic', 'Sweden', 'Norway', 'Finland', 'Denmark',
+  'Portugal', 'Romania', 'Hungary', 'Bulgaria', 'Croatia', 'Serbia',
+  'Greece', 'Turkey', 'Luxembourg', 'Slovakia', 'Slovenia',
+  'Estonia', 'Latvia', 'Lithuania', 'Iceland', 'Malta', 'Cyprus',
+])
+const JAPAN_COUNTRIES = new Set(['Japan'])
 
-  const header = "Tonight's indie wrestling\n"
+function getEventRegion(country: string | null): 'na' | 'europe' | 'japan' | 'other' {
+  if (!country) return 'na'
+  if (NA_COUNTRIES.has(country)) return 'na'
+  if (EUROPE_COUNTRIES.has(country)) return 'europe'
+  if (JAPAN_COUNTRIES.has(country)) return 'japan'
+  return 'other'
+}
+
+function groupEventsByRegion(events: any[]) {
+  const groups: Record<string, any[]> = { na: [], europe: [], japan: [], other: [] }
+  for (const e of events) {
+    groups[getEventRegion(e.country)].push(e)
+  }
+  return groups
+}
+
+function formatTonightTweets(events: any[], regionLabel?: string): { id: string; text: string }[] {
+  if (events.length === 0) return []
+  const prefix = regionLabel ? `Tonight in ${regionLabel}` : "Tonight's indie wrestling"
+
+  const header = prefix + '\n'
   const lines = events.map((e: any) => {
     const promo = e.promotions
     const promoTag = promo ? ` (${tweetHandle(promo.name, promo.twitter_handle)})` : ''
@@ -4622,11 +4651,22 @@ function SocialTab() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [champHours, setChampHours] = useState(48)
   const [newDays, setNewDays] = useState(7)
+  const [socialDate, setSocialDate] = useState(() =>
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+  )
 
-  async function loadAll() {
+  const regionGroups = useMemo(() => groupEventsByRegion(tonightEvents), [tonightEvents])
+
+  const dateLabel = useMemo(() => {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+    if (socialDate === today) return 'Tonight'
+    return new Date(socialDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  }, [socialDate])
+
+  async function loadAll(date?: string) {
     setLoading(true)
     const [tonight, champs, newEvts, weekend] = await Promise.all([
-      getTonightEvents(),
+      getTonightEvents(date || socialDate),
       getRecentChampionChanges(champHours),
       getNewlyAddedEvents(newDays),
       getWeekendEvents(),
@@ -4639,6 +4679,11 @@ function SocialTab() {
   }
 
   useEffect(() => { loadAll() }, [])
+
+  function handleDateChange(newDate: string) {
+    setSocialDate(newDate)
+    loadAll(newDate)
+  }
 
   function handleCopy(id: string, text: string) {
     navigator.clipboard.writeText(text)
@@ -4661,19 +4706,66 @@ function SocialTab() {
           <h2 className="text-xl font-display font-bold">Social Content Generator</h2>
           <p className="text-sm text-foreground-muted mt-1">Copy-paste ready tweets for @HotTagApp</p>
         </div>
-        <button onClick={loadAll} className="btn btn-secondary text-sm">
-          <RefreshCw className="w-4 h-4 mr-1.5" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={socialDate}
+            onChange={(e) => handleDateChange(e.target.value)}
+            className="text-sm px-3 py-1.5 rounded-lg bg-background-tertiary border border-border text-foreground"
+          />
+          <button onClick={() => loadAll()} className="btn btn-secondary text-sm">
+            <RefreshCw className="w-4 h-4 mr-1.5" />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      <TweetSection
-        title="Tonight's Events"
-        count={tonightEvents.length}
-        tweets={formatTonightTweets(tonightEvents)}
-        copiedId={copiedId}
-        onCopy={handleCopy}
-      />
+      {/* Regional tonight sections */}
+      {regionGroups.na.length > 0 && (
+        <TweetSection
+          title={`${dateLabel} — North America`}
+          count={regionGroups.na.length}
+          tweets={formatTonightTweets(regionGroups.na, 'North America')}
+          copiedId={copiedId}
+          onCopy={handleCopy}
+        />
+      )}
+
+      {regionGroups.europe.length > 0 && (
+        <TweetSection
+          title={`${dateLabel} — UK & Europe`}
+          count={regionGroups.europe.length}
+          tweets={formatTonightTweets(regionGroups.europe, 'the UK & Europe')}
+          copiedId={copiedId}
+          onCopy={handleCopy}
+        />
+      )}
+
+      {regionGroups.japan.length > 0 && (
+        <TweetSection
+          title={`${dateLabel} — Japan`}
+          count={regionGroups.japan.length}
+          tweets={formatTonightTweets(regionGroups.japan, 'Japan')}
+          copiedId={copiedId}
+          onCopy={handleCopy}
+        />
+      )}
+
+      {regionGroups.other.length > 0 && (
+        <TweetSection
+          title={`${dateLabel} — International`}
+          count={regionGroups.other.length}
+          tweets={formatTonightTweets(regionGroups.other, 'indie wrestling worldwide')}
+          copiedId={copiedId}
+          onCopy={handleCopy}
+        />
+      )}
+
+      {tonightEvents.length === 0 && (
+        <div className="card p-6 text-center text-foreground-muted text-sm">
+          No events found for {dateLabel === 'Tonight' ? 'tonight' : dateLabel}. Try a different date.
+        </div>
+      )}
 
       <TweetSection
         title="New Champions"

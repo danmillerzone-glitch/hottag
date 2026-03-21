@@ -1167,18 +1167,18 @@ export async function getPromotionEventCounts(): Promise<Record<string, number>>
 // SOCIAL / TWEET GENERATION
 // ============================================
 
-export async function getTonightEvents() {
+export async function getTonightEvents(date?: string) {
   const supabase = createClient()
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
+  const targetDate = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
 
   const { data, error } = await supabase
     .from('events')
     .select(`
-      id, name, event_date, event_time, city, state, venue_name,
+      id, name, event_date, event_time, city, state, country, venue_name,
       ticket_url, hashtag, attending_count, interested_count,
       promotions (id, name, slug, twitter_handle)
     `)
-    .eq('event_date', today)
+    .eq('event_date', targetDate)
     .eq('status', 'upcoming')
     .order('event_time', { ascending: true })
 
