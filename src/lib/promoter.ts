@@ -681,6 +681,32 @@ export async function removeAnnouncedTalent(talentId: string) {
 }
 
 // ============================================
+// EVENT WRESTLERS (legacy scraper-linked card)
+// ============================================
+
+export async function getEventWrestlersLinked(eventId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('event_wrestlers')
+    .select('id, wrestler_id, match_order, wrestlers (id, name, slug, photo_url)')
+    .eq('event_id', eventId)
+    .order('match_order', { ascending: true })
+
+  if (error) { console.error('Error fetching event_wrestlers:', error); return [] }
+  return data || []
+}
+
+export async function removeEventWrestlerLink(linkId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_wrestlers')
+    .delete()
+    .eq('id', linkId)
+
+  if (error) throw error
+}
+
+// ============================================
 // ANNOUNCED CREW
 // ============================================
 

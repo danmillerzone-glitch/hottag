@@ -7,13 +7,14 @@ import {
   searchWrestlers, uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
   getAnnouncedTalent, addAnnouncedTalent, removeAnnouncedTalent, updateAnnouncedTalent,
   getAnnouncedCrew, addAnnouncedCrew, removeAnnouncedCrew, updateAnnouncedCrew, searchProfessionals,
+  getEventWrestlersLinked, removeEventWrestlerLink,
   type EventMatch, type StreamingLink, type AnnouncedTalent,
 } from '@/lib/promoter'
 import { ROLE_LABELS } from '@/lib/supabase'
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
   ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
-  ChevronUp, ChevronDown, Briefcase, Building2, Tag,
+  ChevronUp, ChevronDown, Briefcase, Building2, Tag, Link2,
 } from 'lucide-react'
 
 // ============================================
@@ -1244,6 +1245,70 @@ export function AnnouncedCrewSection({ eventId }: { eventId: string }) {
           No crew announced yet
         </div>
       )}
+    </section>
+  )
+}
+
+// ============================================
+// LINKED WRESTLERS (scraper-imported "Card")
+// ============================================
+
+export function LinkedWrestlersSection({ eventId }: { eventId: string }) {
+  const [wrestlers, setWrestlers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getEventWrestlersLinked(eventId).then(data => {
+      setWrestlers(data)
+      setLoading(false)
+    })
+  }, [eventId])
+
+  if (loading) return null
+  if (wrestlers.length === 0) return null
+
+  const handleRemove = async (linkId: string) => {
+    try {
+      await removeEventWrestlerLink(linkId)
+      setWrestlers(prev => prev.filter(w => w.id !== linkId))
+    } catch (err) { console.error('Error removing wrestler link:', err) }
+  }
+
+  return (
+    <section className="card p-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-display font-bold flex items-center gap-2">
+          <Link2 className="w-5 h-5 text-foreground-muted" />
+          Linked Card ({wrestlers.length})
+        </h3>
+      </div>
+      <p className="text-xs text-foreground-muted mb-4">
+        Wrestlers linked by the data scraper. Remove them here once you&apos;ve added them to Announced Talent or Match Card above.
+      </p>
+
+      <div className="space-y-2">
+        {wrestlers.map((w: any) => (
+          <div key={w.id} className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary">
+            <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center overflow-hidden flex-shrink-0">
+              {w.wrestlers?.photo_url ? (
+                <Image src={w.wrestlers.photo_url} alt="" width={32} height={32} className="object-cover w-full h-full" />
+              ) : (
+                <User className="w-4 h-4 text-foreground-muted" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm truncate">{w.wrestlers?.name || 'Unknown'}</div>
+            </div>
+            <button
+              onClick={() => handleRemove(w.id)}
+              className="p-1.5 rounded hover:bg-background transition-colors text-foreground-muted hover:text-red-400"
+              title="Remove from Card"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

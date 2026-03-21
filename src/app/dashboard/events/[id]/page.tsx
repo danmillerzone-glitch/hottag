@@ -13,7 +13,7 @@ import { formatEventDateFull, formatLocation } from '@/lib/utils'
 import {
   TicketsSection, StreamingLinksSection, EventDetailsSection,
   VenueInfoSection, EventTagsSection,
-  PosterSection, AnnouncedTalentSection, AnnouncedCrewSection, MatchCardSection,
+  PosterSection, AnnouncedTalentSection, AnnouncedCrewSection, MatchCardSection, LinkedWrestlersSection,
 } from '@/components/DashboardEventSections'
 
 export default function ManageEventPage() {
@@ -112,6 +112,7 @@ export default function ManageEventPage() {
         <AnnouncedTalentSection eventId={eventId} talent={announcedTalent} onUpdate={setAnnouncedTalent} />
         <AnnouncedCrewSection eventId={eventId} />
         <MatchCardSection eventId={eventId} matches={matches} onUpdate={setMatches} />
+        <LinkedWrestlersSection eventId={eventId} />
 
         <div className="text-center pt-4">
           <Link href={`/events/${eventId}`} className="btn btn-ghost text-sm">
