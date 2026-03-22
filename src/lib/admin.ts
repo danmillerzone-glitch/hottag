@@ -535,9 +535,11 @@ export async function deleteAnnouncement(id: string) {
 
 export async function getHomepageNews() {
   const supabase = createClient()
+  const now = new Date().toISOString()
   const { data, error } = await supabase
     .from('homepage_news')
     .select('*')
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(50)
