@@ -482,10 +482,12 @@ export async function updatePromotion(promotionId: string, updates: {
     .update(updates)
     .eq('id', promotionId)
     .select()
-    .single()
 
   if (error) throw error
-  return data
+  if (!data || data.length === 0) {
+    throw new Error('Unable to save changes. You may not have edit permission for this promotion.')
+  }
+  return data[0]
 }
 
 // ============================================

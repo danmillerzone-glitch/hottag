@@ -54,6 +54,7 @@ export default function EditPromotionPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Form state
@@ -122,6 +123,7 @@ export default function EditPromotionPage() {
     if (!promotion) return
     setSaving(true)
     setSaved(false)
+    setSaveError(null)
     try {
       const updated = await updatePromotion(promotion.id, {
         description: description || null,
@@ -146,8 +148,9 @@ export default function EditPromotionPage() {
       setPromotion(updated)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving promotion:', err)
+      setSaveError(err.message || 'Failed to save changes')
     }
     setSaving(false)
   }
@@ -510,6 +513,11 @@ export default function EditPromotionPage() {
             )}
           </button>
         </div>
+        {saveError && (
+          <div className="mt-3 p-3 bg-red-900/50 border border-red-500 rounded-lg text-red-300 text-sm">
+            {saveError}
+          </div>
+        )}
       </div>
     </div>
   )
