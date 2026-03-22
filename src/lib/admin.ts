@@ -757,7 +757,7 @@ export async function verifyWrestler(wrestlerId: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('wrestlers')
-    .update({ verification_status: 'verified' })
+    .update({ verification_status: 'verified', verified_at: new Date().toISOString() })
     .eq('id', wrestlerId)
   if (error) throw error
 }
@@ -766,7 +766,7 @@ export async function unverifyWrestler(wrestlerId: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('wrestlers')
-    .update({ verification_status: 'unverified' })
+    .update({ verification_status: 'unverified', verified_at: null })
     .eq('id', wrestlerId)
   if (error) throw error
 }
@@ -775,7 +775,7 @@ export async function verifyPromotion(promotionId: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('promotions')
-    .update({ verification_status: 'verified' })
+    .update({ verification_status: 'verified', verified_at: new Date().toISOString() })
     .eq('id', promotionId)
   if (error) throw error
 }
@@ -784,7 +784,7 @@ export async function unverifyPromotion(promotionId: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('promotions')
-    .update({ verification_status: 'unverified' })
+    .update({ verification_status: 'unverified', verified_at: null })
     .eq('id', promotionId)
   if (error) throw error
 }

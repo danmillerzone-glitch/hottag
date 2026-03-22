@@ -75,10 +75,10 @@ export default function WrestlersPage() {
     const today = getTodayHawaii()
 
     const queries: any[] = [
-      // Newly Verified — most recently created verified wrestlers
+      // Newly Verified — most recently verified wrestlers
       supabase.from('wrestlers').select(SELECT_COLS)
         .eq('verification_status', 'verified')
-        .order('created_at', { ascending: false })
+        .order('verified_at', { ascending: false, nullsFirst: false })
         .limit(12),
       // Most Booked — active indie wrestlers with upcoming shows
       supabase.from('wrestlers').select(SELECT_COLS)
