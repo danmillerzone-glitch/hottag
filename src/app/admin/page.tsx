@@ -476,6 +476,23 @@ function OutreachTab() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  async function handleGenerateClaimCode(promo: any) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) code += '-'
+      code += chars[Math.floor(Math.random() * chars.length)]
+    }
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const { error } = await supabase.from('promotions').update({ claim_code: code }).eq('id', promo.id)
+      if (error) throw error
+      setPromotions(prev => prev.map(p => p.id === promo.id ? { ...p, claim_code: code } : p))
+    } catch (err: any) {
+      setSaveError(`Failed to generate claim code: ${err.message}`)
+    }
+  }
+
   async function handleExportCSV() {
     setExporting(true)
     try {
@@ -712,8 +729,28 @@ function OutreachTab() {
                                 : '—'}
                             </div>
 
+                            {/* Claim code indicator */}
+                            <div className="w-[80px] text-center">
+                              {promo.claimed_by ? (
+                                <span className="text-xs text-emerald-400">Claimed</span>
+                              ) : promo.claim_code ? (
+                                <span className="text-xs text-green-400 font-mono" title={promo.claim_code}>Has Code</span>
+                              ) : (
+                                <span className="text-xs text-foreground-muted">No Code</span>
+                              )}
+                            </div>
+
                             {/* Actions */}
                             <div className="flex items-center gap-1 ml-auto">
+                              {!promo.claimed_by && !promo.claim_code && (
+                                <button
+                                  onClick={() => handleGenerateClaimCode(promo)}
+                                  className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
+                                  title="Generate Claim Code"
+                                >
+                                  <Key className="w-3 h-3" />
+                                </button>
+                              )}
                               {status === 'not_contacted' && promo.twitter_handle && (
                                 <button
                                   onClick={() => handleQuickContact(promo)}
