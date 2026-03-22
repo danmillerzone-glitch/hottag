@@ -280,6 +280,7 @@ export async function updateEvent(eventId: string, updates: {
   venue_name?: string | null
   city?: string | null
   state?: string | null
+  country?: string | null
   coupon_code?: string | null
   coupon_label?: string | null
   hashtag?: string | null
@@ -289,7 +290,7 @@ export async function updateEvent(eventId: string, updates: {
   const supabase = createClient()
 
   // Re-geocode if any location field changed
-  const locationChanged = 'venue_name' in updates || 'venue_address' in updates || 'city' in updates || 'state' in updates
+  const locationChanged = 'venue_name' in updates || 'venue_address' in updates || 'city' in updates || 'state' in updates || 'country' in updates
   let coordUpdates: { latitude?: number; longitude?: number } = {}
 
   if (locationChanged) {
@@ -307,7 +308,7 @@ export async function updateEvent(eventId: string, updates: {
         venue_address: updates.venue_address !== undefined ? updates.venue_address : existing.venue_address,
         city: updates.city !== undefined ? updates.city : existing.city,
         state: updates.state !== undefined ? updates.state : existing.state,
-        country: existing.country || 'USA',
+        country: updates.country !== undefined ? (updates.country || 'USA') : (existing.country || 'USA'),
       })
 
       if (coords) {

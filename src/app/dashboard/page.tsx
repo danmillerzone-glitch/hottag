@@ -456,6 +456,7 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
   const [venueAddress, setVenueAddress] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
+  const [country, setCountry] = useState('USA')
   const [eventTime, setEventTime] = useState('')
   const [doorsTime, setDoorsTime] = useState('')
   const [isFree, setIsFree] = useState(false)
@@ -476,6 +477,7 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
         venue_address: venueAddress || undefined,
         city: city || undefined,
         state: state || undefined,
+        country: country || undefined,
         event_time: eventTime || undefined,
         doors_time: doorsTime || undefined,
         is_free: isFree,
@@ -531,15 +533,20 @@ function AddEventModal({ promotionId, onCreated, onClose }: {
             <p className="text-xs text-foreground-muted mt-1">Full address helps fans find the venue on Google Maps</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">City</label>
               <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Houston"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">State</label>
+              <label className="block text-sm font-medium mb-1.5">State / Region</label>
               <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="TX"
+                className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Country</label>
+              <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="USA"
                 className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
             </div>
           </div>

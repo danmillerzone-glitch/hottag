@@ -3174,7 +3174,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreat
 }
 
 function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () => void, onSaved: () => void }) {
-  const [form, setForm] = useState({ name: event.name || '', event_date: event.event_date || '', venue_name: event.venue_name || '', city: event.city || '', state: event.state || '', ticket_url: event.ticket_url ?? '', doors_time: event.doors_time || '', event_time: event.event_time || '' })
+  const [form, setForm] = useState({ name: event.name || '', event_date: event.event_date || '', venue_name: event.venue_name || '', city: event.city || '', state: event.state || '', country: event.country || 'USA', ticket_url: event.ticket_url ?? '', doors_time: event.doors_time || '', event_time: event.event_time || '' })
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -3182,7 +3182,7 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
     try {
       await updateEventAdmin(event.id, {
         name: form.name, event_date: form.event_date, venue_name: form.venue_name || null,
-        city: form.city || null, state: form.state || null, ticket_url: form.ticket_url || null,
+        city: form.city || null, state: form.state || null, country: form.country || null, ticket_url: form.ticket_url || null,
         doors_time: form.doors_time || null, event_time: form.event_time || null,
       })
       onSaved()
@@ -3196,9 +3196,10 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
         <FieldRow label="Name"><input className="w-full input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></FieldRow>
         <FieldRow label="Date"><input className="w-full input-field" type="date" value={form.event_date} onChange={e => setForm({...form, event_date: e.target.value})} /></FieldRow>
         <FieldRow label="Venue"><input className="w-full input-field" value={form.venue_name} onChange={e => setForm({...form, venue_name: e.target.value})} /></FieldRow>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></FieldRow>
-          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+          <FieldRow label="State / Region"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+          <FieldRow label="Country"><input className="w-full input-field" value={form.country} onChange={e => setForm({...form, country: e.target.value})} /></FieldRow>
         </div>
         <FieldRow label="Ticket URL"><input className="w-full input-field" value={form.ticket_url} onChange={e => setForm({...form, ticket_url: e.target.value})} /></FieldRow>
         <div className="grid grid-cols-2 gap-3">

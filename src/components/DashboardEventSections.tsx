@@ -218,6 +218,7 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
   const [venueAddress, setVenueAddress] = useState(event.venue_address || '')
   const [city, setCity] = useState(event.city || '')
   const [state, setState] = useState(event.state || '')
+  const [country, setCountry] = useState(event.country || 'USA')
   const [hashtag, setHashtag] = useState(event.hashtag || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -234,6 +235,7 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
         venue_address: venueAddress || null,
         city: city || null,
         state: state || null,
+        country: country || null,
         hashtag: cleanHashtag || null,
       })
       onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -272,15 +274,20 @@ export function EventDetailsSection({ event, onUpdate }: { event: any; onUpdate:
               className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">City</label>
             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City..."
               className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">State</label>
+            <label className="block text-sm font-medium mb-1.5">State / Region</label>
             <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="TX..."
+              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Country</label>
+            <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="USA"
               className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
           </div>
         </div>
