@@ -1948,7 +1948,7 @@ function NewsFeedTab() {
     if (!form.title.trim()) return
     setSaving(true)
     try {
-      await createHomepageNewsItem({
+      const created = await createHomepageNewsItem({
         title: form.title,
         body: form.body || undefined,
         type: form.type,
@@ -1958,9 +1958,14 @@ function NewsFeedTab() {
         size: form.size,
         sort_order: form.sort_order,
       })
+      // Optimistically add the new item to the list so it appears immediately
+      if (created) {
+        setNewsItems(prev => [...prev, created].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)))
+      }
       setForm({ title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '', size: 'small', sort_order: 0 })
       setShowForm(false)
-      await loadNews()
+      // Background refresh to sync with DB
+      loadNews()
     } catch (err: any) { alert(`Error: ${err.message}`) }
     setSaving(false)
   }
@@ -2136,14 +2141,19 @@ function NewsFeedTab() {
         <EditNewsItemModal
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSaved={() => { setEditingItem(null); loadNews() }}
+          onSaved={(updated) => {
+            // Optimistically update the item in the list
+            if (updated) setNewsItems(prev => prev.map(n => n.id === updated.id ? { ...n, ...updated } : n))
+            setEditingItem(null)
+            loadNews()
+          }}
         />
       )}
     </div>
   )
 }
 
-function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () => void, onSaved: () => void }) {
+function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () => void, onSaved: (updated?: any) => void }) {
   const [form, setForm] = useState({
     title: item.title || '',
     body: item.body || '',
@@ -2160,7 +2170,7 @@ function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () 
     if (!form.title.trim()) return
     setSaving(true)
     try {
-      await updateHomepageNewsItem(item.id, {
+      const updates = {
         title: form.title,
         body: form.body || null,
         type: form.type,
@@ -2169,8 +2179,9 @@ function EditNewsItemModal({ item, onClose, onSaved }: { item: any, onClose: () 
         expires_at: form.expires_at || null,
         size: form.size,
         sort_order: form.sort_order,
-      })
-      onSaved()
+      }
+      await updateHomepageNewsItem(item.id, updates)
+      onSaved({ ...item, ...updates })
     } catch (err: any) { alert(`Error: ${err.message}`) }
     setSaving(false)
   }
