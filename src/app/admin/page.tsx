@@ -2725,7 +2725,7 @@ function EditWrestlerModal({ wrestler, onClose, onSaved }: { wrestler: any, onCl
 
 function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: () => void, onSaved: () => void }) {
   const [form, setForm] = useState({
-    name: promo.name || '', slug: promo.slug || '', city: promo.city || '', state: promo.state || '',
+    name: promo.name || '', slug: promo.slug || '', city: promo.city || '', state: promo.state || '', country: promo.country || 'USA',
     region: promo.region || '',
     website: promo.website || '', description: promo.description || '',
     twitter_handle: promo.twitter_handle || '', instagram_handle: promo.instagram_handle || '',
@@ -2737,7 +2737,7 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
     setSaving(true)
     try {
       await updatePromotionAdmin(promo.id, {
-        name: form.name, slug: form.slug, city: form.city || null, state: form.state || null,
+        name: form.name, slug: form.slug, city: form.city || null, state: form.state || null, country: form.country || null,
         region: form.region || null,
         website: form.website || null, description: form.description || null,
         twitter_handle: form.twitter_handle || null, instagram_handle: form.instagram_handle || null,
@@ -2760,9 +2760,10 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
         />
         <FieldRow label="Name"><input className="w-full input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></FieldRow>
         <FieldRow label="Slug"><input className="w-full input-field" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} /></FieldRow>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <FieldRow label="City"><input className="w-full input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})} /></FieldRow>
-          <FieldRow label="State"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+          <FieldRow label="State / Region"><input className="w-full input-field" value={form.state} onChange={e => setForm({...form, state: e.target.value})} /></FieldRow>
+          <FieldRow label="Country"><input className="w-full input-field" value={form.country} onChange={e => setForm({...form, country: e.target.value})} placeholder="USA" /></FieldRow>
         </div>
         <FieldRow label="Region">
           <select className="w-full input-field" value={form.region} onChange={e => setForm({...form, region: e.target.value})}>

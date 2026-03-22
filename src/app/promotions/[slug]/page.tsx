@@ -2,12 +2,13 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase, ROLE_LABELS } from '@/lib/supabase'
-import { getTodayHawaii } from '@/lib/utils'
+import { getTodayHawaii, formatLocation } from '@/lib/utils'
 import { Building2, MapPin, ExternalLink, Calendar, Instagram, Youtube, Facebook, Mail, ShoppingBag, Trophy, Users, User, Crown, Shield, Briefcase } from 'lucide-react'
 import FollowPromotionButton from '@/components/FollowPromotionButton'
 import ClaimPromotionButton from '@/components/ClaimPromotionButton'
 import RosterCarousel from '@/components/RosterCarousel'
 import QRCodeButton from '@/components/QRCodeButton'
+import ShareButton from '@/components/ShareButton'
 import MerchGallery from '@/components/MerchGallery'
 import VideoCarousel from '@/components/VideoCarousel'
 import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
@@ -245,7 +246,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
           '@type': 'PostalAddress',
           ...(promotion.city ? { addressLocality: promotion.city } : {}),
           ...(promotion.state ? { addressRegion: promotion.state } : {}),
-          addressCountry: 'US',
+          addressCountry: promotion.country || 'US',
         },
       },
     } : {}),
@@ -281,7 +282,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         name={promotion.name}
         slug={promotion.slug}
         image={promotion.logo_url}
-        subtitle={promotion.city ? `${promotion.city}${promotion.state ? `, ${promotion.state}` : ''}` : undefined}
+        subtitle={promotion.city ? formatLocation(promotion.city, promotion.state, promotion.country) : undefined}
       />
       {/* Header */}
       <div className="bg-background-secondary py-12">
@@ -309,10 +310,13 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 {promotion.name}
               </h1>
               
-              {(promotion.city || promotion.state) && (
+              {(promotion.city || promotion.state || (promotion.country && promotion.country !== 'USA')) && (
                 <div className="flex items-center justify-center md:justify-start gap-2 text-foreground-muted mb-4">
                   <MapPin className="w-4 h-4" />
-                  {[promotion.city, promotion.state].filter(Boolean).join(', ')}
+                  {formatLocation(promotion.city, promotion.state, promotion.country)}
+                  {promotion.country && promotion.country !== 'USA' && promotion.state && (
+                    <span className="text-foreground-muted/60">· {promotion.country}</span>
+                  )}
                 </div>
               )}
 
@@ -323,6 +327,11 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   initialFollowerCount={followerCount}
                 />
                 <QRCodeButton url={`https://www.hottag.app/promotions/${promotion.slug}`} name={promotion.name} />
+                <ShareButton
+                  title={`${promotion.name} | Hot Tag`}
+                  text={`Check out ${promotion.name} on Hot Tag`}
+                  url={`https://www.hottag.app/promotions/${promotion.slug}`}
+                />
 
                 <ClaimPromotionButton
                   promotionId={promotion.id}

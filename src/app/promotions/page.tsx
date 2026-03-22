@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
+import { formatLocation } from '@/lib/utils'
 import { Building2, MapPin, Globe, ChevronDown, Flame, Search } from 'lucide-react'
 import RequestPageButton from '@/components/RequestPageButton'
 
@@ -212,7 +213,8 @@ export default function PromotionsPage() {
     return promotions.filter(p =>
       p.name.toLowerCase().includes(q) ||
       (p.city && p.city.toLowerCase().includes(q)) ||
-      (p.state && p.state.toLowerCase().includes(q))
+      (p.state && p.state.toLowerCase().includes(q)) ||
+      (p.country && p.country !== 'USA' && p.country.toLowerCase().includes(q))
     )
   }, [promotions, searchQuery])
 
@@ -309,10 +311,11 @@ export default function PromotionsPage() {
                         <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
                           {promo.name}
                         </h3>
-                        {(promo.city || promo.state) && (
+                        {(promo.city || promo.state || (promo.country && promo.country !== 'USA')) && (
                           <div className="flex items-center gap-1 text-sm text-foreground-muted mt-1">
                             <MapPin className="w-3 h-3" />
-                            {promo.city}{promo.city && promo.state && ', '}{promo.state}
+                            {formatLocation(promo.city, promo.state, promo.country)}
+                            {promo.country && promo.country !== 'USA' && promo.state && <span className="text-foreground-muted/60"> · {promo.country}</span>}
                           </div>
                         )}
                         {promo.region && (
@@ -484,10 +487,11 @@ export default function PromotionsPage() {
                                 {promo.name}
                               </h3>
 
-                              {(promo.city || promo.state) && (
+                              {(promo.city || promo.state || (promo.country && promo.country !== 'USA')) && (
                                 <div className="flex items-center gap-1 text-sm text-foreground-muted mt-1">
                                   <MapPin className="w-3 h-3" />
-                                  {promo.city}{promo.city && promo.state && ', '}{promo.state}
+                                  {formatLocation(promo.city, promo.state, promo.country)}
+                                  {promo.country && promo.country !== 'USA' && promo.state && <span className="text-foreground-muted/60"> · {promo.country}</span>}
                                 </div>
                               )}
 
