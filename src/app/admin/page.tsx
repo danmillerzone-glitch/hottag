@@ -1022,6 +1022,23 @@ function WrestlerOutreachTab() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  async function handleGenerateClaimCode(wrestler: any) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) code += '-'
+      code += chars[Math.floor(Math.random() * chars.length)]
+    }
+    try {
+      const supabase = (await import('@/lib/supabase-browser')).createClient()
+      const { error } = await supabase.from('wrestlers').update({ claim_code: code }).eq('id', wrestler.id)
+      if (error) throw error
+      setWrestlers(prev => prev.map(w => w.id === wrestler.id ? { ...w, claim_code: code } : w))
+    } catch (err: any) {
+      setSaveError(`Failed to generate claim code: ${err.message}`)
+    }
+  }
+
   // Filter by search
   const filtered = searchQuery.length >= 2
     ? wrestlers.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -1172,8 +1189,28 @@ function WrestlerOutreachTab() {
                         : '—'}
                     </div>
 
+                    {/* Claim code indicator */}
+                    <div className="w-[80px] text-center">
+                      {wrestler.claimed_by ? (
+                        <span className="text-xs text-emerald-400">Claimed</span>
+                      ) : wrestler.claim_code ? (
+                        <span className="text-xs text-green-400 font-mono" title={wrestler.claim_code}>Has Code</span>
+                      ) : (
+                        <span className="text-xs text-foreground-muted">No Code</span>
+                      )}
+                    </div>
+
                     {/* Actions */}
                     <div className="flex items-center gap-1 ml-auto">
+                      {!wrestler.claimed_by && !wrestler.claim_code && (
+                        <button
+                          onClick={() => handleGenerateClaimCode(wrestler)}
+                          className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
+                          title="Generate Claim Code"
+                        >
+                          <Key className="w-3 h-3" />
+                        </button>
+                      )}
                       {status === 'not_contacted' && wrestler.twitter_handle && (
                         <button
                           onClick={() => handleQuickContact(wrestler)}
