@@ -34,12 +34,12 @@ const STATE_ABBREVS = Object.keys(STATE_NAMES)
 async function getEventsByLocation(location: string) {
   const decodedLocation = decodeURIComponent(location).replace(/-/g, ' ')
   const today = getTodayHawaii()
-  
+
   // Check if it's a state abbreviation
   const upperLocation = decodedLocation.toUpperCase()
   const isState = STATE_ABBREVS.includes(upperLocation)
-  
-  let query = supabase
+
+  const baseQuery = () => supabase
     .from('events')
     .select(`
       *,
@@ -53,31 +53,38 @@ async function getEventsByLocation(location: string) {
     .gte('event_date', today)
     .eq('status', 'upcoming')
     .order('event_date', { ascending: true })
-  
+
+  let isCountry = false
+
   if (isState) {
-    query = query.eq('state', upperLocation)
-  } else {
-    // Search by city (case insensitive)
-    query = query.ilike('city', decodedLocation)
+    const { data, error } = await baseQuery().eq('state', upperLocation)
+    if (error) {
+      console.error('Error fetching events by location:', error)
+      return { events: [], isState, isCountry, locationName: STATE_NAMES[upperLocation] || decodedLocation }
+    }
+    const events = data.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    return { events, isState, isCountry, locationName: STATE_NAMES[upperLocation] }
   }
-  
-  const { data, error } = await query
-  
-  if (error) {
-    console.error('Error fetching events by location:', error)
-    return { events: [], isState, locationName: decodedLocation }
+
+  // Try city first
+  const { data: cityData, error: cityError } = await baseQuery().ilike('city', decodedLocation)
+
+  if (!cityError && cityData && cityData.length > 0) {
+    const events = cityData.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    return { events, isState, isCountry, locationName: decodedLocation }
   }
-  
-  // Map real counts
-  const events = data.map((e: any) => ({
-    ...e,
-    attending_count: e.real_attending_count || 0,
-    interested_count: e.real_interested_count || 0
-  }))
-  
-  const locationName = isState ? STATE_NAMES[upperLocation] : decodedLocation
-  
-  return { events, isState, locationName }
+
+  // No city results — try country
+  const { data: countryData, error: countryError } = await baseQuery().ilike('country', decodedLocation)
+
+  if (!countryError && countryData && countryData.length > 0) {
+    isCountry = true
+    const events = countryData.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    return { events, isState, isCountry, locationName: decodedLocation }
+  }
+
+  if (cityError) console.error('Error fetching events by location:', cityError)
+  return { events: [], isState, isCountry, locationName: decodedLocation }
 }
 
 export async function generateMetadata({ params }: LocationPageProps) {
@@ -91,11 +98,11 @@ export async function generateMetadata({ params }: LocationPageProps) {
 }
 
 export default async function LocationPage({ params }: LocationPageProps) {
-  const { events, isState, locationName } = await getEventsByLocation(params.location)
-  
-  // Get unique cities if showing a state
+  const { events, isState, isCountry, locationName } = await getEventsByLocation(params.location)
+
+  // Get unique cities if showing a state or country page
   let cities: string[] = []
-  if (isState) {
+  if (isState || isCountry) {
     const citySet = new Set<string>()
     events.forEach((e: any) => {
       if (e.city) citySet.add(e.city)
@@ -141,8 +148,8 @@ export default async function LocationPage({ params }: LocationPageProps) {
             </div>
           </div>
           
-          {/* City links for state pages */}
-          {isState && cities.length > 1 && (
+          {/* City links for state/country pages */}
+          {(isState || isCountry) && cities.length > 1 && (
             <div className="mt-6">
               <h3 className="text-sm font-medium text-foreground-muted mb-2">Cities</h3>
               <div className="flex flex-wrap gap-2">

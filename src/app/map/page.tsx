@@ -191,7 +191,7 @@ export default function MapPage() {
       `
 
       const venueNames = Array.from(new Set(locationEvents.map((e: any) => e.venue_name).filter(Boolean)))
-      const venueLabel = venueNames.length === 1 ? venueNames[0] : formatLocation(event.city, event.state)
+      const venueLabel = venueNames.length === 1 ? venueNames[0] : formatLocation(event.city, event.state, event.country)
 
       const popupContent = locationEvents.length > 1
         ? `<div class="p-4 max-w-xs">
@@ -204,7 +204,7 @@ export default function MapPage() {
             ${event.promotions ? `<div class="text-accent text-xs font-medium mb-1">${event.promotions.name}</div>` : ''}
             <h3 class="font-bold text-foreground mb-1">${event.name}</h3>
             <p class="text-foreground-muted text-sm mb-2">${formatEventDate(event.event_date)}</p>
-            <p class="text-foreground-muted text-sm mb-3">${event.venue_name || formatLocation(event.city, event.state)}</p>
+            <p class="text-foreground-muted text-sm mb-3">${event.venue_name || formatLocation(event.city, event.state, event.country)}</p>
             <a href="/events/${event.id}" class="inline-block px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">View Event</a></div>`
 
       const marker = new mapboxgl.Marker(el)
@@ -276,7 +276,7 @@ export default function MapPage() {
                 {event.promotions && <div className="text-accent text-xs font-medium mb-1">{event.promotions.name}</div>}
                 <h3 className="font-semibold text-foreground mb-1">{event.name}</h3>
                 <div className="flex items-center gap-2 text-sm text-foreground-muted"><Calendar className="w-3 h-3" />{formatEventDate(event.event_date)}</div>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1"><MapPin className="w-3 h-3" />{formatLocation(event.city, event.state)}</div>
+                <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1"><MapPin className="w-3 h-3" />{formatLocation(event.city, event.state, event.country)}</div>
               </Link>
             ))}
           </div>

@@ -97,7 +97,7 @@ export default function ManageEventPage() {
           <div className="flex items-center gap-3 mt-1 text-sm text-foreground-muted">
             <span>{formatEventDateFull(event.event_date)}</span>
             <span>·</span>
-            <span>{formatLocation(event.city, event.state)}</span>
+            <span>{formatLocation(event.city, event.state, event.country)}</span>
           </div>
         </div>
       </div>

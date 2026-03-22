@@ -93,14 +93,14 @@ export async function generateMetadata({ params }: EventPageProps) {
   }
 
   const ogImage = event.landscape_poster_url || event.poster_url || `https://www.hottag.app/api/og?type=event&id=${params.id}&v=4`
-  const description = `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state)}`
+  const description = `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state, event.country)}`
   const pageUrl = `https://www.hottag.app/events/${params.id}`
   return {
     title: `${event.name} | Hot Tag`,
     description,
     openGraph: {
       title: `${event.name} | Hot Tag`,
-      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state)}`,
+      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state, event.country)}`,
       url: pageUrl,
       type: 'website',
       images: [{ url: ogImage, width: 1200, height: 630, alt: event.name }],
@@ -108,7 +108,7 @@ export async function generateMetadata({ params }: EventPageProps) {
     twitter: {
       card: 'summary_large_image',
       title: `${event.name} | Hot Tag`,
-      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state)}`,
+      description: `${formatEventDateFull(event.event_date)} • ${formatLocation(event.city, event.state, event.country)}`,
       images: [ogImage],
     },
   }
@@ -186,7 +186,7 @@ export default async function EventPage({ params }: EventPageProps) {
     completed: 'https://schema.org/EventScheduled',
   }
 
-  const locationName = event.venue_name || formatLocation(event.city, event.state) || 'TBA'
+  const locationName = event.venue_name || formatLocation(event.city, event.state, event.country) || 'TBA'
   const eventDescription = event.description
     || `${event.name} on ${formatEventDateFull(event.event_date)} at ${locationName}`
   const eventImage = event.poster_url || `https://www.hottag.app/api/og?type=event&id=${event.id}&v=4`
@@ -259,7 +259,7 @@ export default async function EventPage({ params }: EventPageProps) {
         id={event.id}
         name={event.name}
         image={event.poster_url}
-        subtitle={promotion?.name || formatLocation(event.city, event.state)}
+        subtitle={promotion?.name || formatLocation(event.city, event.state, event.country)}
       />
       {/* Hero/Banner */}
       <div className="relative bg-background-secondary">
@@ -370,9 +370,12 @@ export default async function EventPage({ params }: EventPageProps) {
                     </Link>
                   )}
                   {event.country && event.country !== 'USA' && (
-                    <span className="text-foreground-muted">
+                    <Link
+                      href={`/location/${encodeURIComponent(event.country.toLowerCase().replace(/\s+/g, '-'))}`}
+                      className="text-foreground-muted hover:text-accent hover:underline"
+                    >
                       {(event.city || event.state) && ', '}{event.country}
-                    </span>
+                    </Link>
                   )}
                 </div>
                 {/* Google Maps link */}

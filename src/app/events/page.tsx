@@ -40,10 +40,13 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [selectedState, setSelectedState] = useState<string | null>(null)
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
   const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all')
   const [showRegionDropdown, setShowRegionDropdown] = useState(false)
   const [showStateDropdown, setShowStateDropdown] = useState(false)
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [availableStates, setAvailableStates] = useState<string[]>([])
+  const [availableCountries, setAvailableCountries] = useState<string[]>([])
   const [showAll, setShowAll] = useState(false)
 
   const supabase = createClient()
@@ -52,7 +55,7 @@ export default function EventsPage() {
   useEffect(() => {
     setShowAll(false)
     fetchEvents()
-  }, [selectedRegion, selectedState, timeFilter])
+  }, [selectedRegion, selectedState, selectedCountry, timeFilter])
 
   async function fetchEvents() {
     // Stale-response guard: if filters change mid-flight, discard the old response
@@ -98,9 +101,12 @@ export default function EventsPage() {
       }
     }
 
-    // Apply state filter (only for USA)
+    // Apply state filter (USA) or country sub-filter (non-US regions)
     if (selectedState) {
       query = query.eq('state', selectedState)
+    }
+    if (selectedCountry) {
+      query = query.eq('country', selectedCountry)
     }
     
     const { data, error } = await query
@@ -126,6 +132,15 @@ export default function EventsPage() {
           if (e.state && US_STATES[e.state]) stateSet.add(e.state)
         })
         setAvailableStates(Array.from(stateSet).sort((a, b) => (US_STATES[a] || a).localeCompare(US_STATES[b] || b)))
+      }
+
+      // Get unique countries for dropdown (non-US regions)
+      if (selectedRegion && selectedRegion !== 'usa' && !selectedCountry) {
+        const countrySet = new Set<string>()
+        data.forEach((e: any) => {
+          if (e.country) countrySet.add(e.country)
+        })
+        setAvailableCountries(Array.from(countrySet).sort((a, b) => a.localeCompare(b)))
       }
     }
     
@@ -220,7 +235,8 @@ export default function EventsPage() {
 
   const handleRegionSelect = (regionId: string | null) => {
     setSelectedRegion(regionId)
-    if (regionId !== 'usa') setSelectedState(null)
+    setSelectedState(null)
+    setSelectedCountry(null)
     setShowRegionDropdown(false)
   }
 
@@ -242,7 +258,7 @@ export default function EventsPage() {
           {/* Region Filter */}
           <div className="relative">
             <button
-              onClick={() => { setShowRegionDropdown(!showRegionDropdown); setShowStateDropdown(false) }}
+              onClick={() => { setShowRegionDropdown(!showRegionDropdown); setShowStateDropdown(false); setShowCountryDropdown(false) }}
               aria-expanded={showRegionDropdown}
               aria-haspopup="listbox"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${
@@ -285,7 +301,7 @@ export default function EventsPage() {
           {isUSA && (
             <div className="relative">
               <button
-                onClick={() => { setShowStateDropdown(!showStateDropdown); setShowRegionDropdown(false) }}
+                onClick={() => { setShowStateDropdown(!showStateDropdown); setShowRegionDropdown(false); setShowCountryDropdown(false) }}
                 aria-expanded={showStateDropdown}
                 aria-haspopup="listbox"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${
@@ -330,6 +346,52 @@ export default function EventsPage() {
             </div>
           )}
           
+          {/* Country Filter - show for non-US regions with multiple countries */}
+          {!isUSA && availableCountries.length > 1 && (
+            <div className="relative">
+              <button
+                onClick={() => { setShowCountryDropdown(!showCountryDropdown); setShowRegionDropdown(false); setShowStateDropdown(false) }}
+                aria-expanded={showCountryDropdown}
+                aria-haspopup="listbox"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${
+                  selectedCountry
+                    ? 'bg-accent/20 text-accent border-accent/50'
+                    : 'bg-background-secondary border-border hover:border-accent/50'
+                }`}
+              >
+                <MapPin className="w-4 h-4" aria-hidden="true" />
+                {selectedCountry || 'All Countries'}
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+              </button>
+
+              {showCountryDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowCountryDropdown(false)} />
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-background-secondary border border-border rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
+                    <button
+                      onClick={() => { setSelectedCountry(null); setShowCountryDropdown(false) }}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-background-tertiary text-sm ${!selectedCountry ? 'text-accent' : ''}`}
+                    >
+                      All Countries
+                    </button>
+                    <div className="border-t border-border" />
+                    <div className="p-1">
+                      {availableCountries.map(country => (
+                        <button
+                          key={country}
+                          onClick={() => { setSelectedCountry(country); setShowCountryDropdown(false) }}
+                          className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-background-tertiary ${selectedCountry === country ? 'text-accent' : ''}`}
+                        >
+                          {country}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Time Filters */}
           <button
             onClick={() => setTimeFilter('all')}
@@ -375,9 +437,9 @@ export default function EventsPage() {
           </Link>
           
           {/* Clear filters */}
-          {(selectedRegion || selectedState || timeFilter !== 'all') && (
+          {(selectedRegion || selectedState || selectedCountry || timeFilter !== 'all') && (
             <button
-              onClick={() => { setSelectedRegion(null); setSelectedState(null); setTimeFilter('all') }}
+              onClick={() => { setSelectedRegion(null); setSelectedState(null); setSelectedCountry(null); setTimeFilter('all') }}
               className="px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2 hover:bg-red-500/20 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -392,6 +454,7 @@ export default function EventsPage() {
             {events.length} {events.length === 1 ? 'event' : 'events'} found
             {selectedRegion && ` in ${getRegionLabel(selectedRegion)}`}
             {selectedState && ` · ${getStateName(selectedState)}`}
+            {selectedCountry && ` · ${selectedCountry}`}
             {timeFilter === 'week' && ' this week'}
             {timeFilter === 'month' && ' this month'}
           </p>
@@ -419,7 +482,7 @@ export default function EventsPage() {
               No upcoming events match your filters.
             </p>
             <button
-              onClick={() => { setSelectedRegion(null); setSelectedState(null); setTimeFilter('all') }}
+              onClick={() => { setSelectedRegion(null); setSelectedState(null); setSelectedCountry(null); setTimeFilter('all') }}
               className="btn btn-primary"
             >
               Clear Filters

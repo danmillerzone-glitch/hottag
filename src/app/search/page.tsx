@@ -60,6 +60,7 @@ function SearchContent() {
           event_date,
           city,
           state,
+          country,
           promotions (name)
         `)
         .ilike('name', searchTerm)
@@ -74,7 +75,7 @@ function SearchContent() {
             id: e.id,
             name: e.name,
             slug: e.id,
-            subtitle: `${e.promotions?.name || ''} • ${e.city}${e.state ? `, ${e.state}` : ''}`,
+            subtitle: `${e.promotions?.name || ''} • ${e.city}${e.state ? `, ${e.state}` : ''}${e.country && e.country !== 'USA' ? ` · ${e.country}` : ''}`,
             date: e.event_date,
           })
         })

@@ -341,7 +341,7 @@ export default function DashboardPage() {
                             <div className="text-xs sm:text-sm text-foreground-muted flex items-center gap-1 mt-0.5">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
                               <span className="truncate">
-                                {formatLocation(event.city, event.state)}
+                                {formatLocation(event.city, event.state, event.country)}
                                 {event.venue_name && ` · ${event.venue_name}`}
                               </span>
                             </div>
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate text-sm">{event.name}</div>
                     <div className="text-xs text-foreground-muted">
-                      {formatLocation(event.city, event.state)}
+                      {formatLocation(event.city, event.state, event.country)}
                     </div>
                   </div>
                   <ArrowRight className="w-4 h-4 text-foreground-muted flex-shrink-0" />

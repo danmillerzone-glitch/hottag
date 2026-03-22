@@ -29,21 +29,22 @@ function VenueLink({ venue }: { venue?: string | null }) {
   )
 }
 
-function LocationLinks({ city, state, venue }: { city?: string | null, state?: string | null, venue?: string | null }) {
+function LocationLinks({ city, state, country, venue }: { city?: string | null, state?: string | null, country?: string | null, venue?: string | null }) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
   }
-  
+
   // Trim values to remove any extra spaces
   const trimmedVenue = venue?.trim()
   const trimmedCity = city?.trim()
   const trimmedState = state?.trim()
-  
+  const trimmedCountry = country?.trim()
+
   const parts: React.ReactNode[] = []
-  
+
   if (trimmedVenue) {
     parts.push(
-      <Link 
+      <Link
         key="venue"
         href={`/venue/${encodeURIComponent(trimmedVenue.toLowerCase().replace(/\s+/g, '-'))}`}
         onClick={handleClick}
@@ -53,10 +54,10 @@ function LocationLinks({ city, state, venue }: { city?: string | null, state?: s
       </Link>
     )
   }
-  
+
   if (trimmedCity) {
     parts.push(
-      <Link 
+      <Link
         key="city"
         href={`/location/${encodeURIComponent(trimmedCity.toLowerCase().replace(/\s+/g, '-'))}`}
         onClick={handleClick}
@@ -66,10 +67,10 @@ function LocationLinks({ city, state, venue }: { city?: string | null, state?: s
       </Link>
     )
   }
-  
+
   if (trimmedState) {
     parts.push(
-      <Link 
+      <Link
         key="state"
         href={`/location/${trimmedState}`}
         onClick={handleClick}
@@ -79,9 +80,22 @@ function LocationLinks({ city, state, venue }: { city?: string | null, state?: s
       </Link>
     )
   }
-  
+
+  if (trimmedCountry && trimmedCountry !== 'USA') {
+    parts.push(
+      <Link
+        key="country"
+        href={`/location/${encodeURIComponent(trimmedCountry.toLowerCase().replace(/\s+/g, '-'))}`}
+        onClick={handleClick}
+        className="hover:text-accent hover:underline"
+      >
+        {trimmedCountry}
+      </Link>
+    )
+  }
+
   if (parts.length === 0) return null
-  
+
   // Join with proper separators
   return (
     <span>
@@ -118,7 +132,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
               )}
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
+                <LocationLinks venue={event.venue_name} city={event.city} state={event.state} country={event.country} />
               </span>
             </div>
           </div>
@@ -187,7 +201,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
           <div className="flex flex-wrap items-center gap-4 text-sm text-foreground-muted">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
-              <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
+              <LocationLinks venue={event.venue_name} city={event.city} state={event.state} country={event.country} />
             </span>
             
             {(event.attending_count > 0 || event.interested_count > 0) && (
@@ -229,7 +243,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
           <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">
-            <LocationLinks venue={event.venue_name} city={event.city} state={event.state} />
+            <LocationLinks venue={event.venue_name} city={event.city} state={event.state} country={event.country} />
           </span>
         </div>
         

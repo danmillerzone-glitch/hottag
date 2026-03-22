@@ -54,11 +54,15 @@ export function formatRelativeDate(dateString: string): string {
 }
 
 // Location formatting
-export function formatLocation(city: string | null, state: string | null): string {
-  if (!city && !state) return 'TBA'
-  if (!state) return city || 'TBA'
-  if (!city) return state
-  return `${city}, ${state}`
+export function formatLocation(city: string | null, state: string | null, country?: string | null): string {
+  if (!city && !state && !country) return 'TBA'
+  const parts = [city, state].filter(Boolean)
+  // For non-US events without a state/region, append country
+  if (country && country !== 'USA') {
+    if (parts.length === 0) return country
+    if (!state) parts.push(country)
+  }
+  return parts.join(', ') || 'TBA'
 }
 
 // Price formatting
