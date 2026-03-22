@@ -1250,12 +1250,22 @@ export async function getOutreachWrestlers(filters?: {
   hasTwitter?: boolean
   outreachStatus?: string
   verificationStatus?: string
+  page?: number
+  pageSize?: number
 }) {
   const supabase = createClient()
+  const page = filters?.page || 0
+  const pageSize = filters?.pageSize || 50
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  // When filtering by outreach status we need to join client-side, so fetch all wrestlers
+  // and paginate the merged result. For non-outreach filters, paginate server-side.
+  const needsClientFilter = filters?.outreachStatus && filters.outreachStatus !== 'all'
 
   let query = supabase
     .from('wrestlers')
-    .select('id, name, slug, photo_url, twitter_handle, instagram_handle, claimed_by, verification_status, claim_code')
+    .select('id, name, slug, photo_url, twitter_handle, instagram_handle, claimed_by, verification_status, claim_code', { count: 'exact' })
     .order('name')
 
   if (filters?.hasTwitter) {
@@ -1265,12 +1275,17 @@ export async function getOutreachWrestlers(filters?: {
     query = query.eq('verification_status', filters.verificationStatus)
   }
 
-  const [{ data: wrestlers, error: wrestlersErr }, { data: outreach, error: outreachErr }] = await Promise.all([
+  // Only apply server-side range when NOT filtering by outreach status
+  if (!needsClientFilter) {
+    query = query.range(from, to)
+  }
+
+  const [{ data: wrestlers, error: wrestlersErr, count }, { data: outreach, error: outreachErr }] = await Promise.all([
     query,
     supabase.from('wrestler_outreach').select('*'),
   ])
 
-  if (wrestlersErr) { console.error('wrestlers query error:', wrestlersErr); return [] }
+  if (wrestlersErr) { console.error('wrestlers query error:', wrestlersErr); return { data: [], total: 0 } }
   if (outreachErr) { console.error('wrestler outreach query error:', outreachErr) }
 
   const outreachMap = new Map<string, any>()
@@ -1283,8 +1298,8 @@ export async function getOutreachWrestlers(filters?: {
     return { ...w, wrestler_outreach: o ? [o] : [] }
   })
 
-  if (filters?.outreachStatus && filters.outreachStatus !== 'all') {
-    if (filters.outreachStatus === 'not_contacted') {
+  if (needsClientFilter) {
+    if (filters!.outreachStatus === 'not_contacted') {
       results = results.filter((w: any) =>
         w.wrestler_outreach.length === 0 ||
         w.wrestler_outreach[0]?.outreach_status === 'not_contacted'
@@ -1292,12 +1307,14 @@ export async function getOutreachWrestlers(filters?: {
     } else {
       results = results.filter((w: any) =>
         w.wrestler_outreach.length > 0 &&
-        w.wrestler_outreach[0]?.outreach_status === filters.outreachStatus
+        w.wrestler_outreach[0]?.outreach_status === filters!.outreachStatus
       )
     }
+    const total = results.length
+    return { data: results.slice(from, from + pageSize), total }
   }
 
-  return results
+  return { data: results, total: count || 0 }
 }
 
 export async function getWrestlerOutreachStats() {

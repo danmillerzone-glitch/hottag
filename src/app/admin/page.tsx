@@ -896,6 +896,9 @@ function OutreachTab() {
 
 function WrestlerOutreachTab() {
   const [wrestlers, setWrestlers] = useState<any[]>([])
+  const [totalWrestlers, setTotalWrestlers] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
+  const PAGE_SIZE = 50
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
@@ -914,15 +917,17 @@ function WrestlerOutreachTab() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  useEffect(() => { loadData() }, [filters])
+  useEffect(() => { setCurrentPage(0) }, [filters])
+  useEffect(() => { loadData() }, [filters, currentPage])
 
   async function loadData() {
     setLoading(true)
-    const [wrst, outreachStats] = await Promise.all([
-      getOutreachWrestlers(filters),
+    const [result, outreachStats] = await Promise.all([
+      getOutreachWrestlers({ ...filters, page: currentPage, pageSize: PAGE_SIZE }),
       getWrestlerOutreachStats(),
     ])
-    setWrestlers(wrst)
+    setWrestlers(result.data)
+    setTotalWrestlers(result.total)
     setStats(outreachStats)
     setLoading(false)
   }
@@ -1095,7 +1100,9 @@ function WrestlerOutreachTab() {
             Has X Handle
           </label>
 
-          <span className="ml-auto text-sm text-foreground-muted">{filtered.length} wrestlers</span>
+          <span className="ml-auto text-sm text-foreground-muted">
+            {searchQuery.length >= 2 ? `${filtered.length} of ` : ''}{totalWrestlers} wrestlers
+          </span>
         </div>
       </div>
 
@@ -1217,6 +1224,29 @@ function WrestlerOutreachTab() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalWrestlers > PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-4">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+            className="px-4 py-2 text-sm bg-background-tertiary border border-border rounded-lg hover:bg-background-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-foreground-muted">
+            Page {currentPage + 1} of {Math.ceil(totalWrestlers / PAGE_SIZE)}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => p + 1)}
+            disabled={(currentPage + 1) * PAGE_SIZE >= totalWrestlers}
+            className="px-4 py-2 text-sm bg-background-tertiary border border-border rounded-lg hover:bg-background-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
         </div>
       )}
 
