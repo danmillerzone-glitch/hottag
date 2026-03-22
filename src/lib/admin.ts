@@ -1243,6 +1243,133 @@ export async function getPromotionEventCounts(): Promise<Record<string, number>>
 }
 
 // ============================================
+// WRESTLER OUTREACH
+// ============================================
+
+export async function getOutreachWrestlers(filters?: {
+  hasTwitter?: boolean
+  outreachStatus?: string
+  verificationStatus?: string
+}) {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('wrestlers')
+    .select('id, name, slug, photo_url, twitter_handle, instagram_handle, claimed_by, verification_status, claim_code')
+    .order('name')
+
+  if (filters?.hasTwitter) {
+    query = query.not('twitter_handle', 'is', null)
+  }
+  if (filters?.verificationStatus && filters.verificationStatus !== 'all') {
+    query = query.eq('verification_status', filters.verificationStatus)
+  }
+
+  const [{ data: wrestlers, error: wrestlersErr }, { data: outreach, error: outreachErr }] = await Promise.all([
+    query,
+    supabase.from('wrestler_outreach').select('*'),
+  ])
+
+  if (wrestlersErr) { console.error('wrestlers query error:', wrestlersErr); return [] }
+  if (outreachErr) { console.error('wrestler outreach query error:', outreachErr) }
+
+  const outreachMap = new Map<string, any>()
+  for (const row of (outreach || [])) {
+    outreachMap.set(row.wrestler_id, row)
+  }
+
+  let results = (wrestlers || []).map((w: any) => {
+    const o = outreachMap.get(w.id)
+    return { ...w, wrestler_outreach: o ? [o] : [] }
+  })
+
+  if (filters?.outreachStatus && filters.outreachStatus !== 'all') {
+    if (filters.outreachStatus === 'not_contacted') {
+      results = results.filter((w: any) =>
+        w.wrestler_outreach.length === 0 ||
+        w.wrestler_outreach[0]?.outreach_status === 'not_contacted'
+      )
+    } else {
+      results = results.filter((w: any) =>
+        w.wrestler_outreach.length > 0 &&
+        w.wrestler_outreach[0]?.outreach_status === filters.outreachStatus
+      )
+    }
+  }
+
+  return results
+}
+
+export async function getWrestlerOutreachStats() {
+  const supabase = createClient()
+
+  const [
+    { count: totalWrestlers },
+    { count: withTwitter },
+    { count: claimed },
+  ] = await Promise.all([
+    supabase.from('wrestlers').select('*', { count: 'exact', head: true }),
+    supabase.from('wrestlers').select('*', { count: 'exact', head: true })
+      .not('twitter_handle', 'is', null),
+    supabase.from('wrestlers').select('*', { count: 'exact', head: true })
+      .not('claimed_by', 'is', null),
+  ])
+
+  const { data: outreachData } = await supabase
+    .from('wrestler_outreach')
+    .select('outreach_status, follow_up_date')
+
+  const counts = { contacted: 0, interested: 0, noResponse: 0, declined: 0, needsFollowUp: 0 }
+  const today = new Date().toISOString().split('T')[0]
+
+  for (const row of outreachData || []) {
+    if (row.outreach_status === 'contacted') counts.contacted++
+    if (row.outreach_status === 'interested') counts.interested++
+    if (row.outreach_status === 'no_response') counts.noResponse++
+    if (row.outreach_status === 'declined') counts.declined++
+    if (row.follow_up_date && row.follow_up_date <= today) counts.needsFollowUp++
+  }
+
+  return {
+    totalWrestlers: totalWrestlers || 0,
+    withTwitter: withTwitter || 0,
+    claimed: claimed || 0,
+    ...counts,
+  }
+}
+
+export async function upsertWrestlerOutreach(wrestlerId: string, data: {
+  outreach_status: string
+  contact_method?: string
+  notes?: string
+  follow_up_date?: string | null
+  priority?: number
+}) {
+  const now = new Date().toISOString()
+
+  const payload = {
+    wrestler_id: wrestlerId,
+    outreach_status: data.outreach_status,
+    contact_method: data.contact_method || 'twitter_dm',
+    contacted_at: data.outreach_status !== 'not_contacted' ? now : null,
+    last_contact_at: now,
+    contact_count: data.outreach_status !== 'not_contacted' ? 1 : 0,
+    notes: data.notes || null,
+    follow_up_date: data.follow_up_date || null,
+    priority: data.priority ?? 0,
+  }
+
+  const result = await adminApi({
+    action: 'upsert',
+    table: 'wrestler_outreach',
+    data: payload,
+    filter: { onConflict: 'wrestler_id' },
+  })
+
+  return result
+}
+
+// ============================================
 // SOCIAL / TWEET GENERATION
 // ============================================
 

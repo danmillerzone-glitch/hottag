@@ -35,6 +35,7 @@ import {
   verifyProfessional, unverifyProfessional, getPendingProfessionalClaims, getAllProfessionalClaims,
   approveProfessionalClaim, rejectProfessionalClaim,
   getOutreachPromotions, getOutreachStats, upsertOutreach, getPromotionEventCounts,
+  getOutreachWrestlers, getWrestlerOutreachStats, upsertWrestlerOutreach,
   getTonightEvents, getRecentChampionChanges, getNewlyAddedEvents, getWeekendEvents,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
@@ -56,7 +57,7 @@ const REGION_OPTIONS = [
   'Asia', 'Latin America', 'Middle East', 'Africa',
 ]
 
-type Tab = 'overview' | 'outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
+type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -177,7 +178,8 @@ export default function AdminPage() {
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'outreach', label: 'Outreach', icon: Send },
+    { id: 'outreach', label: 'Promo Outreach', icon: Send },
+    { id: 'wrestler-outreach', label: 'Wrestler Outreach', icon: Award },
     { id: 'social', label: 'Social', icon: MessageSquare },
     { id: 'promo-claims', label: 'Promo Claims', icon: Building2 },
     { id: 'wrestler-claims', label: 'Wrestler Claims', icon: Users },
@@ -234,6 +236,7 @@ export default function AdminPage() {
 
         <LazyTab active={activeTab === 'overview'}><OverviewTab /></LazyTab>
         <LazyTab active={activeTab === 'outreach'}><OutreachTab /></LazyTab>
+        <LazyTab active={activeTab === 'wrestler-outreach'}><WrestlerOutreachTab /></LazyTab>
         <LazyTab active={activeTab === 'social'}><SocialTab /></LazyTab>
         <LazyTab active={activeTab === 'promo-claims'}><PromoClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'wrestler-claims'}><WrestlerClaimsTab /></LazyTab>
@@ -467,7 +470,7 @@ function OutreachTab() {
 
   function copyDM(promo: any) {
     const claimCode = promo.claim_code ? `\n\nYour claim code is: ${promo.claim_code}` : ''
-    const dm = `Hello, I'm Dan Miller and I'm the producer for New Texas Pro. I also built Hot Tag, a free event discovery platform for indie wrestling. ${promo.name} already has a page: hottag.app/promotions/${promo.slug}\n\nClaim it to manage your events, showcase your roster, and help fans find your shows. More info: hottag.app/for-promotions${claimCode}`
+    const dm = `Hey, check out your page on Hot Tag and claim it now. ${promo.name} already has a page: hottag.app/promotions/${promo.slug}\n\nClaim it to manage your events, showcase your roster, and help fans find your shows. More info: hottag.app/for-promotions${claimCode}`
     navigator.clipboard.writeText(dm)
     setCopiedId(promo.id)
     setTimeout(() => setCopiedId(null), 2000)
@@ -882,6 +885,439 @@ function OutreachTab() {
           onClose={() => setEditingPromoDetails(null)}
           onSaved={() => { setEditingPromoDetails(null); loadData() }}
         />
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// WRESTLER OUTREACH TAB
+// ============================================
+
+function WrestlerOutreachTab() {
+  const [wrestlers, setWrestlers] = useState<any[]>([])
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState({
+    hasTwitter: false,
+    outreachStatus: 'all',
+    verificationStatus: 'all',
+  })
+  const [editingWrestler, setEditingWrestler] = useState<any>(null)
+  const [editStatus, setEditStatus] = useState('contacted')
+  const [editMethod, setEditMethod] = useState('twitter_dm')
+  const [editNotes, setEditNotes] = useState('')
+  const [editFollowUp, setEditFollowUp] = useState('')
+  const [editPriority, setEditPriority] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => { loadData() }, [filters])
+
+  async function loadData() {
+    setLoading(true)
+    const [wrst, outreachStats] = await Promise.all([
+      getOutreachWrestlers(filters),
+      getWrestlerOutreachStats(),
+    ])
+    setWrestlers(wrst)
+    setStats(outreachStats)
+    setLoading(false)
+  }
+
+  function getOutreachInfo(wrestler: any) {
+    return wrestler.wrestler_outreach?.[0] || null
+  }
+
+  function getStatusBadge(status: string) {
+    const s = OUTREACH_STATUSES.find(os => os.value === status) || OUTREACH_STATUSES[0]
+    const bgMap: Record<string, string> = {
+      not_contacted: 'bg-gray-800',
+      contacted: 'bg-yellow-900/50',
+      follow_up: 'bg-orange-900/50',
+      interested: 'bg-green-900/50',
+      claimed: 'bg-emerald-900/50',
+      declined: 'bg-red-900/50',
+      no_response: 'bg-gray-800',
+    }
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.color} ${bgMap[status] || 'bg-gray-800'}`}>
+        {s.label}
+      </span>
+    )
+  }
+
+  async function handleQuickContact(wrestler: any) {
+    setSaveError(null)
+    const now = new Date().toISOString()
+    setWrestlers(prev => prev.map(w =>
+      w.id === wrestler.id
+        ? { ...w, wrestler_outreach: [{ outreach_status: 'contacted', contact_method: 'twitter_dm', contacted_at: now, last_contact_at: now, contact_count: 1, notes: null, priority: 0, follow_up_date: null }] }
+        : w
+    ))
+    try {
+      await upsertWrestlerOutreach(wrestler.id, {
+        outreach_status: 'contacted',
+        contact_method: 'twitter_dm',
+      })
+      getWrestlerOutreachStats().then(s => setStats(s))
+    } catch (err: any) {
+      console.error('[wrestler outreach] save error:', err)
+      setSaveError(`Failed to save: ${err.message}`)
+      await loadData()
+    }
+  }
+
+  function openEditModal(wrestler: any) {
+    const outreach = getOutreachInfo(wrestler)
+    setEditingWrestler(wrestler)
+    setEditStatus(outreach?.outreach_status || 'contacted')
+    setEditMethod(outreach?.contact_method || 'twitter_dm')
+    setEditNotes(outreach?.notes || '')
+    setEditFollowUp(outreach?.follow_up_date || '')
+    setEditPriority(outreach?.priority || 0)
+  }
+
+  async function handleSaveOutreach() {
+    if (!editingWrestler) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await upsertWrestlerOutreach(editingWrestler.id, {
+        outreach_status: editStatus,
+        contact_method: editMethod,
+        notes: editNotes || undefined,
+        follow_up_date: editFollowUp || null,
+        priority: editPriority,
+      })
+      const now = new Date().toISOString()
+      setWrestlers(prev => prev.map(w =>
+        w.id === editingWrestler.id
+          ? { ...w, wrestler_outreach: [{ ...getOutreachInfo(w), outreach_status: editStatus, contact_method: editMethod, notes: editNotes || null, follow_up_date: editFollowUp || null, priority: editPriority, last_contact_at: now }] }
+          : w
+      ))
+      setEditingWrestler(null)
+      getWrestlerOutreachStats().then(s => setStats(s))
+    } catch (err: any) {
+      console.error('[wrestler outreach] save error:', err)
+      setSaveError(`Failed to save: ${err.message}`)
+      await loadData()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function copyDM(wrestler: any) {
+    const claimCode = wrestler.claim_code ? `\n\nYour claim code is: ${wrestler.claim_code}` : ''
+    const dm = `Hey, check out your page on Hot Tag and claim it now: hottag.app/wrestlers/${wrestler.slug}\n\nManage your profile, showcase your merch, and connect with fans. More info: hottag.app/for-wrestlers${claimCode}`
+    navigator.clipboard.writeText(dm)
+    setCopiedId(wrestler.id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  // Filter by search
+  const filtered = searchQuery.length >= 2
+    ? wrestlers.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : wrestlers
+
+  return (
+    <div>
+      {saveError && (
+        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg flex items-center justify-between">
+          <span className="text-red-300 text-sm">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="text-red-400 hover:text-red-300 ml-4"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
+      {/* Stats */}
+      {stats && (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 mb-6">
+          {[
+            { label: 'Total', value: stats.totalWrestlers, color: 'text-blue-400' },
+            { label: 'Has X', value: stats.withTwitter, color: 'text-blue-400' },
+            { label: 'Contacted', value: stats.contacted, color: 'text-yellow-400' },
+            { label: 'Interested', value: stats.interested, color: 'text-green-400' },
+            { label: 'No Reply', value: stats.noResponse, color: 'text-gray-400' },
+            { label: 'Declined', value: stats.declined, color: 'text-red-400' },
+            { label: 'Claimed', value: stats.claimed, color: 'text-emerald-400' },
+            { label: 'Follow Up', value: stats.needsFollowUp, color: stats.needsFollowUp > 0 ? 'text-orange-400' : 'text-foreground-muted' },
+          ].map(card => (
+            <div key={card.label} className="card p-3 text-center">
+              <div className={`text-2xl font-display font-bold ${card.color}`}>{card.value}</div>
+              <div className="text-xs text-foreground-muted mt-1">{card.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="card p-4 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search wrestlers..."
+              className="bg-background-tertiary border border-border rounded-lg pl-9 pr-3 py-2 text-sm w-48"
+            />
+          </div>
+
+          <select
+            value={filters.outreachStatus}
+            onChange={e => setFilters(f => ({ ...f, outreachStatus: e.target.value }))}
+            className="bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Statuses</option>
+            {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+
+          <select
+            value={filters.verificationStatus}
+            onChange={e => setFilters(f => ({ ...f, verificationStatus: e.target.value }))}
+            className="bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Verification</option>
+            <option value="unverified">Unverified</option>
+            <option value="verified">Verified</option>
+          </select>
+
+          <label className="flex items-center gap-2 text-sm text-foreground-muted cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.hasTwitter}
+              onChange={e => setFilters(f => ({ ...f, hasTwitter: e.target.checked }))}
+              className="rounded border-border"
+            />
+            Has X Handle
+          </label>
+
+          <span className="ml-auto text-sm text-foreground-muted">{filtered.length} wrestlers</span>
+        </div>
+      </div>
+
+      {/* Wrestler List */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : filtered.length === 0 ? (
+        <EmptyState text="No wrestlers match the current filters" />
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="divide-y divide-border">
+            {filtered.map((wrestler: any) => {
+              const outreach = getOutreachInfo(wrestler)
+              const status = outreach?.outreach_status || 'not_contacted'
+
+              return (
+                <div key={wrestler.id} className="px-4 py-3 hover:bg-background-tertiary/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Photo + Name */}
+                    <div className="flex items-center gap-2 min-w-[200px]">
+                      {wrestler.photo_url ? (
+                        <img src={wrestler.photo_url} alt="" className="w-6 h-6 rounded-full object-cover bg-background-tertiary" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-background-tertiary flex items-center justify-center">
+                          <User className="w-3 h-3 text-foreground-muted" />
+                        </div>
+                      )}
+                      <a
+                        href={`/wrestlers/${wrestler.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-sm hover:text-accent transition-colors truncate max-w-[180px]"
+                        title={wrestler.name}
+                      >
+                        {wrestler.name}
+                      </a>
+                      {wrestler.claimed_by && (
+                        <span title="Claimed"><BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" /></span>
+                      )}
+                    </div>
+
+                    {/* X handle */}
+                    <div className="w-[140px]">
+                      {wrestler.twitter_handle ? (
+                        <a
+                          href={`https://x.com/${wrestler.twitter_handle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          @{wrestler.twitter_handle}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-foreground-muted">No X handle</span>
+                      )}
+                    </div>
+
+                    {/* Status badge */}
+                    <div className="w-[110px]">
+                      {getStatusBadge(status)}
+                    </div>
+
+                    {/* Last contacted */}
+                    <div className="text-xs text-foreground-muted w-[80px]">
+                      {outreach?.last_contact_at
+                        ? new Date(outreach.last_contact_at).toLocaleDateString()
+                        : '—'}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 ml-auto">
+                      {status === 'not_contacted' && wrestler.twitter_handle && (
+                        <button
+                          onClick={() => handleQuickContact(wrestler)}
+                          className="px-2 py-1 text-xs bg-yellow-900/50 text-yellow-400 rounded hover:bg-yellow-900 transition-colors"
+                          title="Mark as Contacted"
+                        >
+                          <Send className="w-3 h-3" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => copyDM(wrestler)}
+                        className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                        title="Copy DM Template"
+                      >
+                        {copiedId === wrestler.id ? (
+                          <CheckCircle className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <ClipboardCopy className="w-3 h-3" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => openEditModal(wrestler)}
+                        className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                        title="Edit Outreach Details"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                      {wrestler.twitter_handle && (
+                        <a
+                          href={`https://x.com/${wrestler.twitter_handle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 text-xs bg-background-tertiary text-foreground-muted rounded hover:text-foreground transition-colors"
+                          title="Open X Profile"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {outreach?.notes && (
+                    <div className="mt-1 ml-8 text-xs text-foreground-muted truncate max-w-[500px]" title={outreach.notes}>
+                      {outreach.notes}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Outreach Modal */}
+      {editingWrestler && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setEditingWrestler(null)}>
+          <div className="bg-background-secondary rounded-xl border border-border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-bold text-lg">{editingWrestler.name}</h3>
+              <button onClick={() => setEditingWrestler(null)} className="text-foreground-muted hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editingWrestler.twitter_handle && (
+              <a
+                href={`https://x.com/${editingWrestler.twitter_handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-400 hover:text-blue-300 mb-4 block"
+              >
+                @{editingWrestler.twitter_handle}
+              </a>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={e => setEditStatus(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Contact Method</label>
+                <select
+                  value={editMethod}
+                  onChange={e => setEditMethod(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  {CONTACT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Notes</label>
+                <textarea
+                  value={editNotes}
+                  onChange={e => setEditNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Any notes about this outreach..."
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Follow-up Date</label>
+                <input
+                  type="date"
+                  value={editFollowUp}
+                  onChange={e => setEditFollowUp(e.target.value)}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-foreground-muted block mb-1">Priority</label>
+                <select
+                  value={editPriority}
+                  onChange={e => setEditPriority(Number(e.target.value))}
+                  className="w-full bg-background-tertiary border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value={0}>Normal</option>
+                  <option value={1}>High</option>
+                  <option value={2}>Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setEditingWrestler(null)}
+                className="px-4 py-2 text-sm text-foreground-muted hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveOutreach}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

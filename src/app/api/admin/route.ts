@@ -41,6 +41,7 @@ const ALLOWED_TABLES = new Set([
   'promotion_admins',
   'promotion_groups',
   'promotion_outreach',
+  'wrestler_outreach',
   'site_announcements',
   'homepage_news',
   'hero_slides',
