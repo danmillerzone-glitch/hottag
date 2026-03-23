@@ -2471,7 +2471,7 @@ function NewsFeedTab() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [form, setForm] = useState({
     title: '', body: '', type: 'announcement', image_url: '', link_url: '', expires_at: '',
-    size: 'small', sort_order: 0,
+    size: 'small', sort_order: 1,
   })
   const [saving, setSaving] = useState(false)
 

@@ -517,6 +517,7 @@ def load_events(events):
                 "related_event_id": result['id'],
                 "related_promotion_id": promo_id,
                 "is_auto": True,
+                "sort_order": 1,
                 "expires_at": (datetime.now() + timedelta(days=10)).isoformat(),
             })
         else:
@@ -855,20 +856,30 @@ def sync_championships():
                     if result:
                         total_updated += 1
 
-                        # Create homepage news for new championship
-                        if champ_1_id and len(title['champions']) >= 1:
-                            w = find_wrestler_by_name(title['champions'][0])
-                            champ_link = f"/wrestlers/{w['slug']}" if w else None
-                            db_post("homepage_news", {
-                                "type": "title_change",
-                                "title": f"{title['champions'][0]} holds the {title['name']}!",
-                                "link_url": champ_link,
-                                "related_wrestler_id": champ_1_id,
-                                "related_promotion_id": promo['id'],
-                                "related_championship_id": result['id'],
-                                "is_auto": True,
-                                "expires_at": (datetime.now() + timedelta(days=10)).isoformat(),
-                            })
+                        # Create homepage news for new championship (only for recently won titles)
+                        won_date = title.get('won_date')
+                        if champ_1_id and len(title['champions']) >= 1 and won_date:
+                            from datetime import datetime as dt_cls
+                            try:
+                                won_dt = dt_cls.fromisoformat(won_date.replace('Z', '+00:00'))
+                                days_since = (datetime.now(won_dt.tzinfo) - won_dt).days if won_dt.tzinfo else (datetime.now() - won_dt).days
+                            except Exception:
+                                days_since = 999
+                            if days_since <= 14:
+                                w = find_wrestler_by_name(title['champions'][0])
+                                champ_link = f"/wrestlers/{w['slug']}" if w else None
+                                db_post("homepage_news", {
+                                    "type": "title_change",
+                                    "title": f"{title['champions'][0]} wins the {title['name']}!",
+                                    "link_url": champ_link,
+                                    "related_wrestler_id": champ_1_id,
+                                    "related_promotion_id": promo['id'],
+                                    "related_championship_id": result['id'],
+                                    "is_auto": True,
+                                    "sort_order": 1,
+                                    "display_date": won_date,
+                                    "expires_at": (datetime.now() + timedelta(days=10)).isoformat(),
+                                })
 
             processed += 1
         except Exception as e:
