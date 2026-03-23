@@ -96,16 +96,11 @@ export default function WrestlersPage() {
         .gt('follower_count', 0)
         .order('follower_count', { ascending: false })
         .limit(18),
-      // Belt Collectors — solo/tag championships
+      // Belt Collectors — all active championships with any holder
       supabase.from('promotion_championships')
         .select('id, name, current_champion_id, current_champion_2_id, champion_group_id')
         .eq('is_active', true)
-        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null'),
-      // Belt Collectors — group championships (tag teams/factions holding titles)
-      supabase.from('promotion_championships')
-        .select('id, name, champion_group_id')
-        .eq('is_active', true)
-        .not('champion_group_id', 'is', null),
+        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null,champion_group_id.not.is.null'),
       // Road Warriors — wrestlers on multiple rosters
       supabase.from('wrestler_promotions')
         .select('wrestler_id')
@@ -123,62 +118,64 @@ export default function WrestlersPage() {
     }
 
     const results = await Promise.all(queries)
-    const [verifiedRes, popularRes, champRes, followedRes, beltRes, groupBeltRes, rosterRes] = results
+    const [verifiedRes, popularRes, champRes, followedRes, beltRes, rosterRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
     setMostFollowed(followedRes.data || [])
 
     // Process belt collectors — count unique titles per wrestler
-    // Dedup key: name + partner/group context (matches wrestler detail page logic)
-    // This correctly merges inter-promotional titles (same name, same holders)
-    // while keeping separate titles that share a name but have different holders
-    console.log('[Belt Collectors] beltRes count:', beltRes?.data?.length, 'groupBeltRes count:', groupBeltRes?.data?.length)
+    // Uses SAME dedup logic as wrestler detail page (getWrestlerChampionships):
+    // key = name||partnerKey where partnerKey = partner_id, group_name, or ''
     const titleKeys: Record<string, Set<string>> = {}
-    if (beltRes?.data) {
+    if (beltRes?.data && beltRes.data.length > 0) {
+      // Fetch group names + members for any group-held titles
+      const groupIds = beltRes.data.map((c: any) => c.champion_group_id).filter(Boolean)
+      let groupMembers: Record<string, string[]> = {}
+      let groupNames: Record<string, string> = {}
+      if (groupIds.length > 0) {
+        const [{ data: members }, { data: groups }] = await Promise.all([
+          supabase.from('promotion_group_members')
+            .select('group_id, wrestler_id').in('group_id', groupIds),
+          supabase.from('promotion_groups')
+            .select('id, name').in('id', groupIds),
+        ])
+        for (const m of (members || [])) {
+          if (!groupMembers[m.group_id]) groupMembers[m.group_id] = []
+          groupMembers[m.group_id].push(m.wrestler_id)
+        }
+        for (const g of (groups || [])) {
+          groupNames[g.id] = g.name
+        }
+      }
+
       for (const c of beltRes.data) {
-        const dedupKey = `${c.name}||${c.current_champion_2_id || ''}||${c.champion_group_id || ''}`
+        // Individual champion path (matches detail page asChamp1)
         if (c.current_champion_id) {
+          const partnerKey = c.current_champion_2_id || ''
+          const dedupKey = `${c.name}||${partnerKey}`
           if (!titleKeys[c.current_champion_id]) titleKeys[c.current_champion_id] = new Set()
           titleKeys[c.current_champion_id].add(dedupKey)
         }
+        // Tag partner path (matches detail page asChamp2)
         if (c.current_champion_2_id) {
+          const partnerKey = c.current_champion_id || ''
+          const dedupKey = `${c.name}||${partnerKey}`
           if (!titleKeys[c.current_champion_2_id]) titleKeys[c.current_champion_2_id] = new Set()
           titleKeys[c.current_champion_2_id].add(dedupKey)
         }
-      }
-    }
-    // Group championships — fetch members for each group title
-    if (groupBeltRes?.data && groupBeltRes.data.length > 0) {
-      const groupIds = groupBeltRes.data.map((c: any) => c.champion_group_id).filter(Boolean)
-      if (groupIds.length > 0) {
-        const { data: members } = await supabase
-          .from('promotion_group_members')
-          .select('group_id, wrestler_id')
-          .in('group_id', groupIds)
-        if (members) {
-          const groupMembers: Record<string, string[]> = {}
-          for (const m of members) {
-            if (!groupMembers[m.group_id]) groupMembers[m.group_id] = []
-            groupMembers[m.group_id].push(m.wrestler_id)
-          }
-          for (const c of groupBeltRes.data) {
-            const dedupKey = `${c.name}||||${c.champion_group_id}`
-            const wrestlers = groupMembers[c.champion_group_id] || []
-            for (const wId of wrestlers) {
-              if (!titleKeys[wId]) titleKeys[wId] = new Set()
-              titleKeys[wId].add(dedupKey)
-            }
+        // Group championship path (matches detail page groupChamps)
+        if (c.champion_group_id) {
+          const gName = groupNames[c.champion_group_id] || ''
+          const dedupKey = `${c.name}||${gName}`
+          const wrestlers = groupMembers[c.champion_group_id] || []
+          for (const wId of wrestlers) {
+            if (!titleKeys[wId]) titleKeys[wId] = new Set()
+            titleKeys[wId].add(dedupKey)
           }
         }
       }
     }
-    // Debug: log top wrestlers and their title keys
-    const debugTop = Object.entries(titleKeys)
-      .map(([id, keys]) => ({ id, count: keys.size, keys: Array.from(keys) }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10)
-    console.log('[Belt Collectors] Top wrestlers:', JSON.stringify(debugTop, null, 2))
 
     if (Object.keys(titleKeys).length > 0) {
       // Sort by unique title count descending, take top 6 with 2+ titles
@@ -265,8 +262,8 @@ export default function WrestlersPage() {
     }
 
     // Vegas Weekend talent
-    if (showVegas && results[7]?.data) {
-      const vegasIds = Array.from(new Set(results[7].data.map((r: any) => r.wrestler_id))) as string[]
+    if (showVegas && results[6]?.data) {
+      const vegasIds = Array.from(new Set(results[6].data.map((r: any) => r.wrestler_id))) as string[]
       if (vegasIds.length > 0) {
         const { data: vegasData } = await supabase
           .from('wrestlers').select(SELECT_COLS)
