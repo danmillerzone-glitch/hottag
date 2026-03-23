@@ -257,7 +257,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
           {event.ticket_url && (
             <span className="flex items-center gap-1 text-sm text-accent">
               <Ticket className="w-4 h-4" />
-              {formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free)}
+              {formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free, event.ticket_price_display)}
             </span>
           )}
           

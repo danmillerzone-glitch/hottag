@@ -23,8 +23,7 @@ import {
 
 export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: any) => void }) {
   const [ticketUrl, setTicketUrl] = useState(event.ticket_url || '')
-  const [priceMin, setPriceMin] = useState(event.ticket_price_min?.toString() || '')
-  const [priceMax, setPriceMax] = useState(event.ticket_price_max?.toString() || '')
+  const [priceDisplay, setPriceDisplay] = useState(event.ticket_price_display || '')
   const [isFree, setIsFree] = useState(event.is_free || false)
   const [isSoldOut, setIsSoldOut] = useState(event.is_sold_out || false)
   const [couponCode, setCouponCode] = useState(event.coupon_code || '')
@@ -35,7 +34,7 @@ export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: 
   const handleSave = async () => {
     setSaving(true); setSaved(false)
     try {
-      const updated = await updateEvent(event.id, { ticket_url: ticketUrl || null, ticket_price_min: priceMin ? parseFloat(priceMin) : null, ticket_price_max: priceMax ? parseFloat(priceMax) : null, is_free: isFree, is_sold_out: isSoldOut, coupon_code: couponCode || null, coupon_label: couponLabel || null })
+      const updated = await updateEvent(event.id, { ticket_url: ticketUrl || null, ticket_price_display: priceDisplay || null, is_free: isFree, is_sold_out: isSoldOut, coupon_code: couponCode || null, coupon_label: couponLabel || null })
       onUpdate({ ...event, ...updated }); setSaved(true); setTimeout(() => setSaved(false), 3000)
     } catch (err) { console.error('Error saving:', err) }
     setSaving(false)
@@ -53,17 +52,10 @@ export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: 
           <input type="url" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="https://tickets.example.com/your-event"
             className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Min Price ($)</label>
-            <input type="number" step="0.01" min="0" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} placeholder="20.00" disabled={isFree}
-              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors disabled:opacity-40" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Max Price ($)</label>
-            <input type="number" step="0.01" min="0" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} placeholder="40.00" disabled={isFree}
-              className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors disabled:opacity-40" />
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Ticket Price</label>
+          <input type="text" value={priceDisplay} onChange={(e) => setPriceDisplay(e.target.value)} placeholder="$25, $20 - $40, ¥2500, €10, etc." disabled={isFree}
+            className="w-full px-3 py-2.5 rounded-lg bg-background-tertiary border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors disabled:opacity-40" />
         </div>
         <div className="flex gap-6">
           <label className="flex items-center gap-2 cursor-pointer">

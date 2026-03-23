@@ -113,7 +113,7 @@ const PosterEventCard = memo(function PosterEventCard({ event }: PosterEventCard
               {event.ticket_url && (
                 <span className="flex items-center gap-1 text-accent">
                   <Ticket className="w-3 h-3" />
-                  {formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free)}
+                  {formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free, event.ticket_price_display)}
                 </span>
               )}
             </div>

@@ -3423,7 +3423,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreat
     name: '', event_date: '', promotion_id: '',
     venue_name: '', venue_address: '', city: '', state: '', country: 'USA',
     doors_time: '', event_time: '',
-    ticket_url: '', ticket_price_min: '', ticket_price_max: '',
+    ticket_url: '', ticket_price_display: '',
     is_free: false, is_sold_out: false,
     coupon_code: '', coupon_label: '',
     poster_url: '', landscape_poster_url: '',
@@ -3523,8 +3523,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreat
         doors_time: form.doors_time || null,
         event_time: form.event_time || null,
         ticket_url: form.ticket_url || null,
-        ticket_price_min: form.ticket_price_min ? parseFloat(form.ticket_price_min) : null,
-        ticket_price_max: form.ticket_price_max ? parseFloat(form.ticket_price_max) : null,
+        ticket_price_display: form.ticket_price_display || null,
         is_free: form.is_free,
         is_sold_out: form.is_sold_out,
         coupon_code: form.coupon_code || null,
@@ -3616,10 +3615,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreat
               <FieldRow label="Bell Time"><input className="w-full input-field" type="time" value={form.event_time} onChange={e => setForm({ ...form, event_time: e.target.value })} /></FieldRow>
             </div>
             <FieldRow label="Ticket URL"><input className="w-full input-field" value={form.ticket_url} onChange={e => setForm({ ...form, ticket_url: e.target.value })} /></FieldRow>
-            <div className="grid grid-cols-2 gap-3">
-              <FieldRow label="Min Price"><input className="w-full input-field" type="number" step="0.01" value={form.ticket_price_min} onChange={e => setForm({ ...form, ticket_price_min: e.target.value })} placeholder="$" /></FieldRow>
-              <FieldRow label="Max Price"><input className="w-full input-field" type="number" step="0.01" value={form.ticket_price_max} onChange={e => setForm({ ...form, ticket_price_max: e.target.value })} placeholder="$" /></FieldRow>
-            </div>
+            <FieldRow label="Ticket Price"><input className="w-full input-field" value={form.ticket_price_display} onChange={e => setForm({ ...form, ticket_price_display: e.target.value })} placeholder="$25, $20 - $40, ¥2500, etc." /></FieldRow>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_free} onChange={e => setForm({ ...form, is_free: e.target.checked })} className="rounded" /> Free Event</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_sold_out} onChange={e => setForm({ ...form, is_sold_out: e.target.checked })} className="rounded" /> Sold Out</label>

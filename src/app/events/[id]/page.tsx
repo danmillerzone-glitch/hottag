@@ -400,7 +400,7 @@ export default async function EventPage({ params }: EventPageProps) {
                   {event.is_sold_out ? (
                     <span className="text-red-400">Sold Out</span>
                   ) : (
-                    formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free)
+                    formatPrice(event.ticket_price_min, event.ticket_price_max, event.is_free, event.ticket_price_display)
                   )}
                 </div>
               </div>

@@ -269,6 +269,7 @@ export async function updateEvent(eventId: string, updates: {
   streaming_url?: string | null
   ticket_price_min?: number | null
   ticket_price_max?: number | null
+  ticket_price_display?: string | null
   is_free?: boolean
   is_sold_out?: boolean
   description?: string | null

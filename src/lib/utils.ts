@@ -66,8 +66,9 @@ export function formatLocation(city: string | null, state: string | null, countr
 }
 
 // Price formatting
-export function formatPrice(min: number | null, max: number | null, isFree: boolean): string {
+export function formatPrice(min: number | null, max: number | null, isFree: boolean, displayText?: string | null): string {
   if (isFree) return 'Free'
+  if (displayText) return displayText
   if (!min && !max) return 'TBA'
   if (min && max && min !== max) {
     return `$${min} - $${max}`

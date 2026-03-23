@@ -680,6 +680,7 @@ export async function createEventAdmin(eventData: {
   ticket_url?: string | null
   ticket_price_min?: number | null
   ticket_price_max?: number | null
+  ticket_price_display?: string | null
   is_free?: boolean
   is_sold_out?: boolean
   coupon_code?: string | null
