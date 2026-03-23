@@ -124,80 +124,79 @@ export default function WrestlersPage() {
     setPopular(popularRes.data || [])
     setMostFollowed(followedRes.data || [])
 
-    // Process belt collectors — count unique titles per wrestler
-    // Uses SAME dedup logic as wrestler detail page (getWrestlerChampionships):
-    // key = name||partnerKey where partnerKey = partner_id, group_name, or ''
-    const titleKeys: Record<string, Set<string>> = {}
+    // Process belt collectors — per-wrestler queries matching detail page exactly
     if (beltRes?.data && beltRes.data.length > 0) {
-      // Fetch group names + members for any group-held titles
-      const groupIds = beltRes.data.map((c: any) => c.champion_group_id).filter(Boolean)
-      let groupMembers: Record<string, string[]> = {}
-      let groupNames: Record<string, string> = {}
-      if (groupIds.length > 0) {
-        const [{ data: members }, { data: groups }] = await Promise.all([
-          supabase.from('promotion_group_members')
-            .select('group_id, wrestler_id').in('group_id', groupIds),
-          supabase.from('promotion_groups')
-            .select('id, name').in('id', groupIds),
-        ])
-        for (const m of (members || [])) {
-          if (!groupMembers[m.group_id]) groupMembers[m.group_id] = []
-          groupMembers[m.group_id].push(m.wrestler_id)
-        }
-        for (const g of (groups || [])) {
-          groupNames[g.id] = g.name
-        }
-      }
-
+      // Quick rough count to identify candidates
+      const quickCount: Record<string, number> = {}
       for (const c of beltRes.data) {
-        // Individual champion path (matches detail page asChamp1)
-        if (c.current_champion_id) {
-          const partnerKey = c.current_champion_2_id || ''
-          const dedupKey = `${c.name}||${partnerKey}`
-          if (!titleKeys[c.current_champion_id]) titleKeys[c.current_champion_id] = new Set()
-          titleKeys[c.current_champion_id].add(dedupKey)
-        }
-        // Tag partner path (matches detail page asChamp2)
-        if (c.current_champion_2_id) {
-          const partnerKey = c.current_champion_id || ''
-          const dedupKey = `${c.name}||${partnerKey}`
-          if (!titleKeys[c.current_champion_2_id]) titleKeys[c.current_champion_2_id] = new Set()
-          titleKeys[c.current_champion_2_id].add(dedupKey)
-        }
-        // Group championship path (matches detail page groupChamps)
-        if (c.champion_group_id) {
-          const gName = groupNames[c.champion_group_id] || ''
-          const dedupKey = `${c.name}||${gName}`
-          const wrestlers = groupMembers[c.champion_group_id] || []
-          for (const wId of wrestlers) {
-            if (!titleKeys[wId]) titleKeys[wId] = new Set()
-            titleKeys[wId].add(dedupKey)
-          }
+        if (c.current_champion_id) quickCount[c.current_champion_id] = (quickCount[c.current_champion_id] || 0) + 1
+        if (c.current_champion_2_id) quickCount[c.current_champion_2_id] = (quickCount[c.current_champion_2_id] || 0) + 1
+      }
+      const grpIds = beltRes.data.map((c: any) => c.champion_group_id).filter(Boolean)
+      if (grpIds.length > 0) {
+        const { data: grpMembers } = await supabase
+          .from('promotion_group_members').select('wrestler_id').in('group_id', grpIds)
+        for (const m of (grpMembers || [])) {
+          quickCount[m.wrestler_id] = (quickCount[m.wrestler_id] || 0) + 1
         }
       }
-    }
 
-    if (Object.keys(titleKeys).length > 0) {
-      // Sort by unique title count descending, take top 6 with 2+ titles
-      const topCollectors = Object.entries(titleKeys)
-        .map(([id, keys]) => [id, keys.size] as [string, number])
+      // Candidates: wrestlers appearing 2+ times in championship data
+      const candidates = Object.entries(quickCount)
         .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 20)
+        .map(([id]) => id)
 
-      if (topCollectors.length > 0) {
-        const collectorIds = topCollectors.map(([id]) => id)
-        const { data: collectorWrestlers } = await supabase
-          .from('wrestlers').select(SELECT_COLS)
-          .in('id', collectorIds)
-        if (collectorWrestlers) {
-          const ordered = topCollectors
-            .map(([id, count]) => {
-              const w = collectorWrestlers.find((cw: WrestlerCard) => cw.id === id)
-              return w ? { wrestler: w, titleCount: count } : null
-            })
-            .filter(Boolean) as { wrestler: WrestlerCard; titleCount: number }[]
-          setBeltCollectors(ordered)
+      if (candidates.length > 0) {
+        // Accurate count per wrestler using EXACT same queries as detail page
+        const counts = await Promise.all(
+          candidates.map(async (wId): Promise<[string, number]> => {
+            const [{ data: asChamp1 }, { data: asChamp2 }, { data: gm }] = await Promise.all([
+              supabase.from('promotion_championships')
+                .select('name, current_champion_2_id')
+                .eq('current_champion_id', wId).eq('is_active', true),
+              supabase.from('promotion_championships')
+                .select('name, current_champion_id')
+                .eq('current_champion_2_id', wId).eq('is_active', true),
+              supabase.from('promotion_group_members')
+                .select('group_id').eq('wrestler_id', wId),
+            ])
+            let groupChamps: any[] = []
+            if (gm && gm.length > 0) {
+              const { data } = await supabase.from('promotion_championships')
+                .select('name, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey(name)')
+                .in('champion_group_id', gm.map((m: any) => m.group_id))
+                .eq('is_active', true)
+              groupChamps = data || []
+            }
+            const keys = new Set<string>()
+            for (const c of (asChamp1 || [])) keys.add(`${c.name}||${c.current_champion_2_id || ''}`)
+            for (const c of (asChamp2 || [])) keys.add(`${c.name}||${c.current_champion_id || ''}`)
+            for (const c of groupChamps) keys.add(`${c.name}||${(c as any).champion_group?.name || ''}`)
+            return [wId, keys.size]
+          })
+        )
+
+        const topCollectors = counts
+          .filter(([, count]) => count >= 2)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+
+        if (topCollectors.length > 0) {
+          const collectorIds = topCollectors.map(([id]) => id)
+          const { data: collectorWrestlers } = await supabase
+            .from('wrestlers').select(SELECT_COLS)
+            .in('id', collectorIds)
+          if (collectorWrestlers) {
+            const ordered = topCollectors
+              .map(([id, count]) => {
+                const w = collectorWrestlers.find((cw: WrestlerCard) => cw.id === id)
+                return w ? { wrestler: w, titleCount: count } : null
+              })
+              .filter(Boolean) as { wrestler: WrestlerCard; titleCount: number }[]
+            setBeltCollectors(ordered)
+          }
         }
       }
     }
