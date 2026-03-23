@@ -98,9 +98,9 @@ export default function WrestlersPage() {
         .limit(18),
       // Belt Collectors — all active championships to count per wrestler
       supabase.from('promotion_championships')
-        .select('id, name, current_champion_id, current_champion_2_id')
+        .select('id, name, current_champion_id, current_champion_2_id, champion_group_id, champion_group:promotion_groups(promotion_group_members(wrestler_id))')
         .eq('is_active', true)
-        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null'),
+        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null,champion_group_id.not.is.null'),
       // Road Warriors — wrestlers on multiple rosters
       supabase.from('wrestler_promotions')
         .select('wrestler_id')
@@ -136,6 +136,15 @@ export default function WrestlersPage() {
         if (c.current_champion_2_id) {
           if (!titleNames[c.current_champion_2_id]) titleNames[c.current_champion_2_id] = {}
           titleNames[c.current_champion_2_id][c.name] = true
+        }
+        // Group championships — each member of the group gets credit
+        if (c.champion_group?.promotion_group_members) {
+          for (const m of c.champion_group.promotion_group_members) {
+            if (m.wrestler_id) {
+              if (!titleNames[m.wrestler_id]) titleNames[m.wrestler_id] = {}
+              titleNames[m.wrestler_id][c.name] = true
+            }
+          }
         }
       }
       // Sort by unique title count descending, take top 6 with 2+ titles
