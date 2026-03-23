@@ -11,6 +11,7 @@ import QRCodeButton from '@/components/QRCodeButton'
 import ShareButton from '@/components/ShareButton'
 import MerchGallery from '@/components/MerchGallery'
 import VideoCarousel from '@/components/VideoCarousel'
+import UpcomingEventsCarousel from '@/components/UpcomingEventsCarousel'
 import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
 
 // X (Twitter) icon component
@@ -678,34 +679,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-display font-bold mb-6">
-              Upcoming Events ({upcomingEvents.length})
-            </h2>
-            <div className="space-y-3">
-              {upcomingEvents.map((event: any) => (
-                <Link
-                  key={event.id}
-                  href={`/events/${event.id}`}
-                  className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors"
-                >
-                  <div className="flex-shrink-0 w-16 text-center">
-                    <div className="text-accent font-bold">
-                      {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short' })}
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {new Date(event.event_date).getDate()}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{event.name}</div>
-                    <div className="text-sm text-foreground-muted">
-                      {[event.city?.replace(/,$/, ''), event.state, event.country !== 'United States' && event.country !== 'USA' ? event.country : null].filter(Boolean).join(', ')}
-                    </div>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
-                </Link>
-              ))}
-            </div>
+            <UpcomingEventsCarousel events={upcomingEvents} />
           </div>
         )}
 
