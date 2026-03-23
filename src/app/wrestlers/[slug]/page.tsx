@@ -86,7 +86,13 @@ async function getWrestlerChampionships(wrestlerId: string) {
       }
     }
   }
-  return Object.values(grouped)
+  // Sort by won_date descending (most recent first), nulls last
+  return Object.values(grouped).sort((a: any, b: any) => {
+    if (!a.won_date && !b.won_date) return 0
+    if (!a.won_date) return 1
+    if (!b.won_date) return -1
+    return b.won_date.localeCompare(a.won_date)
+  })
 }
 
 async function getWrestlerGroups(wrestlerId: string) {
@@ -610,7 +616,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
               {championships.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-lg font-display font-bold mb-3">Championships</h2>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="space-y-2">
                     {championships.map((champ: any) => {
                       const promos = champ.allPromotions || [champ.promotions]
                       const isInterPromotional = promos.length > 1
