@@ -96,11 +96,16 @@ export default function WrestlersPage() {
         .gt('follower_count', 0)
         .order('follower_count', { ascending: false })
         .limit(18),
-      // Belt Collectors — all active championships to count per wrestler
+      // Belt Collectors — solo/tag championships
       supabase.from('promotion_championships')
-        .select('id, name, current_champion_id, current_champion_2_id, champion_group_id, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey(promotion_group_members(wrestler_id))')
+        .select('id, name, current_champion_id, current_champion_2_id')
         .eq('is_active', true)
-        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null,champion_group_id.not.is.null'),
+        .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null'),
+      // Belt Collectors — group championships (tag teams/factions holding titles)
+      supabase.from('promotion_championships')
+        .select('id, name, champion_group_id')
+        .eq('is_active', true)
+        .not('champion_group_id', 'is', null),
       // Road Warriors — wrestlers on multiple rosters
       supabase.from('wrestler_promotions')
         .select('wrestler_id')
@@ -118,7 +123,7 @@ export default function WrestlersPage() {
     }
 
     const results = await Promise.all(queries)
-    const [verifiedRes, popularRes, champRes, followedRes, beltRes, rosterRes] = results
+    const [verifiedRes, popularRes, champRes, followedRes, beltRes, groupBeltRes, rosterRes] = results
 
     setVerified(verifiedRes.data || [])
     setPopular(popularRes.data || [])
@@ -126,8 +131,8 @@ export default function WrestlersPage() {
 
     // Process belt collectors — count unique titles per wrestler
     // (dedup by championship name to handle inter-promotional titles)
-    if (beltRes?.data && beltRes.data.length > 0) {
-      const titleNames: Record<string, Record<string, true>> = {}
+    const titleNames: Record<string, Record<string, true>> = {}
+    if (beltRes?.data) {
       for (const c of beltRes.data) {
         if (c.current_champion_id) {
           if (!titleNames[c.current_champion_id]) titleNames[c.current_champion_id] = {}
@@ -137,16 +142,33 @@ export default function WrestlersPage() {
           if (!titleNames[c.current_champion_2_id]) titleNames[c.current_champion_2_id] = {}
           titleNames[c.current_champion_2_id][c.name] = true
         }
-        // Group championships — each member of the group gets credit
-        if (c.champion_group?.promotion_group_members) {
-          for (const m of c.champion_group.promotion_group_members) {
-            if (m.wrestler_id) {
-              if (!titleNames[m.wrestler_id]) titleNames[m.wrestler_id] = {}
-              titleNames[m.wrestler_id][c.name] = true
+      }
+    }
+    // Group championships — fetch members for each group title
+    if (groupBeltRes?.data && groupBeltRes.data.length > 0) {
+      const groupIds = groupBeltRes.data.map((c: any) => c.champion_group_id).filter(Boolean)
+      if (groupIds.length > 0) {
+        const { data: members } = await supabase
+          .from('promotion_group_members')
+          .select('group_id, wrestler_id')
+          .in('group_id', groupIds)
+        if (members) {
+          const groupMembers: Record<string, string[]> = {}
+          for (const m of members) {
+            if (!groupMembers[m.group_id]) groupMembers[m.group_id] = []
+            groupMembers[m.group_id].push(m.wrestler_id)
+          }
+          for (const c of groupBeltRes.data) {
+            const wrestlers = groupMembers[c.champion_group_id] || []
+            for (const wId of wrestlers) {
+              if (!titleNames[wId]) titleNames[wId] = {}
+              titleNames[wId][c.name] = true
             }
           }
         }
       }
+    }
+    if (Object.keys(titleNames).length > 0) {
       // Sort by unique title count descending, take top 6 with 2+ titles
       const topCollectors = Object.entries(titleNames)
         .map(([id, names]) => [id, Object.keys(names).length] as [string, number])
@@ -231,8 +253,8 @@ export default function WrestlersPage() {
     }
 
     // Vegas Weekend talent
-    if (showVegas && results[6]?.data) {
-      const vegasIds = Array.from(new Set(results[5].data.map((r: any) => r.wrestler_id))) as string[]
+    if (showVegas && results[7]?.data) {
+      const vegasIds = Array.from(new Set(results[7].data.map((r: any) => r.wrestler_id))) as string[]
       if (vegasIds.length > 0) {
         const { data: vegasData } = await supabase
           .from('wrestlers').select(SELECT_COLS)
