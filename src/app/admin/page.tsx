@@ -36,7 +36,7 @@ import {
   approveProfessionalClaim, rejectProfessionalClaim,
   getOutreachPromotions, getOutreachStats, upsertOutreach, getPromotionEventCounts,
   getOutreachWrestlers, getWrestlerOutreachStats, upsertWrestlerOutreach,
-  getTonightEvents, getRecentChampionChanges, getNewlyAddedEvents, getWeekendEvents,
+  getTonightEvents, getNewlyAddedEvents, getWeekendEvents,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import { VENUE_AMENITY_GROUPS, EVENT_TAG_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-constants'
@@ -5415,31 +5415,44 @@ function formatTonightTweets(events: any[], regionLabel?: string): { id: string;
   }))
 }
 
-function formatChampionTweets(champions: any[]): { id: string; text: string }[] {
-  return champions.map((c: any, i: number) => {
-    const w = c.current_champion
-    const w2 = c.current_champion_2
-    const promo = c.promotions
+function formatShoutoutTweet(events: any[]): { id: string; text: string }[] {
+  if (events.length === 0) return []
 
-    let text: string
-    if (w2) {
-      text = `NEW CHAMPIONS\n\n${tweetHandle(w?.name || 'Unknown', w?.twitter_handle)} & ${tweetHandle(w2.name, w2.twitter_handle)} are the new ${c.name}!`
-    } else if (w) {
-      text = `NEW CHAMPION\n\n${tweetHandle(w.name, w.twitter_handle)} is the new ${c.name}!`
-    } else {
-      return null
+  // Get unique promotions with twitter handles
+  const seen = new Set<string>()
+  const handles: string[] = []
+  for (const e of events) {
+    const promo = e.promotions
+    if (!promo || !promo.twitter_handle || seen.has(promo.id)) continue
+    seen.add(promo.id)
+    handles.push(`@${promo.twitter_handle.replace(/^@/, '')}`)
+  }
+
+  if (handles.length === 0) return []
+
+  const text = `Big events tonight from ${handles.join(' ')}\n\nhottag.app/events/today`
+
+  if (text.length <= 280) {
+    return [{ id: 'shoutout-0', text }]
+  }
+
+  // If too long, split into multiple tweets
+  const tweets: { id: string; text: string }[] = []
+  const footer = '\n\nhottag.app/events/today'
+  let current = 'Big events tonight from'
+  let i = 0
+  for (const handle of handles) {
+    if ((current + ' ' + handle + footer).length > 280 && current !== 'Big events tonight from') {
+      tweets.push({ id: `shoutout-${i}`, text: current + footer })
+      current = 'Big events tonight from'
+      i++
     }
-
-    if (promo) text += `\n${tweetHandle(promo.name, promo.twitter_handle)}`
-
-    if (w && !w2) {
-      text += `\n\nhottag.app/wrestlers/${w.slug}`
-    } else if (promo) {
-      text += `\n\nhottag.app/promotions/${promo.slug}`
-    }
-
-    return { id: `champ-${i}`, text }
-  }).filter(Boolean) as { id: string; text: string }[]
+    current += ' ' + handle
+  }
+  if (current !== 'Big events tonight from') {
+    tweets.push({ id: `shoutout-${i}`, text: current + footer })
+  }
+  return tweets
 }
 
 function formatNewEventsTweets(events: any[]): { id: string; text: string }[] {
@@ -5593,12 +5606,10 @@ function TweetSection({ title, count, tweets, copiedId, onCopy, controls }: {
 
 function SocialTab() {
   const [tonightEvents, setTonightEvents] = useState<any[]>([])
-  const [champions, setChampions] = useState<any[]>([])
   const [newEvents, setNewEvents] = useState<any[]>([])
   const [weekendEvents, setWeekendEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [champHours, setChampHours] = useState(48)
   const [newDays, setNewDays] = useState(7)
   const [socialDate, setSocialDate] = useState(() =>
     new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Honolulu' })
@@ -5614,14 +5625,12 @@ function SocialTab() {
 
   async function loadAll(date?: string) {
     setLoading(true)
-    const [tonight, champs, newEvts, weekend] = await Promise.all([
+    const [tonight, newEvts, weekend] = await Promise.all([
       getTonightEvents(date || socialDate),
-      getRecentChampionChanges(champHours),
       getNewlyAddedEvents(newDays),
       getWeekendEvents(),
     ])
     setTonightEvents(tonight)
-    setChampions(champs)
     setNewEvents(newEvts)
     setWeekendEvents(weekend)
     setLoading(false)
@@ -5669,6 +5678,17 @@ function SocialTab() {
         </div>
       </div>
 
+      {/* Quick shoutout tweet */}
+      {tonightEvents.length > 0 && (
+        <TweetSection
+          title={`${dateLabel} — Quick Shoutout`}
+          count={tonightEvents.filter((e: any) => e.promotions?.twitter_handle).length}
+          tweets={formatShoutoutTweet(tonightEvents)}
+          copiedId={copiedId}
+          onCopy={handleCopy}
+        />
+      )}
+
       {/* Regional tonight sections */}
       {regionGroups.na.length > 0 && (
         <TweetSection
@@ -5715,25 +5735,6 @@ function SocialTab() {
           No events found for {dateLabel === 'Tonight' ? 'tonight' : dateLabel}. Try a different date.
         </div>
       )}
-
-      <TweetSection
-        title="New Champions"
-        count={champions.length}
-        tweets={formatChampionTweets(champions)}
-        copiedId={copiedId}
-        onCopy={handleCopy}
-        controls={
-          <select
-            value={champHours}
-            onChange={(e) => { setChampHours(Number(e.target.value)); getRecentChampionChanges(Number(e.target.value)).then(setChampions) }}
-            className="text-xs px-2 py-1 rounded bg-background-tertiary border border-border text-foreground"
-          >
-            <option value={24}>Last 24h</option>
-            <option value={48}>Last 48h</option>
-            <option value={168}>Last 7d</option>
-          </select>
-        }
-      />
 
       <TweetSection
         title="New Events This Week"
