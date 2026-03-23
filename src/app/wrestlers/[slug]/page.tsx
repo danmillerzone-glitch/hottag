@@ -822,22 +822,14 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           )}
 
           {pastEvents.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-display font-bold mb-6 text-foreground-muted">Past Events ({pastEvents.length})</h2>
-              <div className="space-y-3 opacity-60">
-                {pastEvents.slice(0, 3).map((event: any) => (
-                  <Link key={event.id} href={`/events/${event.id}`} className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
-                    <div className="flex-shrink-0 w-16 text-center">
-                      <div className="text-foreground-muted font-bold">{new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
-                      <div className="text-2xl font-bold">{new Date(event.event_date + 'T12:00:00').getDate()}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+            <div className="border-t border-border pt-4">
+              <Link
+                href={`/wrestlers/${wrestler.slug}/events`}
+                className="flex items-center justify-between text-foreground-muted hover:text-foreground transition-colors"
+              >
+                <span>Past Events <span className="opacity-60">({pastEvents.length})</span></span>
+                <span className="text-accent">›</span>
+              </Link>
             </div>
           )}
 

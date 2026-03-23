@@ -11,6 +11,7 @@ import QRCodeButton from '@/components/QRCodeButton'
 import FollowProfessionalButton from '@/components/FollowProfessionalButton'
 import ClaimProfessionalButton from '@/components/ClaimProfessionalButton'
 import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
+import { getTodayHawaii } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -102,6 +103,17 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
     .eq('status', 'accepted')
 
   const worksWith = worksWithRaw?.map((w: any) => w.promotions).filter(Boolean) || []
+
+  // Fetch past events count
+  const today = getTodayHawaii()
+  const { data: pastEventData } = await supabase
+    .from('event_announced_crew')
+    .select('events(id, event_date)')
+    .eq('professional_id', pro.id)
+
+  const pastEventCount = (pastEventData || [])
+    .filter((d: any) => d.events && d.events.event_date < today)
+    .length
 
   // Fetch linked wrestler profile
   let linkedWrestler = null
@@ -249,6 +261,19 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
               )}
               <span className="font-semibold group-hover:text-accent transition-colors">{linkedWrestler.name}</span>
               <span className="text-xs text-foreground-muted">→ Wrestler Profile</span>
+            </Link>
+          </div>
+        )}
+
+        {/* Past Events */}
+        {pastEventCount > 0 && (
+          <div className="border-t border-border pt-4">
+            <Link
+              href={`/crew/${pro.slug}/events`}
+              className="flex items-center justify-between text-foreground-muted hover:text-foreground transition-colors"
+            >
+              <span>Past Events <span className="opacity-60">({pastEventCount})</span></span>
+              <span className="text-accent">›</span>
             </Link>
           </div>
         )}
