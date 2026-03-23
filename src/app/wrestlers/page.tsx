@@ -98,7 +98,7 @@ export default function WrestlersPage() {
         .limit(18),
       // Belt Collectors — solo/tag championships
       supabase.from('promotion_championships')
-        .select('id, name, current_champion_id, current_champion_2_id')
+        .select('id, name, current_champion_id, current_champion_2_id, champion_group_id')
         .eq('is_active', true)
         .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null'),
       // Belt Collectors — group championships (tag teams/factions holding titles)
@@ -130,17 +130,20 @@ export default function WrestlersPage() {
     setMostFollowed(followedRes.data || [])
 
     // Process belt collectors — count unique titles per wrestler
-    // Use championship ID as key (not name) to avoid over-deduplication
-    const titleIds: Record<string, Set<string>> = {}
+    // Dedup key: name + partner/group context (matches wrestler detail page logic)
+    // This correctly merges inter-promotional titles (same name, same holders)
+    // while keeping separate titles that share a name but have different holders
+    const titleKeys: Record<string, Set<string>> = {}
     if (beltRes?.data) {
       for (const c of beltRes.data) {
+        const dedupKey = `${c.name}||${c.current_champion_2_id || ''}||${c.champion_group_id || ''}`
         if (c.current_champion_id) {
-          if (!titleIds[c.current_champion_id]) titleIds[c.current_champion_id] = new Set()
-          titleIds[c.current_champion_id].add(c.id)
+          if (!titleKeys[c.current_champion_id]) titleKeys[c.current_champion_id] = new Set()
+          titleKeys[c.current_champion_id].add(dedupKey)
         }
         if (c.current_champion_2_id) {
-          if (!titleIds[c.current_champion_2_id]) titleIds[c.current_champion_2_id] = new Set()
-          titleIds[c.current_champion_2_id].add(c.id)
+          if (!titleKeys[c.current_champion_2_id]) titleKeys[c.current_champion_2_id] = new Set()
+          titleKeys[c.current_champion_2_id].add(dedupKey)
         }
       }
     }
@@ -159,19 +162,20 @@ export default function WrestlersPage() {
             groupMembers[m.group_id].push(m.wrestler_id)
           }
           for (const c of groupBeltRes.data) {
+            const dedupKey = `${c.name}||||${c.champion_group_id}`
             const wrestlers = groupMembers[c.champion_group_id] || []
             for (const wId of wrestlers) {
-              if (!titleIds[wId]) titleIds[wId] = new Set()
-              titleIds[wId].add(c.id)
+              if (!titleKeys[wId]) titleKeys[wId] = new Set()
+              titleKeys[wId].add(dedupKey)
             }
           }
         }
       }
     }
-    if (Object.keys(titleIds).length > 0) {
+    if (Object.keys(titleKeys).length > 0) {
       // Sort by unique title count descending, take top 6 with 2+ titles
-      const topCollectors = Object.entries(titleIds)
-        .map(([id, ids]) => [id, ids.size] as [string, number])
+      const topCollectors = Object.entries(titleKeys)
+        .map(([id, keys]) => [id, keys.size] as [string, number])
         .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
