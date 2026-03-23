@@ -98,7 +98,7 @@ export default function WrestlersPage() {
         .limit(18),
       // Belt Collectors — all active championships to count per wrestler
       supabase.from('promotion_championships')
-        .select('id, name, current_champion_id, current_champion_2_id, champion_group_id, champion_group:promotion_groups(promotion_group_members(wrestler_id))')
+        .select('id, name, current_champion_id, current_champion_2_id, champion_group_id, champion_group:promotion_groups!promotion_championships_champion_group_id_fkey(promotion_group_members(wrestler_id))')
         .eq('is_active', true)
         .or('current_champion_id.not.is.null,current_champion_2_id.not.is.null,champion_group_id.not.is.null'),
       // Road Warriors — wrestlers on multiple rosters
