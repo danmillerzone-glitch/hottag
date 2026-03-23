@@ -500,7 +500,11 @@ def load_events(events):
             created += 1
             new_event_ids.append(result['id'])
             if event.get('cagematch_id'):
-                existing.add(str(event['cagematch_id']))
+                existing[str(event['cagematch_id'])] = {
+                    'id': result['id'],
+                    'name': event.get('name', ''),
+                    'admin_edited': False,
+                }
 
             # Create homepage news item for new event
             news_title = f"New show: {event['name']}"
