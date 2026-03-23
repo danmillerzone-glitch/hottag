@@ -130,17 +130,17 @@ export default function WrestlersPage() {
     setMostFollowed(followedRes.data || [])
 
     // Process belt collectors — count unique titles per wrestler
-    // (dedup by championship name to handle inter-promotional titles)
-    const titleNames: Record<string, Record<string, true>> = {}
+    // Use championship ID as key (not name) to avoid over-deduplication
+    const titleIds: Record<string, Set<string>> = {}
     if (beltRes?.data) {
       for (const c of beltRes.data) {
         if (c.current_champion_id) {
-          if (!titleNames[c.current_champion_id]) titleNames[c.current_champion_id] = {}
-          titleNames[c.current_champion_id][c.name] = true
+          if (!titleIds[c.current_champion_id]) titleIds[c.current_champion_id] = new Set()
+          titleIds[c.current_champion_id].add(c.id)
         }
         if (c.current_champion_2_id) {
-          if (!titleNames[c.current_champion_2_id]) titleNames[c.current_champion_2_id] = {}
-          titleNames[c.current_champion_2_id][c.name] = true
+          if (!titleIds[c.current_champion_2_id]) titleIds[c.current_champion_2_id] = new Set()
+          titleIds[c.current_champion_2_id].add(c.id)
         }
       }
     }
@@ -161,17 +161,17 @@ export default function WrestlersPage() {
           for (const c of groupBeltRes.data) {
             const wrestlers = groupMembers[c.champion_group_id] || []
             for (const wId of wrestlers) {
-              if (!titleNames[wId]) titleNames[wId] = {}
-              titleNames[wId][c.name] = true
+              if (!titleIds[wId]) titleIds[wId] = new Set()
+              titleIds[wId].add(c.id)
             }
           }
         }
       }
     }
-    if (Object.keys(titleNames).length > 0) {
+    if (Object.keys(titleIds).length > 0) {
       // Sort by unique title count descending, take top 6 with 2+ titles
-      const topCollectors = Object.entries(titleNames)
-        .map(([id, names]) => [id, Object.keys(names).length] as [string, number])
+      const topCollectors = Object.entries(titleIds)
+        .map(([id, ids]) => [id, ids.size] as [string, number])
         .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
