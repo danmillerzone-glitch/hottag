@@ -595,19 +595,6 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
           </div>
         )}
 
-        {/* Past Events link */}
-        {pastEvents.length > 0 && (
-          <div className="border-t border-border pt-4 mb-10">
-            <Link
-              href={`/promotions/${promotion.slug}/events`}
-              className="flex items-center justify-between text-foreground-muted hover:text-foreground transition-colors"
-            >
-              <span>Past Events <span className="opacity-60">({pastEvents.length})</span></span>
-              <span className="text-accent">›</span>
-            </Link>
-          </div>
-        )}
-
         {/* Crew */}
         {promotionCrew.length > 0 && (
           <div className="mb-10">
@@ -693,6 +680,19 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
         {merchItems && merchItems.length > 0 && (
           <div className="mb-10">
             <MerchGallery items={merchItems} />
+          </div>
+        )}
+
+        {/* Past Events link */}
+        {pastEvents.length > 0 && (
+          <div className="border-t border-border pt-4 mb-10">
+            <Link
+              href={`/promotions/${promotion.slug}/events`}
+              className="flex items-center justify-between text-foreground-muted hover:text-foreground transition-colors"
+            >
+              <span>Past Events <span className="opacity-60">({pastEvents.length})</span></span>
+              <span className="text-accent">›</span>
+            </Link>
           </div>
         )}
 
