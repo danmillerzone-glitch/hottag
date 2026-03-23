@@ -27,7 +27,10 @@ function isPublicSlugRoute(path: string): boolean {
     /^\/crew\/[^/]+$/.test(path) ||
     /^\/events\/[^/]+$/.test(path) ||
     /^\/venue\/[^/]+$/.test(path) ||
-    /^\/location\/[^/]+$/.test(path)
+    /^\/location\/[^/]+$/.test(path) ||
+    /^\/promotions\/[^/]+\/events$/.test(path) ||
+    /^\/wrestlers\/[^/]+\/events$/.test(path) ||
+    /^\/crew\/[^/]+\/events$/.test(path)
   )
 }
 
