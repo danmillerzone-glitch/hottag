@@ -133,6 +133,7 @@ export default function WrestlersPage() {
     // Dedup key: name + partner/group context (matches wrestler detail page logic)
     // This correctly merges inter-promotional titles (same name, same holders)
     // while keeping separate titles that share a name but have different holders
+    console.log('[Belt Collectors] beltRes count:', beltRes?.data?.length, 'groupBeltRes count:', groupBeltRes?.data?.length)
     const titleKeys: Record<string, Set<string>> = {}
     if (beltRes?.data) {
       for (const c of beltRes.data) {
@@ -172,6 +173,13 @@ export default function WrestlersPage() {
         }
       }
     }
+    // Debug: log top wrestlers and their title keys
+    const debugTop = Object.entries(titleKeys)
+      .map(([id, keys]) => ({ id, count: keys.size, keys: Array.from(keys) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+    console.log('[Belt Collectors] Top wrestlers:', JSON.stringify(debugTop, null, 2))
+
     if (Object.keys(titleKeys).length > 0) {
       // Sort by unique title count descending, take top 6 with 2+ titles
       const topCollectors = Object.entries(titleKeys)
