@@ -276,8 +276,8 @@ export function inferTimezone(
 }
 
 // Check if an event is currently "happening now"
-// Returns true from bell time until 4 hours after bell time
-const HAPPENING_NOW_WINDOW_MS = 4 * 60 * 60 * 1000 // 4 hours
+// Returns true from bell time until 3 hours after bell time
+const HAPPENING_NOW_WINDOW_MS = 3 * 60 * 60 * 1000 // 3 hours
 
 export function isHappeningNow(event: {
   event_date: string
