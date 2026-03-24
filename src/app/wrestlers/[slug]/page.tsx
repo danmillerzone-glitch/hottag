@@ -536,45 +536,45 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground-muted mb-4">{wrestler.name}</h2>
                 <div className="space-y-3">
                   {wrestler.height && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Height</span>
-                      <span className="font-bold text-sm">{wrestler.height}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Height</span>
+                      <span className="font-bold text-sm text-right">{wrestler.height}</span>
                     </div>
                   )}
                   {wrestler.weight && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Weight</span>
-                      <span className="font-bold text-sm">{wrestler.weight}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Weight</span>
+                      <span className="font-bold text-sm text-right">{wrestler.weight}</span>
                     </div>
                   )}
                   {wrestler.birthday && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Born</span>
-                      <span className="font-bold text-sm">{new Date(wrestler.birthday + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Born</span>
+                      <span className="font-bold text-sm text-right">{new Date(wrestler.birthday + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   )}
                   {(wrestler.birthplace || wrestler.hometown) && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">From</span>
-                      <span className="font-bold text-sm">{wrestler.birthplace || wrestler.hometown}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">From</span>
+                      <span className="font-bold text-sm text-right">{wrestler.birthplace || wrestler.hometown}</span>
                     </div>
                   )}
                   {wrestler.residence && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Resides</span>
-                      <span className="font-bold text-sm">{wrestler.residence}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Resides</span>
+                      <span className="font-bold text-sm text-right">{wrestler.residence}</span>
                     </div>
                   )}
                   {wrestler.debut_year && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Debut</span>
-                      <span className="font-bold text-sm">{wrestler.debut_year}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Debut</span>
+                      <span className="font-bold text-sm text-right">{wrestler.debut_year}</span>
                     </div>
                   )}
                   {wrestler.trainer && (
-                    <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                      <span className="text-xs uppercase tracking-wider text-foreground-muted">Trainer</span>
-                      <span className="font-bold text-sm">{wrestler.trainer}</span>
+                    <div className="flex justify-between items-baseline gap-x-6 border-b border-border/50 pb-2">
+                      <span className="text-xs uppercase tracking-wider text-foreground-muted shrink-0">Trainer</span>
+                      <span className="font-bold text-sm text-right">{wrestler.trainer}</span>
                     </div>
                   )}
                   {wrestler.wrestling_style && wrestler.wrestling_style.length > 0 && (
