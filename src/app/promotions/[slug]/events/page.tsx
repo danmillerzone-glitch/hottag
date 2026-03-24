@@ -28,12 +28,22 @@ export default async function PromotionPastEventsPage({ params }: { params: { sl
   if (!promotion) return notFound()
 
   const today = getTodayHawaii()
-  const { data: events } = await supabase
-    .from('events')
-    .select('id, name, event_date, city, state, country, poster_url, promotions(name, slug, logo_url)')
+
+  // Get event IDs via junction table
+  const { data: links } = await supabase
+    .from('event_promotions')
+    .select('event_id')
     .eq('promotion_id', promotion.id)
-    .lt('event_date', today)
-    .order('event_date', { ascending: false })
+
+  const eventIds = (links || []).map(l => l.event_id)
+  const { data: events } = eventIds.length > 0
+    ? await supabase
+        .from('events')
+        .select('id, name, event_date, city, state, country, poster_url, promotions(name, slug, logo_url)')
+        .in('id', eventIds)
+        .lt('event_date', today)
+        .order('event_date', { ascending: false })
+    : { data: [] }
 
   return (
     <PastEventsContent

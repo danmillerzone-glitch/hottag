@@ -72,18 +72,22 @@ async function getPromotion(slug: string) {
 }
 
 async function getPromotionEvents(promotionId: string) {
-  const { data, error } = await supabase
+  // Query via junction table so co-promoted events appear on all co-promoters' pages
+  const { data: links, error } = await supabase
+    .from('event_promotions')
+    .select('event_id')
+    .eq('promotion_id', promotionId)
+
+  if (error || !links || links.length === 0) return []
+
+  const eventIds = links.map(l => l.event_id)
+  const { data: events } = await supabase
     .from('events')
     .select('*')
-    .eq('promotion_id', promotionId)
+    .in('id', eventIds)
     .order('event_date', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching promotion events:', error)
-    return []
-  }
-
-  return data
+  return events || []
 }
 
 async function getFollowerCount(promotionId: string) {
