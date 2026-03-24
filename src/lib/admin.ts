@@ -714,7 +714,18 @@ export async function createEventAdmin(eventData: {
     if (insertData[key] === '') insertData[key] = null
   }
 
-  await adminApi({ action: 'insert', table: 'events', data: insertData })
+  const result = await adminApi({ action: 'insert', table: 'events', data: insertData })
+
+  // Dual-write to event_promotions junction table
+  if (result?.data?.id && eventData.promotion_id) {
+    await adminApi({
+      action: 'insert',
+      table: 'event_promotions',
+      data: { event_id: result.data.id, promotion_id: eventData.promotion_id }
+    })
+  }
+
+  return result?.data
 }
 
 export async function getWrestlerFull(wrestlerId: string) {
@@ -1486,4 +1497,35 @@ export async function getWeekendEvents() {
 
   if (error) { console.error('getWeekendEvents error:', error); return [] }
   return data || []
+}
+
+// ============================================
+// CO-PROMOTER MANAGEMENT (ADMIN)
+// ============================================
+
+export async function getEventCoPromotions(eventId: string) {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('event_promotions')
+    .select('promotion_id, promotions(id, name, slug, logo_url)')
+    .eq('event_id', eventId)
+  return data || []
+}
+
+export async function addEventCoPromotion(eventId: string, promotionId: string) {
+  return adminApi({ action: 'insert', table: 'event_promotions', data: { event_id: eventId, promotion_id: promotionId } })
+}
+
+export async function removeEventCoPromotion(eventId: string, promotionId: string) {
+  // Query the junction table row ID first, then delete by ID
+  const supabase = createClient()
+  const { data: row } = await supabase
+    .from('event_promotions')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('promotion_id', promotionId)
+    .single()
+  if (row?.id) {
+    return adminApi({ action: 'delete', table: 'event_promotions', id: row.id })
+  }
 }

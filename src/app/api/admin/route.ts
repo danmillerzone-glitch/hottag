@@ -34,6 +34,7 @@ async function verifyAdmin(): Promise<string | null> {
 // Tables that admin operations are allowed to modify
 const ALLOWED_TABLES = new Set([
   'events',
+  'event_promotions',
   'wrestlers',
   'promotions',
   'professionals',

@@ -37,6 +37,7 @@ import {
   getOutreachPromotions, getOutreachStats, upsertOutreach, getPromotionEventCounts,
   getOutreachWrestlers, getWrestlerOutreachStats, upsertWrestlerOutreach,
   getTonightEvents, getNewlyAddedEvents, getWeekendEvents,
+  getEventCoPromotions, addEventCoPromotion, removeEventCoPromotion,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import { VENUE_AMENITY_GROUPS, EVENT_TAG_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-constants'
@@ -3724,6 +3725,18 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void, onCreat
 function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () => void, onSaved: () => void }) {
   const [form, setForm] = useState({ name: event.name || '', event_date: event.event_date || '', venue_name: event.venue_name || '', city: event.city || '', state: event.state || '', country: event.country || 'USA', ticket_url: event.ticket_url ?? '', doors_time: event.doors_time || '', event_time: event.event_time || '' })
   const [saving, setSaving] = useState(false)
+  const [coPromotions, setCoPromotions] = useState<any[]>([])
+  const [loadingCoPromos, setLoadingCoPromos] = useState(true)
+  const [promoQuery, setPromoQuery] = useState('')
+  const [promoResults, setPromoResults] = useState<any[]>([])
+  const [searchingPromos, setSearchingPromos] = useState(false)
+
+  useEffect(() => {
+    getEventCoPromotions(event.id).then(data => {
+      setCoPromotions(data)
+      setLoadingCoPromos(false)
+    })
+  }, [event.id])
 
   async function handleSave() {
     setSaving(true)
@@ -3736,6 +3749,30 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
       onSaved()
     } catch (err: any) { alert(`Error: ${err.message}`) }
     setSaving(false)
+  }
+
+  async function handleSearchPromos() {
+    if (!promoQuery.trim()) return
+    setSearchingPromos(true)
+    const data = await searchPromotions(promoQuery)
+    setPromoResults(data)
+    setSearchingPromos(false)
+  }
+
+  async function handleAddCoPromo(promo: any) {
+    try {
+      await addEventCoPromotion(event.id, promo.id)
+      setCoPromotions([...coPromotions, { promotion_id: promo.id, promotions: promo }])
+      setPromoQuery('')
+      setPromoResults([])
+    } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handleRemoveCoPromo(promotionId: string) {
+    try {
+      await removeEventCoPromotion(event.id, promotionId)
+      setCoPromotions(coPromotions.filter(cp => cp.promotion_id !== promotionId))
+    } catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
   return (
@@ -3754,6 +3791,62 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
           <FieldRow label="Doors"><input className="w-full input-field" value={form.doors_time} onChange={e => setForm({...form, doors_time: e.target.value})} /></FieldRow>
           <FieldRow label="Start"><input className="w-full input-field" value={form.event_time} onChange={e => setForm({...form, event_time: e.target.value})} /></FieldRow>
         </div>
+
+        {/* Co-Promoters Section */}
+        <div className="border-t border-border pt-3 mt-4">
+          <FieldRow label="Co-Promoters">
+            {loadingCoPromos ? (
+              <div className="text-sm text-foreground-muted">Loading...</div>
+            ) : (
+              <>
+                {coPromotions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {coPromotions.map((cp: any) => (
+                      <div key={cp.promotion_id} className="flex items-center gap-2 bg-background-tertiary px-3 py-1.5 rounded-lg">
+                        {cp.promotions?.logo_url && (
+                          <Image src={cp.promotions.logo_url} alt="" width={20} height={20} className="rounded" />
+                        )}
+                        <span className="text-sm">{cp.promotions?.name}</span>
+                        <button onClick={() => handleRemoveCoPromo(cp.promotion_id)} className="text-red-400 hover:text-red-300 ml-1">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoQuery}
+                    onChange={(e) => setPromoQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearchPromos()}
+                    placeholder="Search promotions to add..."
+                    className="flex-1 input-field text-sm"
+                  />
+                  <button onClick={handleSearchPromos} disabled={searchingPromos} className="btn btn-ghost text-sm px-3">
+                    {searchingPromos ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </button>
+                </div>
+                {promoResults.length > 0 && (
+                  <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                    {promoResults.map((promo) => (
+                      <button
+                        key={promo.id}
+                        onClick={() => handleAddCoPromo(promo)}
+                        disabled={coPromotions.some(cp => cp.promotion_id === promo.id)}
+                        className="w-full flex items-center gap-2 p-2 bg-background-tertiary hover:bg-border rounded text-left text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {promo.logo_url && <Image src={promo.logo_url} alt="" width={24} height={24} className="rounded" />}
+                        <span>{promo.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </FieldRow>
+        </div>
+
         <div className="flex gap-2 pt-2">
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Save</>}</button>
           <button onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
