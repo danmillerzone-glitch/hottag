@@ -684,7 +684,7 @@ export default function WrestlerDashboardPage() {
               return updated.render_url
             }}
           />
-          <p className="text-xs text-foreground-muted mt-3">Ideal: 600×750px (4:5 ratio), transparent PNG. Max 5MB.</p>
+          <p className="text-xs text-foreground-muted mt-3">Ideal: 800×1000px, <span className="font-bold underline">transparent</span> PNG. Max 5MB.</p>
         </section>
 
         {/* Page Theme */}
