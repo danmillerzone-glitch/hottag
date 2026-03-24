@@ -357,12 +357,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                   </div>
                 )}
                 {hasRender ? (
-                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom relative z-[1]" priority unoptimized
-                    style={{
-                      maskImage: 'radial-gradient(ellipse 80% 85% at 50% 55%, black 40%, transparent 72%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse 80% 85% at 50% 55%, black 40%, transparent 72%)',
-                    }}
-                  />
+                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom relative z-[1]" priority unoptimized />
                 ) : hasPhoto ? (
                   <div className="absolute bottom-0 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
                     <div className="w-full h-full rounded-2xl bg-background-tertiary overflow-hidden border-2 border-border">
@@ -402,12 +397,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background-secondary via-transparent to-transparent z-[1]" />
                 {hasRender ? (
-                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized
-                    style={{
-                      maskImage: 'radial-gradient(ellipse 85% 80% at 50% 55%, black 45%, transparent 72%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse 85% 80% at 50% 55%, black 45%, transparent 72%)',
-                    }}
-                  />
+                  <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom" priority unoptimized />
                 ) : hasPhoto ? (
                   <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover object-top" priority unoptimized />
                 ) : (
