@@ -168,7 +168,7 @@ export default function ManageEventPage() {
         <VenueInfoSection event={event} onUpdate={setEvent} />
 
         {/* Co-Promoters */}
-        <div className="card p-6">
+        <div className="bg-background-secondary rounded-xl border border-border p-6">
           <h2 className="text-lg font-bold mb-4">Co-Promoters</h2>
           <p className="text-sm text-foreground-muted mb-4">
             Add other promotions co-hosting this event. All co-promoters get equal dashboard access.
@@ -198,10 +198,10 @@ export default function ManageEventPage() {
               value={promoSearch}
               onChange={(e) => { setPromoSearch(e.target.value); searchPromotions(e.target.value) }}
               placeholder="Search promotions to add..."
-              className="input w-full"
+              className="input-field w-full"
             />
             {promoResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-background-secondary border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-20 mt-1 w-full bg-background-secondary border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {promoResults.map(p => (
                   <button key={p.id} onClick={() => addCoPromoter(p.id)}
                     className="w-full text-left px-4 py-2 hover:bg-background-tertiary flex items-center gap-2">
