@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getEvent, getEventWrestlers } from '@/lib/supabase'
+import { getEvent, getEventWrestlers, getEventPromotions } from '@/lib/supabase'
 import { getTodayHawaii } from '@/lib/utils'
 import { getHeroCSS } from '@/lib/hero-themes'
 import { 
@@ -121,7 +121,11 @@ export default async function EventPage({ params }: EventPageProps) {
     notFound()
   }
 
-  const promotion = event.promotions
+  // Fetch all co-promoters for this event
+  const eventPromotionsMap = await getEventPromotions([event.id])
+  const allPromotions = (eventPromotionsMap.get(event.id) || []).map(ep => ep.promotions)
+  // Backward compat: use junction data if available, fall back to single FK join
+  const promotion = allPromotions[0] || event.promotions
   const wrestlers = await getEventWrestlers(event.id)
 
   // Fetch coupon + hashtag data directly from events table (view may not include new columns)
@@ -134,13 +138,14 @@ export default async function EventPage({ params }: EventPageProps) {
   const couponLabel = extraData?.coupon_label || null
   const hashtag = extraData?.hashtag || null
 
-  // Fetch current championships for this promotion to show champion badges
+  // Fetch current championships for ALL co-promoters to show champion badges
   let championMap: Record<string, string> = {} // wrestler_id -> championship short_name or name
-  if (promotion?.id) {
+  const coPromoterIds = allPromotions.map(p => p.id)
+  if (coPromoterIds.length > 0) {
     const { data: championships } = await supabase
       .from('promotion_championships')
       .select('name, short_name, current_champion_id, current_champion_2_id')
-      .eq('promotion_id', promotion.id)
+      .in('promotion_id', coPromoterIds)
       .eq('is_active', true)
 
     if (championships) {
@@ -152,20 +157,31 @@ export default async function EventPage({ params }: EventPageProps) {
     }
   }
 
-  // Fetch related events: same promotion, upcoming, not this event
+  // Fetch related events: same promotion(s), upcoming, not this event
   const today = getTodayHawaii()
   let relatedEvents: any[] = []
 
-  if (promotion?.id) {
-    const { data: promoEvents } = await supabase
-      .from('events')
-      .select('id, name, event_date, city, state, country, venue_name, poster_url, promotions(name, slug)')
-      .eq('promotion_id', promotion.id)
-      .neq('id', event.id)
-      .gte('event_date', today)
-      .order('event_date', { ascending: true })
-      .limit(6)
-    if (promoEvents) relatedEvents = promoEvents
+  if (coPromoterIds.length > 0) {
+    // Fetch event IDs from any co-promoter
+    const { data: relatedEventLinks } = await supabase
+      .from('event_promotions')
+      .select('event_id')
+      .in('promotion_id', coPromoterIds)
+
+    const relatedEventIds = Array.from(new Set(
+      (relatedEventLinks || []).map((ep: any) => ep.event_id).filter((id: string) => id !== event.id)
+    ))
+
+    if (relatedEventIds.length > 0) {
+      const { data: promoEvents } = await supabase
+        .from('events')
+        .select('id, name, event_date, city, state, country, venue_name, poster_url, promotions(name, slug)')
+        .in('id', relatedEventIds)
+        .gte('event_date', today)
+        .order('event_date', { ascending: true })
+        .limit(6)
+      relatedEvents = promoEvents || []
+    }
   }
 
   // Build maps query: always include city/state for disambiguation
@@ -283,12 +299,12 @@ export default async function EventPage({ params }: EventPageProps) {
         {/* Main content card */}
         <div className="card p-6 md:p-8">
           {/* Promotion badge */}
-          {promotion && (
-            <Link 
-              href={`/promotions/${promotion.slug}`}
+          {allPromotions.length > 0 && (
+            <Link
+              href={`/promotions/${allPromotions[0].slug}`}
               className="inline-flex items-center gap-2 badge badge-promotion mb-4 hover:bg-accent/30 transition-colors"
             >
-              {promotion.name}
+              {allPromotions.map(p => p.name).join(' x ')}
             </Link>
           )}
 
@@ -584,146 +600,40 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
 
           {/* Promotion info */}
-          {promotion && (
+          {allPromotions.length > 0 && (
             <div className="border-t border-border mt-4 pt-8">
               <h2 className="text-xl font-semibold mb-4">Presented by</h2>
-              <Link
-                href={`/promotions/${promotion.slug}`}
-                className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
-              >
-                <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden">
-                  {promotion.logo_url ? (
-                    <Image
-                      src={promotion.logo_url}
-                      alt={promotion.name}
-                      width={64}
-                      height={64}
-                      className="object-contain"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-background rounded-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-foreground-muted">
-                        {promotion.name.charAt(0)}
-                      </span>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {allPromotions.map((promo) => (
+                  <Link
+                    key={promo.id}
+                    href={`/promotions/${promo.slug}`}
+                    className="flex items-center gap-4 p-4 rounded-lg bg-background-tertiary hover:bg-border transition-colors"
+                  >
+                    <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {promo.logo_url ? (
+                        <Image
+                          src={promo.logo_url}
+                          alt={promo.name}
+                          width={64}
+                          height={64}
+                          className="object-contain"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center">
+                          <span className="text-2xl font-bold text-foreground-muted">
+                            {promo.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-lg">{promotion.name}</div>
-                  <div className="text-foreground-muted text-sm">View all events →</div>
-                </div>
-              </Link>
-
-              <div className="flex flex-wrap items-center gap-4 mt-4">
-                {promotion.website && (
-                  <a
-                    href={promotion.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Website
-                  </a>
-                )}
-                {promotion.twitter_handle && (
-                  <a
-                    href={getTwitterUrl(promotion.twitter_handle) || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <XIcon className="w-4 h-4" />
-                    @{promotion.twitter_handle}
-                  </a>
-                )}
-                {promotion.instagram_handle && (
-                  <a
-                    href={`https://instagram.com/${promotion.instagram_handle}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <Instagram className="w-4 h-4" />
-                    @{promotion.instagram_handle}
-                  </a>
-                )}
-                {promotion.tiktok_handle && (
-                  <a
-                    href={`https://tiktok.com/@${promotion.tiktok_handle}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <TikTokIcon className="w-4 h-4" />
-                    @{promotion.tiktok_handle}
-                  </a>
-                )}
-                {promotion.facebook_url && (
-                  <a
-                    href={promotion.facebook_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <Facebook className="w-4 h-4" />
-                    Facebook
-                  </a>
-                )}
-                {promotion.youtube_url && (
-                  <a
-                    href={promotion.youtube_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <Youtube className="w-4 h-4" />
-                    YouTube
-                  </a>
-                )}
-                {promotion.booking_email && (
-                  <a
-                    href={`mailto:${promotion.booking_email}`}
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </a>
-                )}
-                {promotion.merch_url && (
-                  <a
-                    href={promotion.merch_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    Merch
-                  </a>
-                )}
-                {promotion.bluesky_handle && (
-                  <a
-                    href={`https://bsky.app/profile/${promotion.bluesky_handle}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <BlueskyIcon className="w-4 h-4" />
-                    @{promotion.bluesky_handle}
-                  </a>
-                )}
-                {promotion.patreon_url && (
-                  <a
-                    href={promotion.patreon_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground-muted hover:text-accent transition-colors text-sm flex items-center gap-1"
-                  >
-                    <PatreonIcon className="w-4 h-4" />
-                    Patreon
-                  </a>
-                )}
+                    <div>
+                      <div className="font-semibold text-lg">{promo.name}</div>
+                      <div className="text-foreground-muted text-sm">View all events →</div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}
