@@ -14,6 +14,7 @@ import VideoCarousel from '@/components/VideoCarousel'
 import MerchGallery from '@/components/MerchGallery'
 import { getHeroCSS } from '@/lib/hero-themes'
 import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
+import UpcomingEventsCarousel from '@/components/UpcomingEventsCarousel'
 
 function XIcon({ className }: { className?: string }) {
   return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>)
@@ -792,22 +793,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
         <div className="py-8 border-t border-border">
           {upcomingEvents.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-2xl font-display font-bold mb-6">Upcoming Events ({upcomingEvents.length})</h2>
-              <div className="space-y-3">
-                {upcomingEvents.map((event: any) => (
-                  <Link key={event.id} href={`/events/${event.id}`} className="card p-4 flex items-center gap-4 hover:bg-background-tertiary transition-colors">
-                    <div className="flex-shrink-0 w-16 text-center">
-                      <div className="text-accent font-bold">{new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
-                      <div className="text-2xl font-bold">{new Date(event.event_date + 'T12:00:00').getDate()}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">{event.promotions?.name || event.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
-                  </Link>
-                ))}
-              </div>
+              <UpcomingEventsCarousel events={upcomingEvents} />
             </div>
           )}
 
