@@ -118,11 +118,34 @@ export default function EventsPage() {
       console.error('Error fetching events:', error)
       setEvents([])
     } else {
-      const mappedEvents = data.map((e: any) => ({
+      let mappedEvents = data.map((e: any) => ({
         ...e,
         attending_count: e.real_attending_count || e.attending_count || 0,
         interested_count: e.real_interested_count || e.interested_count || 0
       }))
+
+      // Batch-fetch all co-promoters for displayed events
+      const eventIds = mappedEvents.map((e: any) => e.id)
+      if (eventIds.length > 0) {
+        const { data: eventPromos } = await supabase
+          .from('event_promotions')
+          .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+          .in('event_id', eventIds)
+
+        // Group by event_id and attach to each event
+        const promoMap = new Map<string, any[]>()
+        for (const ep of (eventPromos || [])) {
+          if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+          promoMap.get(ep.event_id)!.push(ep)
+        }
+
+        // Attach co-promoter data to each event
+        mappedEvents = mappedEvents.map((e: any) => ({
+          ...e,
+          event_promotions: promoMap.get(e.id) || [],
+        }))
+      }
+
       setEvents(mappedEvents)
       
       // Get unique US states for dropdown (from current results)
