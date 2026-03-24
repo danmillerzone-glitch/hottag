@@ -110,7 +110,13 @@ function LocationLinks({ city, state, country, venue }: { city?: string | null, 
 }
 
 export function EventCard({ event, variant = 'default' }: EventCardProps) {
-  const promotion = event.promotions
+  const allPromotions = event.event_promotions
+    ? event.event_promotions.map((ep: any) => ep.promotions).filter(Boolean)
+    : []
+  const promotion = allPromotions[0] || event.promotions
+  const promotionDisplay = allPromotions.length > 1
+    ? allPromotions.map((p: any) => p.name).join(' x ')
+    : promotion?.name
   
   if (variant === 'compact') {
     return (
@@ -128,7 +134,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
             <h3 className="font-semibold text-foreground truncate">{event.name}</h3>
             <div className="flex items-center gap-2 mt-1 text-sm text-foreground-muted">
               {promotion && (
-                <span className="badge badge-promotion">{promotion.name}</span>
+                <span className="badge badge-promotion">{promotionDisplay}</span>
               )}
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
@@ -167,7 +173,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
                 />
               ) : (
                 <span className="text-4xl font-display font-bold text-foreground/20">
-                  {promotion?.name || 'Event'}
+                  {promotionDisplay || 'Event'}
                 </span>
               )}
             </div>
@@ -190,7 +196,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
         <div className="p-5">
           {promotion && (
             <div className="flex items-center gap-2 mb-2">
-              <span className="badge badge-promotion">{promotion.name}</span>
+              <span className="badge badge-promotion">{promotionDisplay}</span>
             </div>
           )}
           
@@ -224,7 +230,7 @@ export function EventCard({ event, variant = 'default' }: EventCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {promotion && (
-              <span className="badge badge-promotion mb-2">{promotion.name}</span>
+              <span className="badge badge-promotion mb-2">{promotionDisplay}</span>
             )}
             <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
               {event.name}

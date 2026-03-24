@@ -192,6 +192,7 @@ export interface Event {
 
 export interface EventWithPromotion extends Event {
   promotions: Promotion | null
+  event_promotions?: EventPromotion[]
 }
 
 export interface EventPromotion {

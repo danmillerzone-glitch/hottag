@@ -12,7 +12,13 @@ interface PosterEventCardProps {
 
 // Memoized to prevent re-renders when parent state changes (carousels render 10+ of these)
 const PosterEventCard = memo(function PosterEventCard({ event }: PosterEventCardProps) {
-  const promotion = event.promotions
+  // Support both old single-promotion and new multi-promotion data
+  const allPromotions = event.event_promotions
+    ? event.event_promotions.map((ep: any) => ep.promotions).filter(Boolean)
+    : []
+  const promotion = allPromotions[0] || event.promotions
+  const coPromoCount = allPromotions.length > 1 ? allPromotions.length - 1 : 0
+
   const hasPoster = !!event.poster_url
   const hasLogo = !!promotion?.logo_url
   const date = new Date(event.event_date + 'T12:00:00')
@@ -83,6 +89,9 @@ const PosterEventCard = memo(function PosterEventCard({ event }: PosterEventCard
               )}
               <span className="text-xs font-semibold text-white/80 uppercase tracking-wider truncate">
                 {promotion.name}
+                {coPromoCount > 0 && (
+                  <span className="text-accent"> +{coPromoCount}</span>
+                )}
               </span>
             </div>
           )}
