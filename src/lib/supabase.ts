@@ -194,6 +194,17 @@ export interface EventWithPromotion extends Event {
   promotions: Promotion | null
 }
 
+export interface EventPromotion {
+  event_id: string
+  promotion_id: string
+  promotions: {
+    id: string
+    name: string
+    slug: string
+    logo_url: string | null
+  }
+}
+
 // API Functions
 export async function getUpcomingEvents(limit = 20, offset = 0) {
   const today = getTodayHawaii()
@@ -448,4 +459,22 @@ function calculateDistance(
 
 function toRad(deg: number): number {
   return deg * (Math.PI / 180)
+}
+
+/**
+ * Batch-fetch all promotions for a list of event IDs.
+ * Returns a Map from event_id to array of promotions.
+ */
+export async function getEventPromotions(eventIds: string[]): Promise<Map<string, EventPromotion[]>> {
+  if (eventIds.length === 0) return new Map()
+  const { data } = await supabase
+    .from('event_promotions')
+    .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+    .in('event_id', eventIds)
+  const map = new Map<string, EventPromotion[]>()
+  for (const ep of (data || []) as any[]) {
+    if (!map.has(ep.event_id)) map.set(ep.event_id, [])
+    map.get(ep.event_id)!.push(ep as EventPromotion)
+  }
+  return map
 }

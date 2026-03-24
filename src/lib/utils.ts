@@ -386,3 +386,11 @@ export function getUserLocation(): Promise<{ coords: UserCoords | null; status: 
     )
   })
 }
+
+/**
+ * Format multiple promotion names for display.
+ * Returns "Promo A" for solo, "Promo A x Promo B" for co-promoted.
+ */
+export function formatPromotionNames(promotions: { name: string }[]): string {
+  return promotions.map(p => p.name).join(' x ')
+}
