@@ -249,21 +249,35 @@ def scrape_events(max_days=120):
 
                 event_cell = cells[2]
                 event_name = event_url = promo_name = promo_id = None
+                promo_names = []
+                promo_ids = []
 
                 for link in event_cell.find_all('a'):
                     href = link.get('href', '')
                     if 'id=8' in href and 'nr=' in href:
                         img = link.find('img')
                         if img:
-                            promo_name = img.get('alt') or img.get('title')
-                        promo_id = extract_id(href)
+                            name = img.get('alt') or img.get('title')
+                            if name:
+                                promo_names.append(name)
+                        pid = extract_id(href)
+                        if pid:
+                            promo_ids.append(pid)
                     elif 'id=1' in href and 'nr=' in href:
                         event_name = link.get_text(strip=True)
                         event_url = f"{BASE_URL}/{href}" if not href.startswith('http') else href
 
+                # Use first promotion as primary (backward compat)
+                promo_name = promo_names[0] if promo_names else None
+                promo_id = promo_ids[0] if promo_ids else None
+
                 if not event_name:
                     continue
-                if is_excluded(promo_name):
+                # Check ALL promotion names against exclusions
+                if any(is_excluded(name) for name in promo_names):
+                    continue
+                # Fallback to checking single name if list is empty
+                if not promo_names and is_excluded(promo_name):
                     continue
 
                 location_str = cells[3].get_text(strip=True)
@@ -280,6 +294,7 @@ def scrape_events(max_days=120):
                     'event_date': event_date,
                     'promotion_name': promo_name,
                     'promotion_cagematch_id': promo_id,
+                    'promotion_names': promo_names,  # NEW: all co-promoter names
                     'city': location['city'],
                     'state': location['state'],
                     'country': location['country'],
@@ -316,12 +331,15 @@ def db_get(endpoint):
         return []
 
 
-def db_post(table, data):
-    headers = {**DB_HEADERS, "Prefer": "return=representation"}
+def db_post(table, data, prefer_header=None):
+    headers = {**DB_HEADERS, "Prefer": prefer_header or "return=representation"}
     try:
         resp = requests.post(f"{SUPABASE_URL}/rest/v1/{table}", headers=headers, json=data, timeout=30)
         if resp.status_code == 201:
-            return resp.json()[0]
+            return resp.json()[0] if prefer_header != "resolution=ignore-duplicates" else True
+        elif resp.status_code == 200:
+            # 200 OK when using resolution=ignore-duplicates on conflict
+            return True
     except requests.exceptions.RequestException as e:
         logger.warning(f"db_post error ({table}): {e}")
     return None
@@ -401,6 +419,40 @@ def load_events(events):
         if (i + 1) % 100 == 0:
             logger.info(f"  Loading {i+1}/{len(events)}...")
 
+        # Find or create ALL promotions (co-promoters) FIRST
+        all_promo_ids = []
+        for pname in event.get('promotion_names', []):
+            key = pname.lower()
+            pid = None
+            if key in promos:
+                pid = promos[key]['id']
+            else:
+                # Partial match
+                for k, p in promos.items():
+                    if key in k or k in key:
+                        pid = p['id']
+                        break
+                if not pid:
+                    # Create new promotion
+                    country = event.get('country', 'USA')
+                    region = COUNTRY_TO_REGION.get(country, 'International')
+                    slug = re.sub(r'[^a-z0-9-]', '', pname.lower().replace(' ', '-'))
+                    new_data = {"name": pname, "slug": slug, "country": country}
+                    if region:
+                        new_data["region"] = region
+                    new_promo = db_post("promotions", new_data)
+                    if new_promo:
+                        promos[key] = new_promo
+                        pid = new_promo['id']
+                        new_promos += 1
+                        logger.info(f"  New promotion: {pname} ({country})")
+            if pid:
+                all_promo_ids.append(pid)
+
+        # Primary promotion for backward compat (use first from list)
+        promo_id = all_promo_ids[0] if all_promo_ids else None
+
+        # Check if event already exists
         if event.get('cagematch_id') and str(event['cagematch_id']) in existing:
             db_event = existing[str(event['cagematch_id'])]
             # Update name if Cagematch has a different name and admin hasn't edited
@@ -408,35 +460,17 @@ def load_events(events):
                 if db_patch("events", f"id=eq.{db_event['id']}", {"name": event['name']}):
                     logger.info(f"  ✏️ Updated name: \"{db_event['name']}\" → \"{event['name']}\"")
                     updated += 1
+
+            # Update event_promotions for existing events (ensures co-promoters are linked)
+            if all_promo_ids:
+                for pid in all_promo_ids:
+                    db_post("event_promotions", {
+                        'event_id': db_event['id'],
+                        'promotion_id': pid
+                    }, prefer_header='resolution=ignore-duplicates')
+
             skipped += 1
             continue
-
-        # Find or create promotion
-        promo_id = None
-        promo_name = event.get('promotion_name')
-        if promo_name:
-            key = promo_name.lower()
-            if key in promos:
-                promo_id = promos[key]['id']
-            else:
-                # Partial match
-                for k, p in promos.items():
-                    if key in k or k in key:
-                        promo_id = p['id']
-                        break
-                if not promo_id:
-                    country = event.get('country', 'USA')
-                    region = COUNTRY_TO_REGION.get(country, 'International')
-                    slug = re.sub(r'[^a-z0-9-]', '', promo_name.lower().replace(' ', '-'))
-                    new_data = {"name": promo_name, "slug": slug, "country": country}
-                    if region:
-                        new_data["region"] = region
-                    new_promo = db_post("promotions", new_data)
-                    if new_promo:
-                        promos[key] = new_promo
-                        promo_id = new_promo['id']
-                        new_promos += 1
-                        logger.info(f"  New promotion: {promo_name} ({country})")
 
         # Fallback dedup: check for promoter-created event with same promotion + date + similar name
         if promo_id and event.get('event_date') and event.get('cagematch_id'):
@@ -465,6 +499,17 @@ def load_events(events):
                             logger.info(f"  🎰 Auto-tagged Vegas Weekend: {pe['name']}")
                         db_patch("events", f"id=eq.{pe['id']}", patch_data)
                         existing.add(str(event['cagematch_id']))
+
+                        # Write co-promoter entries to event_promotions junction table
+                        if all_promo_ids:
+                            for pid in all_promo_ids:
+                                db_post("event_promotions", {
+                                    'event_id': pe['id'],
+                                    'promotion_id': pid
+                                }, prefer_header='resolution=ignore-duplicates')
+                            if len(all_promo_ids) > 1:
+                                logger.info(f"  🤝 Linked co-promoted event ({len(all_promo_ids)} promotions)")
+
                         # Remove from promoter_events so it won't match again
                         promoter_events[dedup_key].remove(pe)
                         linked += 1
@@ -498,23 +543,37 @@ def load_events(events):
         result = db_post("events", event_data)
         if result:
             created += 1
-            new_event_ids.append(result['id'])
+            event_id = result.get('id')
+            new_event_ids.append(event_id)
             if event.get('cagematch_id'):
                 existing[str(event['cagematch_id'])] = {
-                    'id': result['id'],
+                    'id': event_id,
                     'name': event.get('name', ''),
                     'admin_edited': False,
                 }
 
+            # Write co-promoter entries to event_promotions junction table
+            if all_promo_ids:
+                co_promo_count = 0
+                for pid in all_promo_ids:
+                    if db_post("event_promotions", {
+                        'event_id': event_id,
+                        'promotion_id': pid
+                    }, prefer_header='resolution=ignore-duplicates'):
+                        co_promo_count += 1
+                if len(all_promo_ids) > 1:
+                    logger.info(f"  🤝 Co-promoted event ({len(all_promo_ids)} promotions): {event['name']}")
+
             # Create homepage news item for new event
+            promo_name = event.get('promotion_name')
             news_title = f"New show: {event['name']}"
             if promo_name:
                 news_title = f"{promo_name} announces {event['name']}"
             db_post("homepage_news", {
                 "type": "new_event",
                 "title": news_title,
-                "link_url": f"/events/{result['id']}",
-                "related_event_id": result['id'],
+                "link_url": f"/events/{event_id}",
+                "related_event_id": event_id,
                 "related_promotion_id": promo_id,
                 "is_auto": True,
                 "sort_order": 1,
