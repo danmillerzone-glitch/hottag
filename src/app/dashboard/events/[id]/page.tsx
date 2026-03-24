@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   getEventForEditing, getEventMatches, getStreamingLinks, getAnnouncedTalent,
   type EventMatch, type StreamingLink, type AnnouncedTalent,
 } from '@/lib/promoter'
-import { Loader2, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react'
+import { Loader2, ArrowLeft, ExternalLink, AlertCircle, X } from 'lucide-react'
 import { formatEventDateFull, formatLocation } from '@/lib/utils'
 import {
   TicketsSection, StreamingLinksSection, EventDetailsSection,
@@ -25,6 +26,9 @@ export default function ManageEventPage() {
   const [matches, setMatches] = useState<EventMatch[]>([])
   const [streamingLinks, setStreamingLinks] = useState<StreamingLink[]>([])
   const [announcedTalent, setAnnouncedTalent] = useState<AnnouncedTalent[]>([])
+  const [coPromotions, setCoPromotions] = useState<any[]>([])
+  const [promoSearch, setPromoSearch] = useState('')
+  const [promoResults, setPromoResults] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const loadedRef = React.useRef(false)
@@ -71,6 +75,7 @@ export default function ManageEventPage() {
       }
 
       setEvent(data)
+      setCoPromotions(data.event_promotions || [])
       setAuthorized(true)
       const [eventMatches, links, talent] = await Promise.all([
         getEventMatches(eventId), getStreamingLinks(eventId), getAnnouncedTalent(eventId),
@@ -80,6 +85,45 @@ export default function ManageEventPage() {
       setAnnouncedTalent(talent)
     } catch (err) { console.error('Error loading event:', err) }
     setLoading(false)
+  }
+
+  const searchPromotions = async (query: string) => {
+    if (query.length < 2) { setPromoResults([]); return }
+    const { createClient } = await import('@/lib/supabase-browser')
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('promotions')
+      .select('id, name, slug, logo_url')
+      .ilike('name', `%${query}%`)
+      .limit(5)
+    // Filter out already-linked promotions
+    const existingIds = new Set(coPromotions.map(ep => ep.promotion_id))
+    setPromoResults((data || []).filter(p => !existingIds.has(p.id)))
+  }
+
+  const addCoPromoter = async (promotionId: string) => {
+    const { createClient } = await import('@/lib/supabase-browser')
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('event_promotions')
+      .insert({ event_id: eventId, promotion_id: promotionId })
+    if (!error) {
+      await loadEvent() // Refresh
+      setPromoSearch('')
+      setPromoResults([])
+    }
+  }
+
+  const removeCoPromoter = async (promotionId: string) => {
+    if (coPromotions.length <= 1) return // Can't remove the last one
+    const { createClient } = await import('@/lib/supabase-browser')
+    const supabase = createClient()
+    await supabase
+      .from('event_promotions')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('promotion_id', promotionId)
+    await loadEvent()
   }
 
   if (authLoading || loading) {
@@ -122,6 +166,54 @@ export default function ManageEventPage() {
         <StreamingLinksSection eventId={eventId} links={streamingLinks} onUpdate={setStreamingLinks} />
         <EventDetailsSection event={event} onUpdate={setEvent} />
         <VenueInfoSection event={event} onUpdate={setEvent} />
+
+        {/* Co-Promoters */}
+        <div className="card p-6">
+          <h2 className="text-lg font-bold mb-4">Co-Promoters</h2>
+          <p className="text-sm text-foreground-muted mb-4">
+            Add other promotions co-hosting this event. All co-promoters get equal dashboard access.
+          </p>
+
+          {/* Current co-promoters as chips */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {coPromotions.map((ep: any) => (
+              <div key={ep.promotion_id} className="flex items-center gap-2 bg-background-tertiary rounded-lg px-3 py-2">
+                {ep.promotions?.logo_url && (
+                  <Image src={ep.promotions.logo_url} alt="" width={20} height={20} className="rounded-sm object-contain" />
+                )}
+                <span className="text-sm font-medium">{ep.promotions?.name}</span>
+                {coPromotions.length > 1 && (
+                  <button onClick={() => removeCoPromoter(ep.promotion_id)} className="text-foreground-muted hover:text-red-400 ml-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Search to add */}
+          <div className="relative">
+            <input
+              type="text"
+              value={promoSearch}
+              onChange={(e) => { setPromoSearch(e.target.value); searchPromotions(e.target.value) }}
+              placeholder="Search promotions to add..."
+              className="input w-full"
+            />
+            {promoResults.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-background-secondary border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {promoResults.map(p => (
+                  <button key={p.id} onClick={() => addCoPromoter(p.id)}
+                    className="w-full text-left px-4 py-2 hover:bg-background-tertiary flex items-center gap-2">
+                    {p.logo_url && <Image src={p.logo_url} alt="" width={20} height={20} className="rounded-sm object-contain" />}
+                    <span className="text-sm">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <EventTagsSection event={event} onUpdate={setEvent} />
         <PosterSection event={event} eventId={eventId} onUpdate={setEvent} />
         <AnnouncedTalentSection eventId={eventId} talent={announcedTalent} onUpdate={setAnnouncedTalent} />
