@@ -4,6 +4,8 @@ import PastEventsContent from '@/components/PastEventsContent'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
+export const revalidate = 600 // ISR: regenerate every 10 minutes
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const { data: professional } = await supabase
     .from('professionals')

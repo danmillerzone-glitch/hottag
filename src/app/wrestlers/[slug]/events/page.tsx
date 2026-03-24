@@ -4,6 +4,8 @@ import PastEventsContent from '@/components/PastEventsContent'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
+export const revalidate = 600 // ISR: regenerate every 10 minutes
+
 const EVENT_FIELDS = 'id, name, event_date, city, state, country, poster_url, promotions(name, slug, logo_url)'
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

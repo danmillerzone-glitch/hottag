@@ -48,9 +48,7 @@ function PatreonIcon({ className }: { className?: string }) {
   )
 }
 
-// Force dynamic rendering - no caching
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 900 // ISR: regenerate every 15 minutes
 
 interface PromotionPageProps {
   params: { slug: string }

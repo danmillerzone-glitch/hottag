@@ -41,9 +41,7 @@ import CouponCodeButton from '@/components/CouponCodeButton'
 import TicketLink from '@/components/TicketLink'
 import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
 
-// Force dynamic rendering - no caching
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 300 // ISR: regenerate every 5 minutes
 
 // X (Twitter) icon component
 function XIcon({ className }: { className?: string }) {

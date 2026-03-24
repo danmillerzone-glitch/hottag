@@ -13,8 +13,7 @@ import ClaimProfessionalButton from '@/components/ClaimProfessionalButton'
 import { ROLE_LABELS, formatRoles } from '@/lib/supabase'
 import { getTodayHawaii } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 600 // ISR: regenerate every 10 minutes
 
 const supabase = createServerClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

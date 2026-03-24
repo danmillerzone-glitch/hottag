@@ -5,8 +5,7 @@ import { getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, Building2, ExternalLink, ChevronLeft } from 'lucide-react'
 import EventCard from '@/components/EventCard'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 900 // ISR: regenerate every 15 minutes
 
 interface VenuePageProps {
   params: { venue: string }
