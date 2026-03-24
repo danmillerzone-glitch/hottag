@@ -43,18 +43,33 @@ export default function ManageEventPage() {
     try {
       const data = await getEventForEditing(eventId)
       if (!data) { router.push('/dashboard'); return }
-      if (data.promotions?.claimed_by !== user?.id) {
-        // Check if user is a promotion admin
+
+      // Check if user is a co-promoter (via junction table)
+      const isCoPromoter = data.event_promotions?.some(
+        (ep: any) => ep.promotions?.claimed_by === user?.id
+      )
+
+      if (!isCoPromoter) {
+        // Check if user is a promotion admin for any of the co-promoters
         const { createClient: createBrowserClient } = await import('@/lib/supabase-browser')
         const supabase = createBrowserClient()
-        const { data: adminCheck } = await supabase
-          .from('promotion_admins')
-          .select('id')
-          .eq('promotion_id', data.promotions?.id)
-          .eq('user_id', user?.id)
-          .maybeSingle()
-        if (!adminCheck) { setAuthorized(false); setLoading(false); return }
+
+        const promotionIds = data.event_promotions?.map((ep: any) => ep.promotion_id) || []
+        let hasAdminAccess = false
+
+        if (promotionIds.length > 0) {
+          const { data: adminCheck } = await supabase
+            .from('promotion_admins')
+            .select('id')
+            .in('promotion_id', promotionIds)
+            .eq('user_id', user?.id)
+            .maybeSingle()
+          if (adminCheck) hasAdminAccess = true
+        }
+
+        if (!hasAdminAccess) { setAuthorized(false); setLoading(false); return }
       }
+
       setEvent(data)
       setAuthorized(true)
       const [eventMatches, links, talent] = await Promise.all([

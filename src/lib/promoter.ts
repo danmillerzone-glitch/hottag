@@ -214,28 +214,54 @@ export async function getPromoterPromotion() {
 
 export async function getPromoterDashboardData(): Promise<PromoterDashboardData | null> {
   const supabase = createClient()
-  
+
   const promotion = await getPromoterPromotion()
   if (!promotion) return null
 
   const today = getTodayHawaii()
 
-  // Fetch upcoming events with streaming link count
-  const { data: upcoming } = await supabase
-    .from('events')
-    .select('*, event_streaming_links(id)')
+  // Fetch upcoming events via junction table
+  // Step 1: Get event IDs for this promotion
+  const { data: upcomingPromos } = await supabase
+    .from('event_promotions')
+    .select('event_id')
     .eq('promotion_id', promotion.id)
-    .gte('event_date', today)
-    .order('event_date', { ascending: true })
 
-  // Fetch past events (last 3)
-  const { data: past } = await supabase
-    .from('events')
-    .select('*')
+  const upcomingEventIds = (upcomingPromos || []).map((ep: any) => ep.event_id)
+
+  // Step 2: Query events with the same filters and selects as before
+  let upcoming: any[] = []
+  if (upcomingEventIds.length > 0) {
+    const { data } = await supabase
+      .from('events')
+      .select('*, event_streaming_links(id)')
+      .in('id', upcomingEventIds)
+      .gte('event_date', today)
+      .order('event_date', { ascending: true })
+    upcoming = data || []
+  }
+
+  // Fetch past events via junction table
+  // Step 1: Get event IDs for this promotion
+  const { data: pastPromos } = await supabase
+    .from('event_promotions')
+    .select('event_id')
     .eq('promotion_id', promotion.id)
-    .lt('event_date', today)
-    .order('event_date', { ascending: false })
-    .limit(3)
+
+  const pastEventIds = (pastPromos || []).map((ep: any) => ep.event_id)
+
+  // Step 2: Query events with the same filters and selects as before
+  let past: any[] = []
+  if (pastEventIds.length > 0) {
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .in('id', pastEventIds)
+      .lt('event_date', today)
+      .order('event_date', { ascending: false })
+      .limit(3)
+    past = data || []
+  }
 
   // Follower count
   const { count: followerCount } = await supabase
@@ -243,13 +269,17 @@ export async function getPromoterDashboardData(): Promise<PromoterDashboardData 
     .select('*', { count: 'exact', head: true })
     .eq('promotion_id', promotion.id)
 
-  // Total attending across upcoming events
-  const { count: totalAttending } = await supabase
-    .from('user_event_attendance')
-    .select('*, events!inner(*)', { count: 'exact', head: true })
-    .eq('events.promotion_id', promotion.id)
-    .gte('events.event_date', today)
-    .eq('status', 'attending')
+  // Total attending across upcoming events for this promotion
+  let totalAttending = 0
+  const upcomingIds = (upcoming || []).map((e: any) => e.id)
+  if (upcomingIds.length > 0) {
+    const { count } = await supabase
+      .from('user_event_attendance')
+      .select('*', { count: 'exact', head: true })
+      .in('event_id', upcomingIds)
+      .eq('status', 'attending')
+    totalAttending = count || 0
+  }
 
   return {
     promotion,
@@ -344,7 +374,14 @@ export async function getEventForEditing(eventId: string) {
     .single()
 
   if (error) throw error
-  return data
+
+  // Fetch co-promoters for this event
+  const { data: eventPromos } = await supabase
+    .from('event_promotions')
+    .select('promotion_id, promotions(id, name, slug, logo_url, claimed_by)')
+    .eq('event_id', eventId)
+
+  return { ...data, event_promotions: eventPromos || [] }
 }
 
 // ============================================
@@ -820,6 +857,14 @@ export async function createEvent(data: {
     .single()
 
   if (error) throw error
+
+  // Dual-write to event_promotions junction table
+  if (event?.id && data.promotion_id) {
+    await supabase
+      .from('event_promotions')
+      .insert({ event_id: event.id, promotion_id: data.promotion_id })
+  }
+
   return event
 }
 
