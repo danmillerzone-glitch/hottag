@@ -91,7 +91,7 @@ export function TicketsSection({ event, onUpdate }: { event: any; onUpdate: (e: 
 // STREAMING LINKS SECTION
 // ============================================
 
-const PLATFORM_OPTIONS = ['FITE/Triller TV', 'YouTube', 'Twitch', 'IWTV', 'Peacock', 'Title Match Network', 'Highspots Wrestling Network', 'Facebook Live', 'X/Twitter', 'Other']
+const PLATFORM_OPTIONS = ['FITE/Triller TV', 'YouTube', 'Twitch', 'IWTV', 'Peacock', 'Title Match Network', 'Highspots Wrestling Network', 'Facebook Live', 'X/Twitter', 'TikTok', 'Patreon', 'Other']
 
 export function StreamingLinksSection({ eventId, links, onUpdate }: { eventId: string; links: StreamingLink[]; onUpdate: (l: StreamingLink[]) => void }) {
   const [showAdd, setShowAdd] = useState(false)

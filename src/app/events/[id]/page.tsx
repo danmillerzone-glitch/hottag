@@ -298,14 +298,19 @@ export default async function EventPage({ params }: EventPageProps) {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
         {/* Main content card */}
         <div className="card p-6 md:p-8">
-          {/* Promotion badge */}
+          {/* Promotion badges */}
           {allPromotions.length > 0 && (
-            <Link
-              href={`/promotions/${allPromotions[0].slug}`}
-              className="inline-flex items-center gap-2 badge badge-promotion mb-4 hover:bg-accent/30 transition-colors"
-            >
-              {allPromotions.map(p => p.name).join(' x ')}
-            </Link>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {allPromotions.map(p => (
+                <Link
+                  key={p.id}
+                  href={`/promotions/${p.slug}`}
+                  className="inline-flex items-center gap-2 badge badge-promotion hover:bg-accent/30 transition-colors"
+                >
+                  {p.name}
+                </Link>
+              ))}
+            </div>
           )}
 
           {/* Title with QR/Share */}
