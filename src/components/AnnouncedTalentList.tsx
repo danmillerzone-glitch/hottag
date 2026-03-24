@@ -79,7 +79,7 @@ export default function AnnouncedTalentList({ eventId, championMap = {} }: { eve
                 href={`/wrestlers/${t.wrestlers.slug}`}
                 className="flex flex-col items-center p-3 rounded-lg bg-background-tertiary hover:bg-border transition-colors group"
               >
-                <div className={`w-16 h-16 rounded-xl bg-background flex items-center justify-center overflow-hidden mb-2 border-2 ${championMap[t.wrestlers.id] ? 'border-yellow-500' : 'border-transparent'}`}>
+                <div className={`w-16 h-16 rounded-xl bg-gradient-to-t from-[#2a3038] to-[#1a1f25] flex items-center justify-center overflow-hidden mb-2 border-2 ${championMap[t.wrestlers.id] ? 'border-yellow-500' : 'border-transparent'}`}>
                   {t.wrestlers.photo_url ? (
                     <Image
                       src={t.wrestlers.photo_url}

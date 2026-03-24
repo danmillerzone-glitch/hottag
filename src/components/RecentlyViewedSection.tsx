@@ -47,6 +47,9 @@ export default function RecentlyViewedSection() {
               className="flex-shrink-0 w-[160px] group"
             >
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-background-tertiary mb-2">
+                {item.type === 'wrestler' && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#2a3038] via-[#1e2530] to-[#14181c]" />
+                )}
                 {item.image ? (
                   <Image
                     src={item.image}
