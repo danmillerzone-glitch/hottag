@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, getEventPromotions } from '@/lib/supabase'
 import { getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, Users, ChevronLeft } from 'lucide-react'
 import EventCard from '@/components/EventCard'
@@ -62,7 +62,14 @@ async function getEventsByLocation(location: string) {
       console.error('Error fetching events by location:', error)
       return { events: [], isState, isCountry, locationName: STATE_NAMES[upperLocation] || decodedLocation }
     }
-    const events = data.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    const eventIds = data.map((e: any) => e.id)
+    const eventPromotionsMap = await getEventPromotions(eventIds)
+    const events = data.map((e: any) => ({
+      ...e,
+      attending_count: e.real_attending_count || 0,
+      interested_count: e.real_interested_count || 0,
+      event_promotions: eventPromotionsMap.get(e.id) || [],
+    }))
     return { events, isState, isCountry, locationName: STATE_NAMES[upperLocation] }
   }
 
@@ -70,7 +77,14 @@ async function getEventsByLocation(location: string) {
   const { data: cityData, error: cityError } = await baseQuery().ilike('city', decodedLocation)
 
   if (!cityError && cityData && cityData.length > 0) {
-    const events = cityData.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    const eventIds = cityData.map((e: any) => e.id)
+    const eventPromotionsMap = await getEventPromotions(eventIds)
+    const events = cityData.map((e: any) => ({
+      ...e,
+      attending_count: e.real_attending_count || 0,
+      interested_count: e.real_interested_count || 0,
+      event_promotions: eventPromotionsMap.get(e.id) || [],
+    }))
     return { events, isState, isCountry, locationName: decodedLocation }
   }
 
@@ -79,7 +93,14 @@ async function getEventsByLocation(location: string) {
 
   if (!countryError && countryData && countryData.length > 0) {
     isCountry = true
-    const events = countryData.map((e: any) => ({ ...e, attending_count: e.real_attending_count || 0, interested_count: e.real_interested_count || 0 }))
+    const eventIds = countryData.map((e: any) => e.id)
+    const eventPromotionsMap = await getEventPromotions(eventIds)
+    const events = countryData.map((e: any) => ({
+      ...e,
+      attending_count: e.real_attending_count || 0,
+      interested_count: e.real_interested_count || 0,
+      event_promotions: eventPromotionsMap.get(e.id) || [],
+    }))
     return { events, isState, isCountry, locationName: decodedLocation }
   }
 

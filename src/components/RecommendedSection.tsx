@@ -55,6 +55,7 @@ export default function RecommendedSection() {
 
     // Strategy 1: Events from promotions in same region as your follows
     let recommendedEvents: any[] = []
+    const allEventIds: string[] = []
 
     if (regions.length > 0) {
       // Find other promotions in same regions
@@ -66,7 +67,7 @@ export default function RecommendedSection() {
 
       if (regionalPromos && regionalPromos.length > 0) {
         const regionalPromoIds = regionalPromos.map((p: any) => p.id)
-        
+
         const { data: regionalEvents } = await supabase
           .from('events')
           .select(eventCols)
@@ -82,6 +83,7 @@ export default function RecommendedSection() {
             attending_count: e.real_attending_count || 0,
             interested_count: e.real_interested_count || 0,
           }))
+          allEventIds.push(...regionalEvents.map((e: any) => e.id))
         }
       }
     }
@@ -107,6 +109,7 @@ export default function RecommendedSection() {
               interested_count: (e as any).real_interested_count || 0,
             })
             existingIds.add(e.id)
+            allEventIds.push(e.id)
           }
         }
       }
@@ -132,6 +135,7 @@ export default function RecommendedSection() {
               interested_count: (e as any).real_interested_count || 0,
             })
             existingIds.add(e.id)
+            allEventIds.push(e.id)
           }
         }
       }
@@ -139,6 +143,25 @@ export default function RecommendedSection() {
 
     // Filter out events user already marked attendance for
     recommendedEvents = recommendedEvents.filter(e => !attendedEventIds.has(e.id))
+
+    // Batch-fetch co-promoters
+    if (allEventIds.length > 0) {
+      const { data: eventPromos } = await supabase
+        .from('event_promotions')
+        .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+        .in('event_id', allEventIds)
+
+      const promoMap = new Map<string, any[]>()
+      for (const ep of (eventPromos || [])) {
+        if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+        promoMap.get(ep.event_id)!.push(ep)
+      }
+
+      recommendedEvents = recommendedEvents.map((e: any) => ({
+        ...e,
+        event_promotions: promoMap.get(e.id) || [],
+      }))
+    }
 
     setEvents(recommendedEvents.slice(0, 8))
     setLoading(false)

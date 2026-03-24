@@ -69,16 +69,36 @@ function SearchContent() {
         .limit(20)
 
       if (events) {
-        events.forEach((e: any) => {
-          allResults.push({
-            type: 'event',
-            id: e.id,
-            name: e.name,
-            slug: e.id,
-            subtitle: `${e.promotions?.name || ''} • ${e.city}${e.state ? `, ${e.state}` : ''}${e.country && e.country !== 'USA' ? ` · ${e.country}` : ''}`,
-            date: e.event_date,
+        // Batch-fetch co-promoters
+        const eventIds = events.map((e: any) => e.id)
+        if (eventIds.length > 0) {
+          const { data: eventPromos } = await supabase
+            .from('event_promotions')
+            .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+            .in('event_id', eventIds)
+
+          const promoMap = new Map<string, any[]>()
+          for (const ep of (eventPromos || [])) {
+            if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+            promoMap.get(ep.event_id)!.push(ep)
+          }
+
+          events.forEach((e: any) => {
+            const coPromoters = promoMap.get(e.id) || []
+            const promoNames = e.promotions?.name
+              ? [e.promotions.name, ...coPromoters.map((ep: any) => ep.promotions?.name).filter(Boolean)].join(' x ')
+              : coPromoters.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ')
+
+            allResults.push({
+              type: 'event',
+              id: e.id,
+              name: e.name,
+              slug: e.id,
+              subtitle: `${promoNames || ''} • ${e.city}${e.state ? `, ${e.state}` : ''}${e.country && e.country !== 'USA' ? ` · ${e.country}` : ''}`,
+              date: e.event_date,
+            })
           })
-        })
+        }
       }
 
       // Search wrestlers

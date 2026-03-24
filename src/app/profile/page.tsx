@@ -78,8 +78,32 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
 
       if (eventsData) {
-        console.log('Events data:', eventsData)
-        setAttendingEvents(eventsData)
+        // Batch-fetch co-promoters
+        const eventIds = eventsData.map((item: any) => item.events?.id).filter(Boolean)
+        if (eventIds.length > 0) {
+          const { data: eventPromos } = await supabase
+            .from('event_promotions')
+            .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+            .in('event_id', eventIds)
+
+          const promoMap = new Map<string, any[]>()
+          for (const ep of (eventPromos || [])) {
+            if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+            promoMap.get(ep.event_id)!.push(ep)
+          }
+
+          const enrichedEvents = eventsData.map((item: any) => ({
+            ...item,
+            events: item.events ? {
+              ...item.events,
+              event_promotions: promoMap.get(item.events.id) || [],
+            } : null,
+          }))
+
+          setAttendingEvents(enrichedEvents)
+        } else {
+          setAttendingEvents(eventsData)
+        }
       }
 
       // Fetch followed wrestlers
@@ -288,7 +312,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{item.events.name}</div>
                     <div className="text-sm text-foreground-muted">
-                      {item.events.promotions?.name} • {item.events.city}, {item.events.state}
+                      {item.events.promotions?.name || item.events.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''} • {item.events.city}, {item.events.state}
                     </div>
                   </div>
                   <span className="badge bg-green-500/20 text-green-400">Going</span>
@@ -328,7 +352,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{item.events.name}</div>
                     <div className="text-sm text-foreground-muted">
-                      {item.events.promotions?.name} • {item.events.city}, {item.events.state}
+                      {item.events.promotions?.name || item.events.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''} • {item.events.city}, {item.events.state}
                     </div>
                   </div>
                   <span className="badge bg-pink-500/20 text-pink-400">Interested</span>
@@ -370,7 +394,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{item.events.name}</div>
                     <div className="text-sm text-foreground-muted">
-                      {item.events.promotions?.name} • {item.events.city}, {item.events.state}
+                      {item.events.promotions?.name || item.events.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''} • {item.events.city}, {item.events.state}
                     </div>
                   </div>
                   <span className={`badge ${item.status === 'attending' ? 'bg-green-500/10 text-green-400/60' : 'bg-pink-500/10 text-pink-400/60'}`}>

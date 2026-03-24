@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, getEventPromotions } from '@/lib/supabase'
 import { getTodayHawaii } from '@/lib/utils'
 import { MapPin, Calendar, Building2, ExternalLink, ChevronLeft } from 'lucide-react'
 import EventCard from '@/components/EventCard'
@@ -36,30 +36,35 @@ async function getEventsByVenue(venueSlug: string) {
     return { events: [], venueName, venueInfo: null }
   }
   
-  // Map real counts
+  // Batch-fetch co-promoters
+  const eventIds = events.map((e: any) => e.id)
+  const eventPromotionsMap = await getEventPromotions(eventIds)
+
+  // Map real counts and attach co-promoters
   const mappedEvents = events.map((e: any) => ({
     ...e,
     attending_count: e.real_attending_count || 0,
-    interested_count: e.real_interested_count || 0
+    interested_count: e.real_interested_count || 0,
+    event_promotions: eventPromotionsMap.get(e.id) || [],
   }))
-  
+
   // Get venue info from first event
   const venueInfo = events.length > 0 ? {
     name: events[0].venue_name,
     city: events[0].city,
     state: events[0].state,
   } : null
-  
+
   // Split into upcoming and past
   const upcoming = mappedEvents.filter((e: any) => e.event_date >= today)
   const past = mappedEvents.filter((e: any) => e.event_date < today)
-  
-  return { 
-    events: mappedEvents, 
+
+  return {
+    events: mappedEvents,
     upcoming,
     past,
-    venueName: venueInfo?.name || venueName, 
-    venueInfo 
+    venueName: venueInfo?.name || venueName,
+    venueInfo
   }
 }
 

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { supabase, formatRoles, WRESTLING_STYLE_LABELS } from '@/lib/supabase'
+import { supabase, formatRoles, WRESTLING_STYLE_LABELS, getEventPromotions } from '@/lib/supabase'
 import { User, MapPin, Calendar, ExternalLink, Trophy, Instagram, Youtube, Globe, Mail, ShoppingBag, Home, Ruler, Dumbbell, Cake, GraduationCap, Shield, Briefcase } from 'lucide-react'
 import { formatEventDateFull, getTodayHawaii } from '@/lib/utils'
 import { getFlag, getCountryName } from '@/lib/countries'
@@ -46,7 +46,15 @@ async function getWrestlerEvents(wrestlerId: string) {
   for (const d of (ewData || [])) { const evt = (d as any).events; if (evt) eventMap.set(evt.id, evt) }
   for (const d of (mpData || [])) { const evt = (d as any).event_matches?.events; if (evt) eventMap.set(evt.id, evt) }
   for (const d of (atData || [])) { const evt = (d as any).events; if (evt) eventMap.set(evt.id, evt) }
-  return Array.from(eventMap.values()).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+  const events = Array.from(eventMap.values()).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+
+  // Batch-fetch co-promoters
+  const eventIds = events.map((e: any) => e.id)
+  const eventPromotionsMap = await getEventPromotions(eventIds)
+  return events.map((e: any) => ({
+    ...e,
+    event_promotions: eventPromotionsMap.get(e.id) || [],
+  }))
 }
 
 async function getFollowerCount(wrestlerId: string) {
@@ -794,7 +802,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{event.name}</div>
-                      <div className="text-sm text-foreground-muted">{event.promotions?.name}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
+                      <div className="text-sm text-foreground-muted">{event.promotions?.name || event.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''}{event.city && ` · ${event.city.replace(/,$/, '')}`}{event.state && `, ${event.state}`}{event.country && event.country !== 'USA' && `, ${event.country}`}</div>
                     </div>
                     <ExternalLink className="w-4 h-4 text-foreground-muted flex-shrink-0" />
                   </Link>

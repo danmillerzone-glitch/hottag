@@ -51,18 +51,35 @@ export default function PromoterAnalytics({ promotionId }: PromoterAnalyticsProp
     setLoading(true)
     const today = getTodayHawaii()
 
+    // Get event IDs from event_promotions junction table
+    const { data: eventPromoData } = await supabase
+      .from('event_promotions')
+      .select('event_id')
+      .eq('promotion_id', promotionId)
+
+    const eventIds = (eventPromoData || []).map((ep: any) => ep.event_id)
+
+    if (eventIds.length === 0) {
+      setEventStats([])
+      setTotalPastAttending(0)
+      setTotalPastInterested(0)
+      setRecentFollowers(0)
+      setLoading(false)
+      return
+    }
+
     // Fetch all events with their attendance counts
     const [upcomingRes, pastRes, followersRes] = await Promise.all([
       supabase
         .from('events')
         .select('id, name, event_date, attending_count, interested_count, real_attending_count, real_interested_count, ticket_url, poster_url')
-        .eq('promotion_id', promotionId)
+        .in('id', eventIds)
         .gte('event_date', today)
         .order('event_date', { ascending: true }),
       supabase
         .from('events')
         .select('id, name, event_date, attending_count, interested_count, real_attending_count, real_interested_count, ticket_url, poster_url')
-        .eq('promotion_id', promotionId)
+        .in('id', eventIds)
         .lt('event_date', today)
         .order('event_date', { ascending: false })
         .limit(10),

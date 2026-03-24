@@ -37,7 +37,7 @@ export default function VegasWeekendPage() {
 
   const loadData = async () => {
     const supabase = createClient()
-    
+
     const [eventsRes, collectivesRes] = await Promise.all([
       supabase
         .from('events')
@@ -60,7 +60,29 @@ export default function VegasWeekendPage() {
         .order('sort_order', { ascending: true })
     ])
 
-    setEvents(eventsRes.data || [])
+    let eventsWithPromos = eventsRes.data || []
+
+    // Batch-fetch co-promoters
+    const eventIds = eventsWithPromos.map((e: any) => e.id)
+    if (eventIds.length > 0) {
+      const { data: eventPromos } = await supabase
+        .from('event_promotions')
+        .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+        .in('event_id', eventIds)
+
+      const promoMap = new Map<string, any[]>()
+      for (const ep of (eventPromos || [])) {
+        if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+        promoMap.get(ep.event_id)!.push(ep)
+      }
+
+      eventsWithPromos = eventsWithPromos.map((e: any) => ({
+        ...e,
+        event_promotions: promoMap.get(e.id) || [],
+      }))
+    }
+
+    setEvents(eventsWithPromos)
     setCollectives(collectivesRes.data || [])
     setLoading(false)
   }

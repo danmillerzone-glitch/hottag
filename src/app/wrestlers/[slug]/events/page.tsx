@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, getEventPromotions } from '@/lib/supabase'
 import { getTodayHawaii } from '@/lib/utils'
 import PastEventsContent from '@/components/PastEventsContent'
 import { notFound } from 'next/navigation'
@@ -65,9 +65,17 @@ export default async function WrestlerPastEventsPage({ params }: { params: { slu
     (a: any, b: any) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
   )
 
+  // Batch-fetch co-promoters
+  const eventIds = events.map((e: any) => e.id)
+  const eventPromotionsMap = await getEventPromotions(eventIds)
+  const eventsWithPromotions = events.map((e: any) => ({
+    ...e,
+    event_promotions: eventPromotionsMap.get(e.id) || [],
+  }))
+
   return (
     <PastEventsContent
-      events={events}
+      events={eventsWithPromotions}
       entityName={wrestler.name}
       entitySlug={wrestler.slug}
       entityType="wrestlers"

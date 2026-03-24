@@ -44,7 +44,29 @@ export default function MapPage() {
         console.error('Map events error:', error)
         setEvents([])
       } else {
-        setEvents(data || [])
+        let eventsWithPromos = data || []
+
+        // Batch-fetch co-promoters
+        const eventIds = eventsWithPromos.map((e: any) => e.id)
+        if (eventIds.length > 0) {
+          const { data: eventPromos } = await supabase
+            .from('event_promotions')
+            .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+            .in('event_id', eventIds)
+
+          const promoMap = new Map<string, any[]>()
+          for (const ep of (eventPromos || [])) {
+            if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+            promoMap.get(ep.event_id)!.push(ep)
+          }
+
+          eventsWithPromos = eventsWithPromos.map((e: any) => ({
+            ...e,
+            event_promotions: promoMap.get(e.id) || [],
+          }))
+        }
+
+        setEvents(eventsWithPromos)
       }
       setLoading(false)
     }
@@ -201,7 +223,7 @@ export default function MapPage() {
               ${locationEvents.map((e: any) => `<a href="/events/${e.id}" class="block p-2 rounded bg-background-tertiary hover:bg-border transition-colors"><div class="font-medium text-sm text-foreground">${e.name}</div><div class="text-xs text-accent">${formatEventDate(e.event_date)}</div></a>`).join('')}
             </div></div>`
         : `<div class="p-4 max-w-xs">
-            ${event.promotions ? `<div class="text-accent text-xs font-medium mb-1">${event.promotions.name}</div>` : ''}
+            ${event.promotions || event.event_promotions?.length > 0 ? `<div class="text-accent text-xs font-medium mb-1">${event.promotions?.name || event.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''}</div>` : ''}
             <h3 class="font-bold text-foreground mb-1">${event.name}</h3>
             <p class="text-foreground-muted text-sm mb-2">${formatEventDate(event.event_date)}</p>
             <p class="text-foreground-muted text-sm mb-3">${event.venue_name || formatLocation(event.city, event.state, event.country)}</p>
@@ -271,14 +293,17 @@ export default function MapPage() {
             <button onClick={() => setShowList(false)} className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"><X className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {filteredEvents.map((event) => (
-              <Link key={event.id} href={`/events/${event.id}`} className="block p-4 rounded-lg bg-background hover:bg-background-tertiary transition-colors">
-                {event.promotions && <div className="text-accent text-xs font-medium mb-1">{event.promotions.name}</div>}
-                <h3 className="font-semibold text-foreground mb-1">{event.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted"><Calendar className="w-3 h-3" />{formatEventDate(event.event_date)}</div>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1"><MapPin className="w-3 h-3" />{formatLocation(event.city, event.state, event.country)}</div>
-              </Link>
-            ))}
+            {filteredEvents.map((event) => {
+              const promoNames = event.promotions?.name || event.event_promotions?.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ') || ''
+              return (
+                <Link key={event.id} href={`/events/${event.id}`} className="block p-4 rounded-lg bg-background hover:bg-background-tertiary transition-colors">
+                  {promoNames && <div className="text-accent text-xs font-medium mb-1">{promoNames}</div>}
+                  <h3 className="font-semibold text-foreground mb-1">{event.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-foreground-muted"><Calendar className="w-3 h-3" />{formatEventDate(event.event_date)}</div>
+                  <div className="flex items-center gap-2 text-sm text-foreground-muted mt-1"><MapPin className="w-3 h-3" />{formatLocation(event.city, event.state, event.country)}</div>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}

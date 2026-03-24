@@ -59,13 +59,29 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
       .limit(500)
 
     if (data) {
-      const withDistance = data.map((e: any) => ({
-        ...e,
-        attending_count: e.real_attending_count || 0,
-        interested_count: e.real_interested_count || 0,
-        distance: calculateDistance(coords.lat, coords.lng, e.latitude, e.longitude),
-      }))
-      setAllEvents(withDistance)
+      // Batch-fetch co-promoters
+      const eventIds = data.map((e: any) => e.id)
+      if (eventIds.length > 0) {
+        const { data: eventPromos } = await supabase
+          .from('event_promotions')
+          .select('event_id, promotion_id, promotions(id, name, slug, logo_url)')
+          .in('event_id', eventIds)
+
+        const promoMap = new Map<string, any[]>()
+        for (const ep of (eventPromos || [])) {
+          if (!promoMap.has(ep.event_id)) promoMap.set(ep.event_id, [])
+          promoMap.get(ep.event_id)!.push(ep)
+        }
+
+        const withDistance = data.map((e: any) => ({
+          ...e,
+          attending_count: e.real_attending_count || 0,
+          interested_count: e.real_interested_count || 0,
+          distance: calculateDistance(coords.lat, coords.lng, e.latitude, e.longitude),
+          event_promotions: promoMap.get(e.id) || [],
+        }))
+        setAllEvents(withDistance)
+      }
     }
     setLoading(false)
   }
