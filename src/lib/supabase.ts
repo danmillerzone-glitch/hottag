@@ -76,7 +76,7 @@ export interface Wrestler {
 export const WRESTLING_STYLES = [
   'brawler', 'grappler', 'luchador', 'strong_style', 'high_flyer',
   'technical', 'hybrid', 'powerhouse', 'hardcore', 'submission_specialist',
-  'comedy', 'deathmatch'
+  'comedy', 'deathmatch', 'striker', 'martial_arts'
 ] as const
 
 export const WRESTLING_STYLE_LABELS: Record<string, string> = {
@@ -92,6 +92,8 @@ export const WRESTLING_STYLE_LABELS: Record<string, string> = {
   submission_specialist: 'Submission Specialist',
   comedy: 'Comedy',
   deathmatch: 'Deathmatch',
+  striker: 'Striker',
+  martial_arts: 'Martial Arts',
 }
 
 export const PROFESSIONAL_ROLES = [
