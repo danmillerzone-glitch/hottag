@@ -49,7 +49,7 @@ import {
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper, Send, Download, MessageSquare, ClipboardCopy,
+  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper, Send, Download, MessageSquare, ClipboardCopy, FileText,
 } from 'lucide-react'
 
 const REGION_OPTIONS = [
@@ -58,7 +58,7 @@ const REGION_OPTIONS = [
   'Asia', 'Latin America', 'Middle East', 'Africa',
 ]
 
-type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas'
+type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas' | 'blog'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -197,6 +197,7 @@ export default function AdminPage() {
     { id: 'requests', label: 'Page Requests', icon: Inbox },
     { id: 'hero', label: 'Hero Images', icon: ImageIcon },
     { id: 'vegas', label: 'Vegas Weekend', icon: Star },
+    { id: 'blog', label: 'Dev Blog', icon: FileText },
   ]
 
   return (
@@ -254,6 +255,7 @@ export default function AdminPage() {
         <LazyTab active={activeTab === 'requests'}><PageRequestsTab /></LazyTab>
         <LazyTab active={activeTab === 'hero'}><HeroSlidesTab /></LazyTab>
         <LazyTab active={activeTab === 'vegas'}><VegasWeekendTab /></LazyTab>
+        <LazyTab active={activeTab === 'blog'}><BlogTab /></LazyTab>
       </div>
     </div>
   )
@@ -5855,6 +5857,190 @@ function SocialTab() {
         copiedId={copiedId}
         onCopy={handleCopy}
       />
+    </div>
+  )
+}
+
+// ─── Blog Tab ───────────────────────────────────────────────────────────────
+function BlogTab() {
+  const [posts, setPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<any | null>(null)
+  const [title, setTitle] = useState('')
+  const [slug, setSlug] = useState('')
+  const [content, setContent] = useState('')
+  const [published, setPublished] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { loadPosts() }, [])
+
+  async function loadPosts() {
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const { data } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setPosts(data || [])
+    setLoading(false)
+  }
+
+  function startNew() {
+    setEditing({})
+    setTitle('')
+    setSlug('')
+    setContent('')
+    setPublished(false)
+  }
+
+  function startEdit(post: any) {
+    setEditing(post)
+    setTitle(post.title)
+    setSlug(post.slug)
+    setContent(post.content)
+    setPublished(post.published)
+  }
+
+  function generateSlug(t: string) {
+    return t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  }
+
+  async function handleSave() {
+    if (!title.trim() || !slug.trim()) return
+    setSaving(true)
+    const payload = { title: title.trim(), slug: slug.trim(), content, published, updated_at: new Date().toISOString() }
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing?.id
+        ? { action: 'update', table: 'blog_posts', id: editing.id, data: payload }
+        : { action: 'insert', table: 'blog_posts', data: payload }
+      ),
+    })
+    if (res.ok) {
+      setEditing(null)
+      setTitle('')
+      setSlug('')
+      setContent('')
+      setPublished(false)
+      await loadPosts()
+    }
+    setSaving(false)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this post?')) return
+    await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', table: 'blog_posts', id }),
+    })
+    await loadPosts()
+  }
+
+  async function togglePublish(post: any) {
+    await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', table: 'blog_posts', id: post.id, data: { published: !post.published } }),
+    })
+    await loadPosts()
+  }
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-foreground-muted" /></div>
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-display font-bold flex items-center gap-2">
+          <FileText className="w-5 h-5 text-accent" /> Dev Blog ({posts.length})
+        </h2>
+        <button onClick={startNew} className="btn btn-primary text-sm">
+          <Plus className="w-4 h-4 mr-1" /> New Post
+        </button>
+      </div>
+
+      {/* Editor */}
+      {editing && (
+        <div className="card p-6 space-y-4">
+          <h3 className="font-bold">{editing.id ? 'Edit Post' : 'New Post'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-foreground-muted mb-1 block">Title</label>
+              <input
+                value={title}
+                onChange={e => { setTitle(e.target.value); if (!editing.id) setSlug(generateSlug(e.target.value)) }}
+                className="input w-full"
+                placeholder="Post title"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-foreground-muted mb-1 block">Slug</label>
+              <input
+                value={slug}
+                onChange={e => setSlug(e.target.value)}
+                className="input w-full"
+                placeholder="url-friendly-slug"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-foreground-muted mb-1 block">Content (Markdown)</label>
+            <textarea
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              rows={16}
+              className="input w-full font-mono text-sm"
+              placeholder="Write your post in markdown..."
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)} />
+              Published
+            </label>
+            <div className="flex-1" />
+            <button onClick={() => { setEditing(null); setTitle(''); setSlug(''); setContent(''); setPublished(false) }} className="btn btn-ghost text-sm">
+              Cancel
+            </button>
+            <button onClick={handleSave} disabled={saving || !title.trim() || !slug.trim()} className="btn btn-primary text-sm">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+              {editing.id ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Posts list */}
+      <div className="space-y-2">
+        {posts.map(post => (
+          <div key={post.id} className="card p-4 flex items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-bold truncate">{post.title}</span>
+                {post.published ? (
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">Published</span>
+                ) : (
+                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">Draft</span>
+                )}
+              </div>
+              <p className="text-xs text-foreground-muted">/blog/{post.slug} · {new Date(post.created_at).toLocaleDateString()}</p>
+            </div>
+            <button onClick={() => togglePublish(post)} className="btn btn-ghost text-xs">
+              {post.published ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
+              {post.published ? 'Unpublish' : 'Publish'}
+            </button>
+            <button onClick={() => startEdit(post)} className="btn btn-ghost text-xs">
+              <Edit3 className="w-3 h-3 mr-1" /> Edit
+            </button>
+            <button onClick={() => handleDelete(post.id)} className="btn btn-ghost text-xs text-red-400 hover:text-red-300">
+              <Trash2 className="w-3 h-3 mr-1" /> Delete
+            </button>
+          </div>
+        ))}
+        {posts.length === 0 && (
+          <p className="text-center text-foreground-muted py-8">No blog posts yet. Create your first one!</p>
+        )}
+      </div>
     </div>
   )
 }

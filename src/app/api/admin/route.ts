@@ -47,6 +47,7 @@ const ALLOWED_TABLES = new Set([
   'homepage_news',
   'hero_slides',
   'vegas_weekend_collectives',
+  'blog_posts',
 ])
 
 // POST /api/admin — generic admin operations

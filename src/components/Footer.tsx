@@ -36,6 +36,9 @@ export default function Footer() {
             >
               Report a Problem
             </a>
+            <Link href="/blog" className="text-foreground-muted hover:text-foreground transition-colors">
+              Dev Blog
+            </Link>
           </nav>
           <span className="text-xs text-foreground-muted">
             &copy; {new Date().getFullYear()} Hot Tag LLC
