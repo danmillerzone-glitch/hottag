@@ -358,7 +358,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {hasRender ? (
                   <Image src={wrestler.render_url!} alt={wrestler.name} fill className="object-contain object-bottom relative z-[1]" priority unoptimized />
                 ) : hasPhoto ? (
-                  <div className="absolute bottom-0 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
+                  <div className="absolute top-8 right-8 w-[260px] lg:w-[300px] h-[260px] lg:h-[300px]">
                     <div className="w-full h-full rounded-2xl bg-background-tertiary overflow-hidden border-2 border-border">
                       <Image src={wrestler.photo_url!} alt={wrestler.name} fill className="object-cover object-top" priority unoptimized />
                     </div>
