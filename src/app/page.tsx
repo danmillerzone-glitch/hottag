@@ -13,6 +13,7 @@ import NearYouSection from '@/components/NearYouSection'
 import RecommendedSection from '@/components/RecommendedSection'
 import WhatsNewSection from '@/components/WhatsNewSection'
 import RecentlyViewedSection from '@/components/RecentlyViewedSection'
+import TitleMatchesSection from '@/components/TitleMatchesSection'
 import {
   Calendar,
   MapPin,
@@ -283,6 +284,9 @@ export default function HomePage() {
 
       {/* Recently Viewed — localStorage-based history */}
       <RecentlyViewedSection />
+
+      {/* Title Matches — admin-curated championship matches */}
+      <TitleMatchesSection />
 
       {/* Personalized Section for Logged-in Users */}
       {!authLoading && user && (
