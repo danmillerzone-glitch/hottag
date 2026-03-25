@@ -49,7 +49,7 @@ import {
   AlertTriangle, Loader2, User, Award, Megaphone,
   Ban, UserCheck, Edit3, GitMerge, Upload, Eye, EyeOff,
   Plus, Save, X, BadgeCheck, Key, Copy, RefreshCw, Crown, Inbox, ImageIcon,
-  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper, Send, Download, MessageSquare, ClipboardCopy, FileText,
+  ChevronUp, ChevronDown, Edit2, Briefcase, Star, Newspaper, Send, Download, MessageSquare, ClipboardCopy, FileText, Trophy,
 } from 'lucide-react'
 
 const REGION_OPTIONS = [
@@ -58,7 +58,7 @@ const REGION_OPTIONS = [
   'Asia', 'Latin America', 'Middle East', 'Africa',
 ]
 
-type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas' | 'blog'
+type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas' | 'blog' | 'title-matches'
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
@@ -186,6 +186,7 @@ export default function AdminPage() {
     { id: 'wrestler-claims', label: 'Wrestler Claims', icon: Users },
     { id: 'crew-claims', label: 'Crew Claims', icon: Briefcase },
     { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'title-matches', label: 'Title Matches', icon: Trophy },
     { id: 'promotions', label: 'Promotions', icon: Building2 },
     { id: 'wrestlers', label: 'Wrestlers', icon: Award },
     { id: 'crew', label: 'Crew', icon: Briefcase },
@@ -244,6 +245,7 @@ export default function AdminPage() {
         <LazyTab active={activeTab === 'wrestler-claims'}><WrestlerClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'crew-claims'}><CrewClaimsTab /></LazyTab>
         <LazyTab active={activeTab === 'events'}><EventsTab /></LazyTab>
+        <LazyTab active={activeTab === 'title-matches'}><TitleMatchesTab /></LazyTab>
         <LazyTab active={activeTab === 'promotions'}><PromotionsTab /></LazyTab>
         <LazyTab active={activeTab === 'wrestlers'}><WrestlersTab /></LazyTab>
         <LazyTab active={activeTab === 'crew'}><CrewTab /></LazyTab>
@@ -6040,6 +6042,190 @@ function BlogTab() {
         {posts.length === 0 && (
           <p className="text-center text-foreground-muted py-8">No blog posts yet. Create your first one!</p>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// TITLE MATCHES TAB
+// ============================================
+
+function TitleMatchesTab() {
+  const [matches, setMatches] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Plain async function — matches pattern of loadPosts (BlogTab), loadNews (NewsFeedTab)
+  async function fetchMatches() {
+    setLoading(true)
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const { getTodayHawaii } = await import('@/lib/utils')
+    const today = getTodayHawaii()
+    const thirtyDaysOut = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+
+    const { data } = await supabase
+      .from('event_matches')
+      .select(`
+        id, championship_name, match_title, is_title_match, featured_title_match, featured_sort_order,
+        events!inner (id, title, event_date, poster_url,
+          promotions (id, name, slug)
+        ),
+        match_participants (
+          wrestlers (id, name, slug)
+        )
+      `)
+      .eq('is_title_match', true)
+      .gte('events.event_date', today)
+      .lte('events.event_date', thirtyDaysOut)
+      .eq('events.status', 'upcoming')
+
+    // Sort client-side: featured matches first (by sort_order), then unfeatured by event_date
+    const sorted = (data || []).sort((a: any, b: any) => {
+      const aFeatured = a.featured_title_match ? 1 : 0
+      const bFeatured = b.featured_title_match ? 1 : 0
+      if (aFeatured !== bFeatured) return bFeatured - aFeatured // featured first
+      if (aFeatured && bFeatured) return (a.featured_sort_order || 0) - (b.featured_sort_order || 0)
+      return (a.events?.event_date || '').localeCompare(b.events?.event_date || '')
+    })
+
+    setMatches(sorted)
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchMatches() }, [])
+
+  // Use direct fetch('/api/admin', ...) — adminApi is not exported from admin.ts
+  async function adminUpdate(id: string, data: Record<string, any>) {
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', table: 'event_matches', id, data }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      throw new Error(json.error || 'Admin operation failed')
+    }
+  }
+
+  const toggleFeatured = async (matchId: string, currentValue: boolean) => {
+    await adminUpdate(matchId, { featured_title_match: !currentValue })
+    // If unfeaturing, also reset sort order
+    if (currentValue) {
+      await adminUpdate(matchId, { featured_sort_order: 0 })
+    }
+    fetchMatches()
+  }
+
+  const moveFeatured = async (matchId: string, direction: 'up' | 'down') => {
+    const featured = matches
+      .filter(m => m.featured_title_match)
+      .sort((a, b) => (a.featured_sort_order || 0) - (b.featured_sort_order || 0))
+    const idx = featured.findIndex(m => m.id === matchId)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= featured.length) return
+
+    const currentOrder = featured[idx].featured_sort_order || 0
+    const swapOrder = featured[swapIdx].featured_sort_order || 0
+    await Promise.all([
+      adminUpdate(featured[idx].id, { featured_sort_order: swapOrder }),
+      adminUpdate(featured[swapIdx].id, { featured_sort_order: currentOrder }),
+    ])
+    fetchMatches()
+  }
+
+  const featuredCount = matches.filter(m => m.featured_title_match).length
+
+  // Use LoadingSpinner — matches pattern of other admin tabs (OverviewTab, etc.)
+  if (loading) return <LoadingSpinner />
+
+  if (matches.length === 0) {
+    return (
+      <div className="text-center py-12 text-foreground-muted">
+        <Trophy className="w-12 h-12 mx-auto mb-4 opacity-40" />
+        <p>No upcoming title matches in the next 30 days.</p>
+        <p className="text-sm mt-1">Promoters can mark matches as title matches from their event dashboard.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-xl font-display font-bold">Featured Title Matches</h2>
+        <p className="text-sm text-foreground-muted mt-1">
+          Select which upcoming title matches appear on the homepage. {featuredCount} of {matches.length} featured.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-foreground-muted border-b border-border">
+              <th className="pb-3 pr-4 w-20">Featured</th>
+              <th className="pb-3 pr-4">Championship</th>
+              <th className="pb-3 pr-4">Match</th>
+              <th className="pb-3 pr-4">Event</th>
+              <th className="pb-3 pr-4 w-24">Date</th>
+              <th className="pb-3 w-20">Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matches.map((match) => {
+              const event = match.events
+              const promotion = event?.promotions
+              const participants = match.match_participants || []
+              const wrestlerNames = participants.map((p: any) => p.wrestlers?.name).filter(Boolean)
+              const matchDisplay = wrestlerNames.length > 0 ? wrestlerNames.join(' vs ') : 'TBD'
+              const eventDate = event?.event_date
+                ? new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : '—'
+
+              return (
+                <tr key={match.id} className="border-b border-border/50 hover:bg-background-tertiary/50">
+                  <td className="py-3 pr-4">
+                    <input
+                      type="checkbox"
+                      checked={match.featured_title_match || false}
+                      onChange={() => toggleFeatured(match.id, match.featured_title_match || false)}
+                      className="w-4 h-4 rounded border-border accent-[#ffd700]"
+                    />
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="flex items-center gap-1.5">
+                      <Trophy className="w-3.5 h-3.5 text-[#ffd700]" />
+                      {match.championship_name || 'Untitled Championship'}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4 text-foreground-muted">{matchDisplay}</td>
+                  <td className="py-3 pr-4">
+                    <a href={`/events/${event?.id}`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                      {event?.title || '—'}
+                    </a>
+                    {promotion && <span className="text-foreground-muted text-xs ml-1">({promotion.name})</span>}
+                  </td>
+                  <td className="py-3 pr-4 text-foreground-muted">{eventDate}</td>
+                  <td className="py-3">
+                    {match.featured_title_match && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => moveFeatured(match.id, 'up')}
+                          className="px-1.5 py-0.5 rounded text-xs bg-background-tertiary hover:bg-border transition-colors"
+                          title="Move up"
+                        >↑</button>
+                        <button
+                          onClick={() => moveFeatured(match.id, 'down')}
+                          className="px-1.5 py-0.5 rounded text-xs bg-background-tertiary hover:bg-border transition-colors"
+                          title="Move down"
+                        >↓</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
