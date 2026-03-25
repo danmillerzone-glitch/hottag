@@ -148,7 +148,7 @@ async function getWrestlerPromotions(wrestlerId: string) {
 export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   if (!wrestler) return { title: 'Wrestler Not Found | Hot Tag' }
-  const ogImage = `https://www.hottag.app/api/og?type=wrestler&slug=${params.slug}&v=3`
+  const ogImage = `https://www.hottag.app/api/og?type=wrestler&slug=${params.slug}&v=4`
   const pageUrl = `https://www.hottag.app/wrestlers/${params.slug}`
   return {
     title: `${wrestler.name} | Hot Tag`,

@@ -10,6 +10,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const BG_URL = 'https://auth.hottag.app/storage/v1/object/public/hottag/OG-BG.jpg'
 const LOGO_URL = 'https://www.hottag.app/logo.svg'
 
+// Fetch Inter fonts at build/first-request time
+const interBold = fetch(
+  'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf'
+).then((res) => res.arrayBuffer())
+
+const interRegular = fetch(
+  'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf'
+).then((res) => res.arrayBuffer())
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') // 'promotion', 'wrestler', or 'event'
@@ -19,6 +28,12 @@ export async function GET(request: NextRequest) {
   if (!type || (!slug && !id)) {
     return new Response('Missing type or slug/id', { status: 400 })
   }
+
+  const [boldFont, regularFont] = await Promise.all([interBold, interRegular])
+  const fonts = [
+    { name: 'Inter', data: boldFont, weight: 700 as const, style: 'normal' as const },
+    { name: 'Inter', data: regularFont, weight: 400 as const, style: 'normal' as const },
+  ]
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -44,6 +59,7 @@ export async function GET(request: NextRequest) {
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
+            fontFamily: 'Inter',
           }}
         >
           {/* Background image */}
@@ -106,6 +122,7 @@ export async function GET(request: NextRequest) {
                   justifyContent: 'center',
                   marginBottom: '24px',
                   fontSize: '80px',
+                  fontWeight: 700,
                   color: '#ff6b35',
                 }}
               >
@@ -116,7 +133,7 @@ export async function GET(request: NextRequest) {
             <div
               style={{
                 fontSize: name.length > 30 ? '36px' : '48px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#ffffff',
                 textAlign: 'center',
                 maxWidth: '900px',
@@ -130,6 +147,7 @@ export async function GET(request: NextRequest) {
               <div
                 style={{
                   fontSize: '24px',
+                  fontWeight: 400,
                   color: '#9ca3af',
                   marginTop: '12px',
                 }}
@@ -155,6 +173,7 @@ export async function GET(request: NextRequest) {
       {
         width: 1200,
         height: 630,
+        fonts,
         headers: { 'Cache-Control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800' },
       }
     )
@@ -182,6 +201,7 @@ export async function GET(request: NextRequest) {
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
+            fontFamily: 'Inter',
           }}
         >
           {/* Background image */}
@@ -249,6 +269,7 @@ export async function GET(request: NextRequest) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '120px',
+                    fontWeight: 700,
                     color: '#ff6b35',
                   }}
                 >
@@ -268,7 +289,7 @@ export async function GET(request: NextRequest) {
               <div
                 style={{
                   fontSize: name.length > 20 ? '44px' : '56px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: '#ffffff',
                   lineHeight: 1.1,
                 }}
@@ -280,6 +301,7 @@ export async function GET(request: NextRequest) {
                 <div
                   style={{
                     fontSize: '24px',
+                    fontWeight: 400,
                     color: '#ff6b35',
                     marginTop: '8px',
                     fontStyle: 'italic',
@@ -293,6 +315,7 @@ export async function GET(request: NextRequest) {
                 <div
                   style={{
                     fontSize: '22px',
+                    fontWeight: 400,
                     color: '#9ca3af',
                     marginTop: '12px',
                   }}
@@ -319,6 +342,7 @@ export async function GET(request: NextRequest) {
       {
         width: 1200,
         height: 630,
+        fonts,
         headers: { 'Cache-Control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800' },
       }
     )
@@ -363,6 +387,7 @@ export async function GET(request: NextRequest) {
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
+            fontFamily: 'Inter',
           }}
         >
           {/* Background image */}
@@ -425,6 +450,7 @@ export async function GET(request: NextRequest) {
                   justifyContent: 'center',
                   marginBottom: '24px',
                   fontSize: '50px',
+                  fontWeight: 700,
                   color: '#ff6b35',
                 }}
               >
@@ -435,7 +461,7 @@ export async function GET(request: NextRequest) {
             <div
               style={{
                 fontSize: name.length > 40 ? '32px' : name.length > 25 ? '40px' : '48px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#ffffff',
                 textAlign: 'center',
                 maxWidth: '900px',
@@ -449,6 +475,7 @@ export async function GET(request: NextRequest) {
               <div
                 style={{
                   fontSize: '22px',
+                  fontWeight: 400,
                   color: '#ff6b35',
                   marginTop: '12px',
                 }}
@@ -461,6 +488,7 @@ export async function GET(request: NextRequest) {
               <div
                 style={{
                   fontSize: '20px',
+                  fontWeight: 400,
                   color: '#9ca3af',
                   marginTop: '8px',
                 }}
@@ -486,6 +514,7 @@ export async function GET(request: NextRequest) {
       {
         width: 1200,
         height: 630,
+        fonts,
         headers: { 'Cache-Control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800' },
       }
     )

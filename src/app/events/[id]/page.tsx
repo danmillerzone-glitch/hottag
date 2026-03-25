@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: EventPageProps) {
     return { title: 'Event Not Found | Hot Tag' }
   }
 
-  const ogImage = event.landscape_poster_url || event.poster_url || `https://www.hottag.app/api/og?type=event&id=${params.id}&v=4`
+  const ogImage = event.landscape_poster_url || event.poster_url || `https://www.hottag.app/api/og?type=event&id=${params.id}&v=5`
   const description = `${event.name} on ${formatEventDateFull(event.event_date)} at ${event.venue_name || formatLocation(event.city, event.state, event.country)}`
   const pageUrl = `https://www.hottag.app/events/${params.id}`
   return {
