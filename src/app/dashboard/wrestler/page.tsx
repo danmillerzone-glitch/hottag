@@ -680,16 +680,19 @@ export default function WrestlerDashboardPage() {
             label={(wrestler.render_url || wrestler.photo_url) ? 'Replace Photo' : 'Upload Photo'}
             onUpload={async (file, meta) => {
               const id = dashboardData!.wrestler.id
+              let url: string
               if (meta?.hasTransparency) {
                 const updated = await uploadWrestlerRender(id, file)
                 setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
-                return updated.render_url
+                url = updated.render_url
               } else {
                 const updated = await uploadWrestlerPhoto(id, file)
                 await updateWrestlerProfile(id, { render_url: null })
                 setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: null, photo_url: updated.photo_url } })
-                return updated.photo_url
+                url = updated.photo_url
               }
+              fetch('/api/revalidate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `/wrestlers/${wrestler.slug}` }) }).catch(() => {})
+              return url
             }}
           />
           <p className="text-xs text-foreground-muted mt-3">Ideal: 800×1000px, <span className="font-bold underline">transparent</span> PNG. Max 5MB.</p>
