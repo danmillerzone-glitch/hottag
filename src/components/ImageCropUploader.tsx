@@ -9,7 +9,7 @@ interface Props {
   size?: number
   /** Width-to-height ratio (e.g. 4/5 = 0.8). Overrides shape to rectangular. */
   aspectRatio?: number
-  onUpload: (file: File) => Promise<string>
+  onUpload: (file: File, meta?: { hasTransparency: boolean }) => Promise<string>
   label?: string
 }
 
@@ -172,6 +172,14 @@ export default function ImageCropUploader({
 
     ctx.drawImage(img, finalX * r, finalY * r, finalW * r, finalH * r)
 
+    // Detect if the image has any transparent pixels
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const pixels = imageData.data
+    let hasTransparency = false
+    for (let i = 3; i < pixels.length; i += 16) { // sample every 4th pixel for speed
+      if (pixels[i] < 250) { hasTransparency = true; break }
+    }
+
     // Use PNG for transparent images, JPEG for photos
     const isPng = file?.type === 'image/png' || file?.name?.toLowerCase().endsWith('.png')
     const mimeType = isPng ? 'image/png' : 'image/jpeg'
@@ -180,7 +188,7 @@ export default function ImageCropUploader({
     canvas.toBlob(async (blob) => {
       if (!blob) { setUploading(false); return }
       try {
-        const url = await onUpload(new File([blob], `cropped.${fileExt}`, { type: mimeType }))
+        const url = await onUpload(new File([blob], `cropped.${fileExt}`, { type: mimeType }), { hasTransparency })
         setImageUrl(url.includes('?') ? url : `${url}?t=${Date.now()}`)
         setCropping(false)
         doCleanup()

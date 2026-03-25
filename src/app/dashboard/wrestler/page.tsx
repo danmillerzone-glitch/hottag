@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   getWrestlerDashboardData, getClaimedWrestler, getUserWrestlerClaims,
-  updateWrestlerProfile, uploadWrestlerRender,
+  updateWrestlerProfile, uploadWrestlerRender, uploadWrestlerPhoto,
   getWrestlerAppearances, addWrestlerAppearance, removeWrestlerAppearance,
   searchUpcomingEvents, getSelfAnnouncements, getAnnouncedEventIds,
   selfAnnounceAtEvent, removeSelfAnnouncement,
@@ -674,14 +674,22 @@ export default function WrestlerDashboardPage() {
           </p>
 
           <ImageCropUploader
-            currentUrl={wrestler.render_url || ''}
+            currentUrl={wrestler.render_url || wrestler.photo_url || ''}
             aspectRatio={4 / 5}
             size={160}
-            label={wrestler.render_url ? 'Replace Photo' : 'Upload Photo'}
-            onUpload={async (file) => {
-              const updated = await uploadWrestlerRender(dashboardData!.wrestler.id, file)
-              setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
-              return updated.render_url
+            label={(wrestler.render_url || wrestler.photo_url) ? 'Replace Photo' : 'Upload Photo'}
+            onUpload={async (file, meta) => {
+              const id = dashboardData!.wrestler.id
+              if (meta?.hasTransparency) {
+                const updated = await uploadWrestlerRender(id, file)
+                setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: updated.render_url, photo_url: updated.photo_url } })
+                return updated.render_url
+              } else {
+                const updated = await uploadWrestlerPhoto(id, file)
+                await updateWrestlerProfile(id, { render_url: null })
+                setDashboardData({ ...dashboardData!, wrestler: { ...dashboardData!.wrestler, render_url: null, photo_url: updated.photo_url } })
+                return updated.photo_url
+              }
             }}
           />
           <p className="text-xs text-foreground-muted mt-3">Ideal: 800×1000px, <span className="font-bold underline">transparent</span> PNG. Max 5MB.</p>
