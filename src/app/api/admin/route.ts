@@ -35,6 +35,7 @@ async function verifyAdmin(): Promise<string | null> {
 const ALLOWED_TABLES = new Set([
   'events',
   'event_promotions',
+  'event_matches',
   'wrestlers',
   'promotions',
   'professionals',
