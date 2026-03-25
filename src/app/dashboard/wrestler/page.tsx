@@ -675,7 +675,7 @@ export default function WrestlerDashboardPage() {
 
           <ImageCropUploader
             currentUrl={wrestler.render_url || ''}
-            aspectRatio={4 / 5}
+            aspectRatio={4 / 3}
             size={160}
             label={wrestler.render_url ? 'Replace Photo' : 'Upload Photo'}
             onUpload={async (file) => {
