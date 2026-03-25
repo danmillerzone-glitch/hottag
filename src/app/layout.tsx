@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://www.hottag.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Hot Tag - Go See A Show',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     title: 'Hot Tag - Go See A Show',
     description: 'Go see a show.',
     creator: '@HotTagApp',
-    images: ['/og-image.png'],
+    images: ['https://www.hottag.app/og-image.png'],
   },
 }
 
