@@ -24,6 +24,9 @@ src/ios/
 # Claude Code config
 .claude/
 
+# AI workflow artifacts
+docs/superpowers/
+
 # One-off files
 Smoothness Prompt.txt
 compress-flags.ps1
