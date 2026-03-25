@@ -124,7 +124,15 @@ export default async function EventPage({ params }: EventPageProps) {
   const allPromotions = (eventPromotionsMap.get(event.id) || []).map(ep => ep.promotions)
   // Backward compat: use junction data if available, fall back to single FK join
   const promotion = allPromotions[0] || event.promotions
-  const wrestlers = await getEventWrestlers(event.id)
+  const allCardWrestlers = await getEventWrestlers(event.id)
+
+  // Filter out wrestlers already in announced talent to avoid duplicates
+  const { data: announcedTalentIds } = await supabase
+    .from('event_announced_talent')
+    .select('wrestler_id')
+    .eq('event_id', event.id)
+  const announcedSet = new Set((announcedTalentIds || []).map((at: any) => at.wrestler_id))
+  const wrestlers = allCardWrestlers.filter(w => !announcedSet.has(w.id))
 
   // Fetch coupon + hashtag data directly from events table (view may not include new columns)
   const { data: extraData } = await supabase
