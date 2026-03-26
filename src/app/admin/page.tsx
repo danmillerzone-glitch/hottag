@@ -6067,7 +6067,7 @@ function TitleMatchesTab() {
       .from('event_matches')
       .select(`
         id, championship_name, match_title, is_title_match, featured_title_match, featured_sort_order,
-        events!inner (id, title, event_date, poster_url,
+        events!inner (id, name, event_date, poster_url,
           promotions (id, name, slug)
         ),
         match_participants (
@@ -6080,7 +6080,6 @@ function TitleMatchesTab() {
       .eq('events.status', 'upcoming')
 
     if (error) console.error('TitleMatchesTab query error:', error)
-    console.log('TitleMatchesTab query result:', { today, thirtyDaysOut, count: data?.length, data })
 
     // Sort client-side: featured matches first (by sort_order), then unfeatured by event_date
     const sorted = (data || []).sort((a: any, b: any) => {
@@ -6203,7 +6202,7 @@ function TitleMatchesTab() {
                   <td className="py-3 pr-4 text-foreground-muted">{matchDisplay}</td>
                   <td className="py-3 pr-4">
                     <a href={`/events/${event?.id}`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                      {event?.title || '—'}
+                      {event?.name || '—'}
                     </a>
                     {promotion && <span className="text-foreground-muted text-xs ml-1">({promotion.name})</span>}
                   </td>

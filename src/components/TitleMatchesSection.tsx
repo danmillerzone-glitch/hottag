@@ -25,7 +25,7 @@ export default function TitleMatchesSection() {
       .from('event_matches')
       .select(`
         id, championship_name, match_title, match_type, featured_sort_order,
-        events!inner (id, title, event_date, poster_url, city, state, venue_name,
+        events!inner (id, name, event_date, poster_url, city, state, venue_name,
           promotions (id, name, slug, logo_url)
         ),
         match_participants (

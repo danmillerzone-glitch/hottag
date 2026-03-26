@@ -19,7 +19,7 @@ interface TitleMatchData {
   match_type: string | null
   events: {
     id: string
-    title: string
+    name: string
     event_date: string
     poster_url: string | null
     city: string | null
@@ -67,7 +67,7 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
           {event.poster_url ? (
             <Image
               src={event.poster_url}
-              alt={event.title}
+              alt={event.name}
               fill
               className="object-cover object-top"
               sizes="240px"
@@ -136,7 +136,7 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
           <div className="border-t border-border pt-3 mt-auto min-w-0">
             <Link href={`/events/${event.id}`} className="block group">
               <p className="font-bold text-sm text-white truncate group-hover:text-accent transition-colors">
-                {event.title}
+                {event.name}
               </p>
               <div className="flex items-center gap-1.5 text-xs text-foreground-muted mt-1">
                 {promotion.logo_url && (
