@@ -112,11 +112,11 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
           {/* Wrestlers VS */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 py-2">
             {isSingleWrestler ? (
-              <WrestlerThumb wrestler={sorted[0]?.wrestlers} />
+              <WrestlerThumb wrestler={sorted[0]?.wrestlers} isChampion />
             ) : isTagMatch ? (
               /* Tag team: show teams side by side */
               <>
-                <TeamStack wrestlers={teams[0]} />
+                <TeamStack wrestlers={teams[0]} isChampion />
                 <span className="text-white font-display font-bold text-base sm:text-lg flex-shrink-0">VS</span>
                 <TeamStack wrestlers={teams[1] || []} />
                 {teams.length > 2 && (
@@ -124,10 +124,10 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
                 )}
               </>
             ) : (
-              /* Singles: two wrestlers with VS */
+              /* Singles: first listed wrestler is defending champion */
               <>
                 {sorted[0]?.wrestlers ? (
-                  <WrestlerThumb wrestler={sorted[0].wrestlers} />
+                  <WrestlerThumb wrestler={sorted[0].wrestlers} isChampion />
                 ) : (
                   <TBDThumb />
                 )}
@@ -177,25 +177,28 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
   )
 }
 
-function TeamStack({ wrestlers }: { wrestlers: Wrestler[] }) {
+function TeamStack({ wrestlers, isChampion }: { wrestlers: Wrestler[]; isChampion?: boolean }) {
   if (wrestlers.length === 0) return <TBDThumb />
   return (
     <div className="flex flex-col items-center gap-1">
       {wrestlers.map((w) => (
-        <WrestlerThumb key={w.id} wrestler={w} compact />
+        <WrestlerThumb key={w.id} wrestler={w} compact isChampion={isChampion} />
       ))}
     </div>
   )
 }
 
-function WrestlerThumb({ wrestler, compact }: { wrestler: Wrestler; compact?: boolean }) {
+function WrestlerThumb({ wrestler, compact, isChampion }: { wrestler: Wrestler; compact?: boolean; isChampion?: boolean }) {
   const imgSrc = wrestler.render_url || wrestler.photo_url
   const sizeClass = compact
     ? 'w-9 h-9 sm:w-12 sm:h-12'
     : 'w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20'
+  const borderClass = isChampion
+    ? 'ring-2 ring-[#ffd700] border-transparent'
+    : 'border border-border'
   return (
     <Link href={`/wrestlers/${wrestler.slug}`} className="flex flex-col items-center gap-1 min-w-0 group">
-      <div className={`${sizeClass} rounded-lg overflow-hidden bg-background-tertiary border border-border flex-shrink-0`}>
+      <div className={`${sizeClass} rounded-lg overflow-hidden bg-background-tertiary ${borderClass} flex-shrink-0`}>
         {imgSrc ? (
           <Image
             src={imgSrc}
