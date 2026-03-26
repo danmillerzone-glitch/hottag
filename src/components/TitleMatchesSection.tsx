@@ -44,7 +44,7 @@ export default function TitleMatchesSection() {
     setMatches(matchList)
 
     // Build champion ID set from promotion_championships
-    const promoIds = [...new Set(matchList.map((m: any) => m.events?.promotions?.id).filter(Boolean))]
+    const promoIds = Array.from(new Set(matchList.map((m: any) => m.events?.promotions?.id).filter(Boolean)))
     if (promoIds.length > 0) {
       const { data: championships } = await supabase
         .from('promotion_championships')
