@@ -70,14 +70,14 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
     <div className="flex-shrink-0 w-[calc(100vw-2rem)] max-w-[340px] sm:max-w-[480px] lg:max-w-[540px] snap-start">
       <div className="flex h-[260px] sm:h-[340px] rounded-xl overflow-hidden border border-border border-t-2 border-t-[#ffd700] bg-background-secondary">
         {/* Left half — Event Poster */}
-        <Link href={`/events/${event.id}`} className="relative w-[45%] flex-shrink-0">
+        <Link href={`/events/${event.id}`} className="relative w-[40%] sm:w-[45%] flex-shrink-0 bg-background-tertiary">
           {event.poster_url ? (
             <Image
               src={event.poster_url}
               alt={event.name}
               fill
-              className="object-cover object-top"
-              sizes="240px"
+              className="object-contain object-top"
+              sizes="(max-width: 640px) 136px, 216px"
             />
           ) : promotion.logo_url ? (
             <div className="w-full h-full flex items-center justify-center bg-background-tertiary p-6">

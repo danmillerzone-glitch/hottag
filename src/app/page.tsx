@@ -285,9 +285,6 @@ export default function HomePage() {
       {/* Recently Viewed — localStorage-based history */}
       <RecentlyViewedSection />
 
-      {/* Title Matches — admin-curated championship matches */}
-      <TitleMatchesSection />
-
       {/* Personalized Section for Logged-in Users */}
       {!authLoading && user && (
         <>
@@ -320,6 +317,9 @@ export default function HomePage() {
               </div>
             </section>
           )}
+
+          {/* Title Matches — admin-curated championship matches */}
+          <TitleMatchesSection />
 
           {/* Events From People You Follow */}
           {followedEvents.length > 0 && (
