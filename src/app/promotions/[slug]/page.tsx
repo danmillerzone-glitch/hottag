@@ -181,9 +181,11 @@ export async function generateMetadata({ params }: PromotionPageProps) {
   }
 
   const pageUrl = `https://www.hottag.app/promotions/${params.slug}`
+  const hasContent = !!(promotion.description || promotion.logo_url)
   return {
     title: `${promotion.name} | Hot Tag`,
     description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,
+    ...(!hasContent && { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${promotion.name} | Hot Tag`,
       description: `Follow ${promotion.name} on Hot Tag to see their upcoming events.`,

@@ -45,15 +45,17 @@ interface CrewPageProps {
 export async function generateMetadata({ params }: CrewPageProps) {
   const { data: pro } = await supabase
     .from('professionals')
-    .select('name, role, residence, photo_url')
+    .select('name, role, residence, photo_url, bio')
     .eq('slug', params.slug)
     .single()
 
   if (!pro) return { title: 'Not Found | Hot Tag' }
 
+  const hasContent = !!(pro.bio || pro.photo_url)
   return {
     title: `${pro.name} - ${formatRoles(pro.role)} | Hot Tag`,
     description: `${pro.name} is a ${formatRoles(pro.role)}${pro.residence ? ` based in ${pro.residence}` : ''}`,
+    ...(!hasContent && { robots: { index: false, follow: true } }),
     openGraph: { title: `${pro.name} | Hot Tag`, images: pro.photo_url ? [pro.photo_url] : undefined },
   }
 }

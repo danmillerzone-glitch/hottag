@@ -149,9 +149,11 @@ export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   if (!wrestler) return { title: 'Wrestler Not Found | Hot Tag' }
   const pageUrl = `https://www.hottag.app/wrestlers/${params.slug}`
+  const hasContent = !!(wrestler.bio || wrestler.photo_url || wrestler.render_url)
   return {
     title: `${wrestler.name} | Hot Tag`,
     description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
+    ...(!hasContent && { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${wrestler.name} | Hot Tag`,
       description: `Follow ${wrestler.name} on Hot Tag to see their upcoming events.`,
