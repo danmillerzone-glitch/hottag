@@ -49,9 +49,16 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
   const sorted = [...participants].sort((a, b) =>
     (a.entrance_order ?? Infinity) - (b.entrance_order ?? Infinity) || a.id.localeCompare(b.id)
   )
-  const wrestler1 = sorted[0]?.wrestlers
-  const wrestler2 = sorted[1]?.wrestlers
-  const extraCount = Math.max(0, sorted.length - 2)
+
+  // Group by team_number for tag team display
+  const teamMap = new Map<number, Wrestler[]>()
+  for (const p of sorted) {
+    const team = p.team_number ?? 1
+    if (!teamMap.has(team)) teamMap.set(team, [])
+    teamMap.get(team)!.push(p.wrestlers)
+  }
+  const teams = Array.from(teamMap.values())
+  const isTagMatch = teams.length >= 2 && teams.some(t => t.length > 1)
   const isSingleWrestler = participants.length === 1
 
   // Date formatting
@@ -103,24 +110,32 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
           </div>
 
           {/* Wrestlers VS */}
-          <div className="flex items-center justify-center gap-3 sm:gap-4 py-2">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 py-2">
             {isSingleWrestler ? (
-              /* Single wrestler — centered, no VS (spec: champion with no challenger yet) */
-              <WrestlerThumb wrestler={wrestler1!} />
-            ) : (
+              <WrestlerThumb wrestler={sorted[0]?.wrestlers} />
+            ) : isTagMatch ? (
+              /* Tag team: show teams side by side */
               <>
-                {wrestler1 ? (
-                  <WrestlerThumb wrestler={wrestler1} />
+                <TeamStack wrestlers={teams[0]} />
+                <span className="text-white font-display font-bold text-base sm:text-lg flex-shrink-0">VS</span>
+                <TeamStack wrestlers={teams[1] || []} />
+                {teams.length > 2 && (
+                  <span className="text-foreground-muted text-xs">+{teams.length - 2} more</span>
+                )}
+              </>
+            ) : (
+              /* Singles: two wrestlers with VS */
+              <>
+                {sorted[0]?.wrestlers ? (
+                  <WrestlerThumb wrestler={sorted[0].wrestlers} />
                 ) : (
                   <TBDThumb />
                 )}
-
                 <span className="text-white font-display font-bold text-lg sm:text-xl flex-shrink-0">VS</span>
-
                 {participants.length === 0 ? (
                   <TBDThumb />
-                ) : wrestler2 ? (
-                  <WrestlerThumb wrestler={wrestler2} />
+                ) : sorted[1]?.wrestlers ? (
+                  <WrestlerThumb wrestler={sorted[1].wrestlers} />
                 ) : (
                   <TBDThumb label="TBA" />
                 )}
@@ -128,8 +143,9 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
             )}
           </div>
 
-          {extraCount > 0 && (
-            <p className="text-center text-foreground-muted text-xs -mt-1">+{extraCount} more</p>
+          {/* Extra participants for singles (triple threat, etc.) */}
+          {!isTagMatch && !isSingleWrestler && sorted.length > 2 && (
+            <p className="text-center text-foreground-muted text-xs -mt-1">+{sorted.length - 2} more</p>
           )}
 
           {/* Event info */}
@@ -161,26 +177,40 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
   )
 }
 
-function WrestlerThumb({ wrestler }: { wrestler: Wrestler }) {
-  const imgSrc = wrestler.render_url || wrestler.photo_url
+function TeamStack({ wrestlers }: { wrestlers: Wrestler[] }) {
+  if (wrestlers.length === 0) return <TBDThumb />
   return (
-    <Link href={`/wrestlers/${wrestler.slug}`} className="flex flex-col items-center gap-1.5 min-w-0 group">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-background-tertiary border border-border flex-shrink-0">
+    <div className="flex flex-col items-center gap-1">
+      {wrestlers.map((w) => (
+        <WrestlerThumb key={w.id} wrestler={w} compact />
+      ))}
+    </div>
+  )
+}
+
+function WrestlerThumb({ wrestler, compact }: { wrestler: Wrestler; compact?: boolean }) {
+  const imgSrc = wrestler.render_url || wrestler.photo_url
+  const sizeClass = compact
+    ? 'w-10 h-10 sm:w-12 sm:h-12'
+    : 'w-16 h-16 sm:w-20 sm:h-20'
+  return (
+    <Link href={`/wrestlers/${wrestler.slug}`} className="flex flex-col items-center gap-1 min-w-0 group">
+      <div className={`${sizeClass} rounded-lg overflow-hidden bg-background-tertiary border border-border flex-shrink-0`}>
         {imgSrc ? (
           <Image
             src={imgSrc}
             alt={wrestler.name}
-            width={80}
-            height={80}
+            width={compact ? 48 : 80}
+            height={compact ? 48 : 80}
             className="w-full h-full object-cover object-top"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-foreground-muted font-bold text-lg">
+          <div className={`w-full h-full flex items-center justify-center text-foreground-muted font-bold ${compact ? 'text-xs' : 'text-lg'}`}>
             {wrestler.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
         )}
       </div>
-      <span className="text-white text-xs text-center leading-tight line-clamp-2 group-hover:text-accent transition-colors max-w-[80px]">
+      <span className={`text-white text-center leading-tight line-clamp-1 group-hover:text-accent transition-colors ${compact ? 'text-[10px] max-w-[56px]' : 'text-xs max-w-[80px] line-clamp-2'}`}>
         {wrestler.name}
       </span>
     </Link>

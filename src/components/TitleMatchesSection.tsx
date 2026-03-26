@@ -82,7 +82,7 @@ export default function TitleMatchesSection() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2">
             <Trophy className="w-6 h-6 text-[#ffd700]" />
-            Title Matches
+            Upcoming Title Matches
           </h2>
         </div>
 
