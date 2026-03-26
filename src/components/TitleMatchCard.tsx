@@ -76,7 +76,7 @@ export default function TitleMatchCard({ match, championIds = new Set() }: { mat
               src={event.poster_url}
               alt={event.name}
               fill
-              className="object-contain sm:object-cover object-top"
+              className="object-cover object-top"
               sizes="(max-width: 640px) 136px, 216px"
             />
           ) : promotion.logo_url ? (
