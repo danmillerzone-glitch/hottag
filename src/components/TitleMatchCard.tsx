@@ -76,7 +76,7 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
               src={event.poster_url}
               alt={event.name}
               fill
-              className="object-contain object-top"
+              className="object-contain sm:object-cover object-top"
               sizes="(max-width: 640px) 136px, 216px"
             />
           ) : promotion.logo_url ? (
