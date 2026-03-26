@@ -6063,7 +6063,7 @@ function TitleMatchesTab() {
     const today = getTodayHawaii()
     const thirtyDaysOut = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('event_matches')
       .select(`
         id, championship_name, match_title, is_title_match, featured_title_match, featured_sort_order,
@@ -6078,6 +6078,9 @@ function TitleMatchesTab() {
       .gte('events.event_date', today)
       .lte('events.event_date', thirtyDaysOut)
       .eq('events.status', 'upcoming')
+
+    if (error) console.error('TitleMatchesTab query error:', error)
+    console.log('TitleMatchesTab query result:', { today, thirtyDaysOut, count: data?.length, data })
 
     // Sort client-side: featured matches first (by sort_order), then unfeatured by event_date
     const sorted = (data || []).sort((a: any, b: any) => {
