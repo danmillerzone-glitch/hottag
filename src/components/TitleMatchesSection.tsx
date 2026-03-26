@@ -8,6 +8,7 @@ import TitleMatchCard from './TitleMatchCard'
 
 export default function TitleMatchesSection() {
   const [matches, setMatches] = useState<any[]>([])
+  const [championIds, setChampionIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -39,7 +40,28 @@ export default function TitleMatchesSection() {
       .eq('events.status', 'upcoming')
       .order('featured_sort_order', { ascending: true })
 
-    setMatches(data || [])
+    const matchList = data || []
+    setMatches(matchList)
+
+    // Build champion ID set from promotion_championships
+    const promoIds = [...new Set(matchList.map((m: any) => m.events?.promotions?.id).filter(Boolean))]
+    if (promoIds.length > 0) {
+      const { data: championships } = await supabase
+        .from('promotion_championships')
+        .select('current_champion_id, current_champion_2_id')
+        .in('promotion_id', promoIds)
+        .eq('is_active', true)
+
+      if (championships) {
+        const ids = new Set<string>()
+        for (const c of championships) {
+          if (c.current_champion_id) ids.add(c.current_champion_id)
+          if (c.current_champion_2_id) ids.add(c.current_champion_2_id)
+        }
+        setChampionIds(ids)
+      }
+    }
+
     setLoading(false)
   }
 
@@ -116,7 +138,7 @@ export default function TitleMatchesSection() {
               className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
             >
               {matches.map((match) => (
-                <TitleMatchCard key={match.id} match={match} />
+                <TitleMatchCard key={match.id} match={match} championIds={championIds} />
               ))}
             </div>
 

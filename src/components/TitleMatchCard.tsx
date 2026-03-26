@@ -40,7 +40,7 @@ interface TitleMatchData {
   }[]
 }
 
-export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
+export default function TitleMatchCard({ match, championIds = new Set() }: { match: TitleMatchData; championIds?: Set<string> }) {
   const event = match.events
   const promotion = event.promotions
   const participants = match.match_participants || []
@@ -112,22 +112,22 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
           {/* Wrestlers VS */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 py-2">
             {isSingleWrestler ? (
-              <WrestlerThumb wrestler={sorted[0]?.wrestlers} isChampion />
+              <WrestlerThumb wrestler={sorted[0]?.wrestlers} isChampion={championIds.has(sorted[0]?.wrestlers?.id)} />
             ) : isTagMatch ? (
               /* Tag team: show teams side by side */
               <>
-                <TeamStack wrestlers={teams[0]} isChampion />
+                <TeamStack wrestlers={teams[0]} championIds={championIds} />
                 <span className="text-white font-display font-bold text-base sm:text-lg flex-shrink-0">VS</span>
-                <TeamStack wrestlers={teams[1] || []} />
+                <TeamStack wrestlers={teams[1] || []} championIds={championIds} />
                 {teams.length > 2 && (
                   <span className="text-foreground-muted text-xs">+{teams.length - 2} more</span>
                 )}
               </>
             ) : (
-              /* Singles: first listed wrestler is defending champion */
+              /* Singles: champion determined by promotion_championships data */
               <>
                 {sorted[0]?.wrestlers ? (
-                  <WrestlerThumb wrestler={sorted[0].wrestlers} isChampion />
+                  <WrestlerThumb wrestler={sorted[0].wrestlers} isChampion={championIds.has(sorted[0].wrestlers.id)} />
                 ) : (
                   <TBDThumb />
                 )}
@@ -135,7 +135,7 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
                 {participants.length === 0 ? (
                   <TBDThumb />
                 ) : sorted[1]?.wrestlers ? (
-                  <WrestlerThumb wrestler={sorted[1].wrestlers} />
+                  <WrestlerThumb wrestler={sorted[1].wrestlers} isChampion={championIds.has(sorted[1].wrestlers.id)} />
                 ) : (
                   <TBDThumb label="TBA" />
                 )}
@@ -177,12 +177,12 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
   )
 }
 
-function TeamStack({ wrestlers, isChampion }: { wrestlers: Wrestler[]; isChampion?: boolean }) {
+function TeamStack({ wrestlers, championIds = new Set() }: { wrestlers: Wrestler[]; championIds?: Set<string> }) {
   if (wrestlers.length === 0) return <TBDThumb />
   return (
     <div className="flex flex-col items-center gap-1">
       {wrestlers.map((w) => (
-        <WrestlerThumb key={w.id} wrestler={w} compact isChampion={isChampion} />
+        <WrestlerThumb key={w.id} wrestler={w} compact isChampion={championIds.has(w.id)} />
       ))}
     </div>
   )
