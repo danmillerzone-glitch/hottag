@@ -67,8 +67,8 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
   const day = date.getDate()
 
   return (
-    <div className="flex-shrink-0 w-[440px] sm:w-[500px] lg:w-[540px] snap-start">
-      <div className="flex h-[320px] sm:h-[360px] rounded-xl overflow-hidden border border-border border-t-2 border-t-[#ffd700] bg-background-secondary">
+    <div className="flex-shrink-0 w-[calc(100vw-2rem)] max-w-[340px] sm:max-w-[480px] lg:max-w-[540px] snap-start">
+      <div className="flex h-[260px] sm:h-[340px] rounded-xl overflow-hidden border border-border border-t-2 border-t-[#ffd700] bg-background-secondary">
         {/* Left half — Event Poster */}
         <Link href={`/events/${event.id}`} className="relative w-[45%] flex-shrink-0">
           {event.poster_url ? (
@@ -100,7 +100,7 @@ export default function TitleMatchCard({ match }: { match: TitleMatchData }) {
         </Link>
 
         {/* Right half — Match Details */}
-        <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 min-w-0">
+        <div className="flex-1 flex flex-col justify-between p-3 sm:p-5 min-w-0">
           {/* Championship name */}
           <div className="flex items-start gap-2">
             <Trophy className="w-4 h-4 text-[#ffd700] flex-shrink-0 mt-0.5" />
@@ -191,8 +191,8 @@ function TeamStack({ wrestlers }: { wrestlers: Wrestler[] }) {
 function WrestlerThumb({ wrestler, compact }: { wrestler: Wrestler; compact?: boolean }) {
   const imgSrc = wrestler.render_url || wrestler.photo_url
   const sizeClass = compact
-    ? 'w-10 h-10 sm:w-12 sm:h-12'
-    : 'w-16 h-16 sm:w-20 sm:h-20'
+    ? 'w-9 h-9 sm:w-12 sm:h-12'
+    : 'w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20'
   return (
     <Link href={`/wrestlers/${wrestler.slug}`} className="flex flex-col items-center gap-1 min-w-0 group">
       <div className={`${sizeClass} rounded-lg overflow-hidden bg-background-tertiary border border-border flex-shrink-0`}>

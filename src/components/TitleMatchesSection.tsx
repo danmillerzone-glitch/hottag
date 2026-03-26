@@ -77,7 +77,7 @@ export default function TitleMatchesSection() {
   if (!loading && matches.length === 0) return null
 
   return (
-    <section className="py-10 bg-gradient-to-b from-[#ffd700]/5 to-transparent">
+    <section className="py-6 sm:py-10 bg-gradient-to-b from-[#ffd700]/5 to-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2">
@@ -90,8 +90,8 @@ export default function TitleMatchesSection() {
         {loading && (
           <div className="flex gap-4 overflow-hidden">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[440px] sm:w-[500px] lg:w-[540px]">
-                <div className="flex h-[320px] sm:h-[360px] rounded-xl overflow-hidden border border-border border-t-2 border-t-[#ffd700]/30 bg-background-secondary animate-pulse">
+              <div key={i} className="flex-shrink-0 w-[calc(100vw-2rem)] max-w-[340px] sm:max-w-[480px] lg:max-w-[540px]">
+                <div className="flex h-[260px] sm:h-[340px] rounded-xl overflow-hidden border border-border border-t-2 border-t-[#ffd700]/30 bg-background-secondary animate-pulse">
                   <div className="w-[45%] bg-background-tertiary" />
                   <div className="flex-1 p-5 flex flex-col gap-4">
                     <div className="h-5 bg-background-tertiary rounded w-3/4" />
