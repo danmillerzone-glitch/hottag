@@ -122,26 +122,7 @@ export default function MapRecordPage() {
     <div className="w-[1920px] h-[1080px] relative overflow-hidden bg-[#14181c]">
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Region label - bottom left */}
-      <div className="absolute bottom-8 left-8 z-10">
-        <div className="text-white/80 text-lg font-medium tracking-wide uppercase">
-          {regionConfig.label}
-        </div>
-      </div>
 
-      {/* Hot Tag branding - top right */}
-      <div className="absolute top-8 right-8 z-10 flex items-center gap-3">
-        <div className="text-2xl font-display font-bold text-white">
-          HOT<span className="text-accent">TAG</span>
-        </div>
-      </div>
-
-      {/* Date range - bottom right */}
-      <div className="absolute bottom-8 right-8 z-10">
-        <div className="text-white/60 text-sm font-medium">
-          This Weekend
-        </div>
-      </div>
 
       {/* Ready indicator for Puppeteer (hidden) */}
       {ready && <div id="map-ready" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />}
@@ -173,10 +154,13 @@ export default function MapRecordPage() {
             transform: scale(1.1);
           }
         }
-        /* Hide mapbox controls and attribution */
+        /* Hide mapbox controls, attribution, and cookie banners */
         .mapboxgl-ctrl-top-right,
         .mapboxgl-ctrl-bottom-left,
         .mapboxgl-ctrl-bottom-right { display: none !important; }
+        [class*="cookie" i], [id*="cookie" i],
+        [class*="consent" i], [id*="consent" i],
+        [class*="CookieBanner" i], [class*="cookie-banner" i] { display: none !important; }
       `}</style>
     </div>
   )

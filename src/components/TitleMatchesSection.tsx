@@ -67,12 +67,16 @@ export default function TitleMatchesSection() {
   }
 
   // Scroll state tracking
+  const rafRef = useRef<number>(0)
   const checkScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    requestAnimationFrame(() => {
-      setCanScrollLeft(el.scrollLeft > 4)
-      setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      const el = scrollRef.current
+      if (!el) return
+      const left = el.scrollLeft > 4
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 4
+      setCanScrollLeft(prev => prev !== left ? left : prev)
+      setCanScrollRight(prev => prev !== right ? right : prev)
     })
   }, [])
 
@@ -80,9 +84,13 @@ export default function TitleMatchesSection() {
     const el = scrollRef.current
     if (!el) return
     checkScroll()
+    // Recheck after a short delay to ensure cards are laid out
+    const timer = setTimeout(checkScroll, 200)
     el.addEventListener('scroll', checkScroll, { passive: true })
     window.addEventListener('resize', checkScroll)
     return () => {
+      clearTimeout(timer)
+      cancelAnimationFrame(rafRef.current)
       el.removeEventListener('scroll', checkScroll)
       window.removeEventListener('resize', checkScroll)
     }
@@ -132,7 +140,7 @@ export default function TitleMatchesSection() {
         )}
 
         {!loading && (
-          <div className="relative group/carousel">
+          <div className="relative">
             {/* Scroll container */}
             <div
               ref={scrollRef}
@@ -143,22 +151,22 @@ export default function TitleMatchesSection() {
               ))}
             </div>
 
-            {/* Left arrow */}
+            {/* Left arrow — always visible */}
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
 
-            {/* Right arrow */}
+            {/* Right arrow — always visible */}
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-5 h-5" />
