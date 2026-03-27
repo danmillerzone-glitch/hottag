@@ -5172,7 +5172,7 @@ function VegasWeekendTab() {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
     const [eventsRes, collectivesRes] = await Promise.all([
       supabase.from('events')
-        .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
+        .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, event_tags, promotions (name)')
         .eq('vegas_weekend', true)
         .order('event_date', { ascending: true }),
       supabase.from('vegas_weekend_collectives')
@@ -5189,7 +5189,7 @@ function VegasWeekendTab() {
     setSearching(true)
     const supabase = (await import('@/lib/supabase-browser')).createClient()
     const { data } = await supabase.from('events')
-      .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, promotions (name)')
+      .select('id, name, event_date, venue_name, vegas_weekend, vegas_collective, event_tags, promotions (name)')
       .ilike('name', `%${q}%`)
       .gte('event_date', '2026-04-10')
       .lte('event_date', '2026-04-25')
@@ -5204,11 +5204,40 @@ function VegasWeekendTab() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  const detectCollective = (venueName: string): string | null => {
+    const v = (venueName || '').toLowerCase()
+    if (v.includes('horseshoe')) return 'the-collective'
+    if (v.includes('bizarre')) return 'shooting-star-fest'
+    if (v.includes('hyperx')) return 'hyperx-arena'
+    if (v.includes('fsw arena')) return 'fsw-arena'
+    if (v.includes('pearl theater') || v.includes('pearl theatre')) return 'pearl-theater'
+    if (v.includes('the nerd')) return 'the-nerd'
+    if (v.includes('beer zombie')) return 'beer-zombies'
+    if (v.includes('dive bar')) return 'dive-bar'
+    if (v.includes('palms')) return 'slam-fest'
+    return null
+  }
+
   const toggleVegasWeekend = async (eventId: string, current: boolean) => {
     const supabase = (await import('@/lib/supabase-browser')).createClient()
-    await supabase.from('events').update({ vegas_weekend: !current, ...(!current ? {} : { vegas_collective: null }), admin_edited: true }).eq('id', eventId)
+    if (current) {
+      await supabase.from('events').update({ vegas_weekend: false, vegas_collective: null, admin_edited: true }).eq('id', eventId)
+    } else {
+      const event = searchResults.find(e => e.id === eventId) || events.find(e => e.id === eventId)
+      const collective = event ? detectCollective(event.venue_name) : null
+      await supabase.from('events').update({ vegas_weekend: true, vegas_collective: collective, admin_edited: true }).eq('id', eventId)
+    }
     loadData()
     if (searchQuery.length >= 2) searchEvents(searchQuery)
+  }
+
+  const toggleMiscTag = async (eventId: string, currentTags: string[] | null) => {
+    const supabase = (await import('@/lib/supabase-browser')).createClient()
+    const tags = currentTags || []
+    const isMisc = tags.includes('miscellaneous')
+    const newTags = isMisc ? tags.filter(t => t !== 'miscellaneous') : [...tags, 'miscellaneous']
+    await supabase.from('events').update({ event_tags: newTags }).eq('id', eventId)
+    loadData()
   }
 
   const setCollective = async (eventId: string, collectiveKey: string | null) => {
@@ -5396,6 +5425,13 @@ function VegasWeekendTab() {
                 <div className="text-xs text-foreground-muted">{event.event_date} · {event.venue_name}</div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => toggleMiscTag(event.id, event.event_tags)}
+                  className={`text-xs px-2 py-1 rounded font-medium ${Array.isArray(event.event_tags) && event.event_tags.includes('miscellaneous') ? 'bg-purple-500/20 text-purple-400' : 'bg-background-tertiary text-foreground-muted hover:text-foreground'}`}
+                  title="Toggle miscellaneous (parties, signings, etc.)"
+                >
+                  Misc
+                </button>
                 <select
                   value={event.vegas_collective || ''}
                   onChange={(e) => setCollective(event.id, e.target.value || null)}
