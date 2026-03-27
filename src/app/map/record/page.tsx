@@ -59,25 +59,22 @@ export default function MapRecordPage() {
         .order('event_date', { ascending: true })
         .limit(1000)
 
-      const events = data || []
-      const now = new Date()
-      const msPerDay = 86400000
+      const allEvents = data || []
 
-      function getUrgency(eventDate: string) {
-        const date = new Date(eventDate + 'T12:00:00')
-        const daysAway = Math.floor((date.getTime() - now.getTime()) / msPerDay)
-        if (daysAway <= 7) return 'week'
-        if (daysAway <= 30) return 'month'
-        if (daysAway <= 60) return 'soon'
-        return 'later'
-      }
+      // Filter to "this weekend" only (Friday–Sunday)
+      const todayDate = new Date(today + 'T12:00:00')
+      const dayOfWeek = todayDate.getDay() // 0=Sun, 6=Sat
+      const fri = new Date(todayDate)
+      if (dayOfWeek < 5) fri.setDate(fri.getDate() + (5 - dayOfWeek))
+      else if (dayOfWeek > 5) fri.setDate(fri.getDate() - (dayOfWeek - 5))
+      const sun = new Date(fri)
+      sun.setDate(sun.getDate() + 2)
+      const friStr = fri.toISOString().slice(0, 10)
+      const sunStr = sun.toISOString().slice(0, 10)
+      const events = allEvents.filter(e => e.event_date >= friStr && e.event_date <= sunStr)
 
-      const urgencyConfig = {
-        week:  { size: 36, opacity: 1.0,  pulse: true  },
-        month: { size: 28, opacity: 0.85, pulse: false },
-        soon:  { size: 22, opacity: 0.65, pulse: false },
-        later: { size: 16, opacity: 0.45, pulse: false },
-      }
+      const pinSize = 32
+      const pinOpacity = 1.0
 
       // Group by proximity
       const locationGroups = new Map<string, any[]>()
@@ -92,23 +89,17 @@ export default function MapRecordPage() {
       locationGroups.forEach((locationEvents, key) => {
         const [lat, lng] = key.split(',').map(Number)
 
-        const urgencies = locationEvents.map((e: any) => getUrgency(e.event_date))
-        const priority: ('week' | 'month' | 'soon' | 'later')[] = ['week', 'month', 'soon', 'later']
-        const bestUrgency = priority.find(p => urgencies.includes(p)) || 'later'
-        const config = urgencyConfig[bestUrgency as keyof typeof urgencyConfig]
-
         const el = document.createElement('div')
         el.className = 'event-marker'
 
         const count = locationEvents.length > 1 ? locationEvents.length : ''
-        const fontSize = config.size < 24 ? '10px' : '12px'
 
         el.innerHTML = `
-          <div class="marker-dot ${config.pulse ? 'marker-pulse' : ''}" style="
-            width: ${config.size}px;
-            height: ${config.size}px;
-            opacity: ${config.opacity};
-            font-size: ${fontSize};
+          <div class="marker-dot marker-pulse" style="
+            width: ${pinSize}px;
+            height: ${pinSize}px;
+            opacity: ${pinOpacity};
+            font-size: 12px;
           ">${count}</div>
         `
 
@@ -148,7 +139,7 @@ export default function MapRecordPage() {
       {/* Date range - bottom right */}
       <div className="absolute bottom-8 right-8 z-10">
         <div className="text-white/60 text-sm font-medium">
-          Week of {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          This Weekend
         </div>
       </div>
 
