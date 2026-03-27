@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/dashboard', '/api/', '/onboarding'],
+      disallow: ['/admin', '/dashboard', '/api/', '/onboarding', '/map/record'],
     },
     sitemap: 'https://www.hottag.app/sitemap.xml',
   }
