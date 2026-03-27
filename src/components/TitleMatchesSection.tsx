@@ -147,7 +147,7 @@ export default function TitleMatchesSection() {
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -158,7 +158,7 @@ export default function TitleMatchesSection() {
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-5 h-5" />
