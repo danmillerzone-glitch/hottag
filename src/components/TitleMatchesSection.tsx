@@ -8,7 +8,7 @@ import TitleMatchCard from './TitleMatchCard'
 
 export default function TitleMatchesSection() {
   const [matches, setMatches] = useState<any[]>([])
-  const [championIds, setChampionIds] = useState<Set<string>>(new Set())
+  const [championMap, setChampionMap] = useState<Record<string, Set<string>>>({})
   const [loading, setLoading] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -43,22 +43,23 @@ export default function TitleMatchesSection() {
     const matchList = data || []
     setMatches(matchList)
 
-    // Build champion ID set from promotion_championships
+    // Build champion ID map keyed by promotion_id
     const promoIds = Array.from(new Set(matchList.map((m: any) => m.events?.promotions?.id).filter(Boolean)))
     if (promoIds.length > 0) {
       const { data: championships } = await supabase
         .from('promotion_championships')
-        .select('current_champion_id, current_champion_2_id')
+        .select('promotion_id, current_champion_id, current_champion_2_id')
         .in('promotion_id', promoIds)
         .eq('is_active', true)
 
       if (championships) {
-        const ids = new Set<string>()
+        const map: Record<string, Set<string>> = {}
         for (const c of championships) {
-          if (c.current_champion_id) ids.add(c.current_champion_id)
-          if (c.current_champion_2_id) ids.add(c.current_champion_2_id)
+          if (!map[c.promotion_id]) map[c.promotion_id] = new Set<string>()
+          if (c.current_champion_id) map[c.promotion_id].add(c.current_champion_id)
+          if (c.current_champion_2_id) map[c.promotion_id].add(c.current_champion_2_id)
         }
-        setChampionIds(ids)
+        setChampionMap(map)
       }
     }
 
@@ -138,7 +139,7 @@ export default function TitleMatchesSection() {
               className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
             >
               {matches.map((match) => (
-                <TitleMatchCard key={match.id} match={match} championIds={championIds} />
+                <TitleMatchCard key={match.id} match={match} championIds={championMap[match.events?.promotions?.id] || new Set()} />
               ))}
             </div>
 
@@ -146,7 +147,7 @@ export default function TitleMatchesSection() {
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-11 h-11 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -157,7 +158,7 @@ export default function TitleMatchesSection() {
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-11 h-11 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
+                className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg items-center justify-center opacity-0 group-hover/carousel:opacity-100 focus:opacity-100 transition-opacity"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-5 h-5" />
