@@ -5210,7 +5210,7 @@ function VegasWeekendTab() {
     if (v.includes('bizarre')) return 'shooting-star-fest'
     if (v.includes('hyperx')) return 'hyperx-arena'
     if (v.includes('fsw arena')) return 'fsw-arena'
-    if (v.includes('pearl theater') || v.includes('pearl theatre')) return 'pearl-theater'
+    if (v.includes('pearl theater') || v.includes('pearl theatre')) return 'slam-fest'
     if (v.includes('the nerd')) return 'the-nerd'
     if (v.includes('beer zombie')) return 'beer-zombies'
     if (v.includes('dive bar')) return 'dive-bar'
