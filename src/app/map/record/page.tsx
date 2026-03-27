@@ -144,7 +144,7 @@ export default function MapRecordPage() {
       </div>
 
       {/* Ready indicator for Puppeteer (hidden) */}
-      {ready && <div id="map-ready" className="hidden" />}
+      {ready && <div id="map-ready" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />}
 
       <style jsx global>{`
         body { margin: 0; padding: 0; overflow: hidden; background: #14181c; }

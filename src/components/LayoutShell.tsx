@@ -8,7 +8,7 @@ import Footer from '@/components/Footer'
 import AuthGate from '@/components/AuthGate'
 
 // Pages where we hide nav/footer for a clean fullscreen experience
-const CHROMELESS_ROUTES = ['/welcome', '/onboarding', '/signin', '/signup']
+const CHROMELESS_ROUTES = ['/welcome', '/onboarding', '/signin', '/signup', '/map/record']
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

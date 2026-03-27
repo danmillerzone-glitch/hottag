@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/for-promotions',
   '/blog',
+  '/map/record',
 ]
 
 // Routes that are public for SEO/sharing (individual pages)
