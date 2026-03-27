@@ -144,32 +144,32 @@ export default function TitleMatchesSection() {
             {/* Scroll container */}
             <div
               ref={scrollRef}
-              className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
+              className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory px-8 sm:px-0"
             >
               {matches.map((match) => (
                 <TitleMatchCard key={match.id} match={match} championIds={championMap[match.events?.promotions?.id] || new Set()} />
               ))}
             </div>
 
-            {/* Left arrow — always visible */}
+            {/* Left arrow */}
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors"
+                className="hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-colors"
                 aria-label="Scroll left"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 mx-auto" />
               </button>
             )}
 
-            {/* Right arrow — always visible */}
-            {canScrollRight && (
+            {/* Right arrow */}
+            {matches.length > 1 && (
               <button
                 onClick={() => scroll('right')}
-                className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg items-center justify-center text-foreground hover:bg-accent hover:text-white transition-colors"
+                className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-colors"
                 aria-label="Scroll right"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 mx-auto" />
               </button>
             )}
           </div>
