@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Calendar, ExternalLink, MapPin, PartyPopper, Star, Ticket } from 'lucide-react'
+import { Calendar, ExternalLink, MapPin, Star, Ticket } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
 // Vegas Weekend: April 15–19, 2025
@@ -98,12 +98,7 @@ export default function VegasWeekendPage() {
   })
 
   const assignedEventIds = new Set(collectiveEvents.flatMap(c => c.events.map((e: any) => e.id)))
-  const unassignedEvents = events.filter(e => !assignedEventIds.has(e.id))
-
-  // Split unassigned into regular standalone vs miscellaneous
-  const isMisc = (e: any) => Array.isArray(e.event_tags) && e.event_tags.includes('miscellaneous')
-  const standaloneEvents = unassignedEvents.filter(e => !isMisc(e))
-  const miscEvents = unassignedEvents.filter(e => isMisc(e))
+  const standaloneEvents = events.filter(e => !assignedEventIds.has(e.id))
 
   // Group standalone by date
   const standaloneByDate = standaloneEvents.reduce<Record<string, any[]>>((acc, e) => {
@@ -243,11 +238,40 @@ export default function VegasWeekendPage() {
                   </div>
 
                   {/* Collective Events */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {collective.events.map(event => (
-                      <PosterEventCard key={event.id} event={event} />
-                    ))}
-                  </div>
+                  {collective.key === 'parties-signings' ? (
+                    // Date-grouped layout for miscellaneous events
+                    Object.entries(
+                      collective.events.reduce<Record<string, any[]>>((acc, e) => {
+                        const date = e.event_date
+                        if (!acc[date]) acc[date] = []
+                        acc[date].push(e)
+                        return acc
+                      }, {})
+                    )
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([date, dateEvents]) => (
+                        <div key={date} className="mb-8">
+                          <h3 className="text-lg font-semibold text-foreground-muted mb-3">
+                            {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {dateEvents.map(event => (
+                              <PosterEventCard key={event.id} event={event} />
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {collective.events.map(event => (
+                        <PosterEventCard key={event.id} event={event} />
+                      ))}
+                    </div>
+                  )}
                 </section>
               )
             ))}
@@ -260,41 +284,6 @@ export default function VegasWeekendPage() {
                   More Events
                 </h2>
                 {Object.entries(standaloneByDate)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([date, dateEvents]) => (
-                    <div key={date} className="mb-8">
-                      <h3 className="text-lg font-semibold text-foreground-muted mb-3">
-                        {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {dateEvents.map(event => (
-                          <PosterEventCard key={event.id} event={event} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </section>
-            )}
-
-            {/* Parties, Signings & More */}
-            {miscEvents.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-                  <PartyPopper className="w-6 h-6 text-purple-400" />
-                  Parties, Signings &amp; More
-                </h2>
-                {Object.entries(
-                  miscEvents.reduce<Record<string, any[]>>((acc, e) => {
-                    const date = e.event_date
-                    if (!acc[date]) acc[date] = []
-                    acc[date].push(e)
-                    return acc
-                  }, {})
-                )
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([date, dateEvents]) => (
                     <div key={date} className="mb-8">
