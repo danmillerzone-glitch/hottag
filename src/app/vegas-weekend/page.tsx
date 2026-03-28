@@ -97,16 +97,6 @@ export default function VegasWeekendPage() {
     return { ...collective, events: matched }
   })
 
-  const assignedEventIds = new Set(collectiveEvents.flatMap(c => c.events.map((e: any) => e.id)))
-  const standaloneEvents = events.filter(e => !assignedEventIds.has(e.id))
-
-  // Group standalone by date
-  const standaloneByDate = standaloneEvents.reduce<Record<string, any[]>>((acc, e) => {
-    const date = e.event_date
-    if (!acc[date]) acc[date] = []
-    acc[date].push(e)
-    return acc
-  }, {})
 
   return (
     <div className="min-h-screen">
@@ -238,8 +228,8 @@ export default function VegasWeekendPage() {
                   </div>
 
                   {/* Collective Events */}
-                  {collective.key === 'parties-signings' ? (
-                    // Date-grouped layout for miscellaneous events
+                  {(collective.key === 'parties-signings' || collective.key === 'more-events') ? (
+                    // Date-grouped layout for miscellaneous / overflow events
                     Object.entries(
                       collective.events.reduce<Record<string, any[]>>((acc, e) => {
                         const date = e.event_date
@@ -275,34 +265,6 @@ export default function VegasWeekendPage() {
                 </section>
               )
             ))}
-
-            {/* Standalone Events */}
-            {standaloneEvents.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-                  <Star className="w-6 h-6 text-yellow-400" />
-                  More Events
-                </h2>
-                {Object.entries(standaloneByDate)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([date, dateEvents]) => (
-                    <div key={date} className="mb-8">
-                      <h3 className="text-lg font-semibold text-foreground-muted mb-3">
-                        {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {dateEvents.map(event => (
-                          <PosterEventCard key={event.id} event={event} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </section>
-            )}
 
             {events.length === 0 && (
               <div className="text-center py-16">
