@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 import LayoutShell from '@/components/LayoutShell'
@@ -64,14 +65,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://floznswkfodjuigfzkki.supabase.co" />
-        {/* Plausible Analytics — privacy-focused, cookie-free */}
-        <script
-          defer
-          data-domain="hottag.app"
-          src="https://plausible.io/js/script.js"
-        />
       </head>
       <body className="bg-background text-foreground min-h-screen">
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-G97CHP6LCB"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-G97CHP6LCB');
+          `}
+        </Script>
         <AuthProvider>
           <LayoutShell>{children}</LayoutShell>
           <CookieConsent />
