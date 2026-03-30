@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
-import { Calendar, ExternalLink, MapPin, Star, Ticket } from 'lucide-react'
+import { Calendar, ExternalLink, LayoutGrid, List, MapPin, Star, Ticket } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
 // Vegas Weekend: April 15–19, 2025
@@ -30,6 +30,7 @@ export default function VegasWeekendPage() {
   const [events, setEvents] = useState<any[]>([])
   const [collectives, setCollectives] = useState<VegasCollective[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<'collectives' | 'schedule'>('collectives')
 
   useEffect(() => {
     loadData()
@@ -145,6 +146,36 @@ export default function VegasWeekendPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* View Toggle */}
+        {!loading && events.length > 0 && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex rounded-lg bg-background-secondary border border-border p-1">
+              <button
+                onClick={() => setViewMode('collectives')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                  viewMode === 'collectives'
+                    ? 'bg-yellow-500 text-black'
+                    : 'text-yellow-400/70 hover:text-yellow-400'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                Collectives
+              </button>
+              <button
+                onClick={() => setViewMode('schedule')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                  viewMode === 'schedule'
+                    ? 'bg-yellow-500 text-black'
+                    : 'text-yellow-400/70 hover:text-yellow-400'
+                }`}
+              >
+                <List className="w-4 h-4" />
+                Schedule
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-12">
             {[1, 2].map(i => (
@@ -159,9 +190,94 @@ export default function VegasWeekendPage() {
               </div>
             ))}
           </div>
+        ) : viewMode === 'schedule' ? (
+          /* ── Schedule View ── */
+          <div>
+            {Object.entries(
+              events.reduce<Record<string, any[]>>((acc, e) => {
+                const date = e.event_date
+                if (!acc[date]) acc[date] = []
+                acc[date].push(e)
+                return acc
+              }, {})
+            )
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([date, dateEvents]) => (
+                <div key={date} className="mb-2">
+                  {/* Sticky day header */}
+                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-yellow-500/30 py-3 px-4 -mx-4 sm:-mx-6 lg:-mx-8 sm:px-6 lg:px-8 flex items-center gap-3">
+                    <h3 className="text-lg font-display font-bold text-yellow-400 uppercase tracking-wide">
+                      {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </h3>
+                    <span className="text-xs font-semibold text-yellow-400/60 bg-yellow-500/10 px-2 py-0.5 rounded-full">
+                      {dateEvents.length} {dateEvents.length === 1 ? 'show' : 'shows'}
+                    </span>
+                  </div>
+                  {/* Event rows */}
+                  <div className="divide-y divide-border">
+                    {dateEvents.map((event: any) => {
+                      const promos = event.event_promotions || []
+                      const firstPromo = promos[0]?.promotions
+                      return (
+                        <Link
+                          key={event.id}
+                          href={`/events/${event.id}`}
+                          className="flex items-center gap-3 py-3 px-4 -mx-4 sm:-mx-6 lg:-mx-8 sm:px-6 lg:px-8 hover:bg-background-secondary transition-colors group"
+                        >
+                          {/* Time */}
+                          <span className="w-[72px] sm:w-[80px] flex-shrink-0 text-sm text-foreground-muted tabular-nums">
+                            {event.event_time
+                              ? new Date(`2000-01-01T${event.event_time}`).toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                })
+                              : 'TBA'}
+                          </span>
+                          {/* Promo logo */}
+                          {firstPromo?.logo_url && (
+                            <Image
+                              src={firstPromo.logo_url}
+                              alt=""
+                              width={20}
+                              height={20}
+                              className="w-5 h-5 rounded-sm object-contain flex-shrink-0"
+                              unoptimized
+                            />
+                          )}
+                          {/* Event name */}
+                          <span className="flex-1 min-w-0 font-semibold text-sm sm:text-base text-foreground group-hover:text-yellow-400 transition-colors truncate">
+                            {event.name}
+                          </span>
+                          {/* Badges */}
+                          {event.is_sold_out && (
+                            <span className="flex-shrink-0 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
+                              Sold Out
+                            </span>
+                          )}
+                          {event.is_free && !event.is_sold_out && (
+                            <span className="flex-shrink-0 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
+                              Free
+                            </span>
+                          )}
+                          {/* Venue */}
+                          <span className="hidden sm:block flex-shrink-0 text-sm text-foreground-muted max-w-[200px] truncate text-right">
+                            {event.venue_name}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+          </div>
         ) : (
+          /* ── Collectives View ── */
           <div className="space-y-12">
-            {/* Collectives */}
             {collectiveEvents.map(collective => (
               collective.events.length > 0 && (
                 <section key={collective.name}>
