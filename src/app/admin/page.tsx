@@ -38,6 +38,7 @@ import {
   getOutreachWrestlers, getWrestlerOutreachStats, upsertWrestlerOutreach,
   getTonightEvents, getNewlyAddedEvents, getWeekendEvents,
   getEventCoPromotions, addEventCoPromotion, removeEventCoPromotion,
+  uploadEventPosterAdmin,
 } from '@/lib/admin'
 import { ROLE_LABELS, PROFESSIONAL_ROLES, formatRoles } from '@/lib/supabase'
 import { VENUE_AMENITY_GROUPS, EVENT_TAG_GROUPS, EVENT_TAG_LABELS } from '@/lib/venue-event-constants'
@@ -3734,6 +3735,11 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
   const [promoQuery, setPromoQuery] = useState('')
   const [promoResults, setPromoResults] = useState<any[]>([])
   const [searchingPromos, setSearchingPromos] = useState(false)
+  const [posterUrl, setPosterUrl] = useState(event.poster_url || '')
+  const [landscapePosterUrl, setLandscapePosterUrl] = useState(event.landscape_poster_url || '')
+  const [uploadingPortrait, setUploadingPortrait] = useState(false)
+  const [uploadingLandscape, setUploadingLandscape] = useState(false)
+  const [posterError, setPosterError] = useState('')
 
   useEffect(() => {
     getEventCoPromotions(event.id).then(data => {
@@ -3777,6 +3783,20 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
       await removeEventCoPromotion(event.id, promotionId)
       setCoPromotions(coPromotions.filter(cp => cp.promotion_id !== promotionId))
     } catch (err: any) { alert(`Error: ${err.message}`) }
+  }
+
+  async function handlePosterUpload(e: React.ChangeEvent<HTMLInputElement>, variant: 'portrait' | 'landscape') {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setPosterError('Please select an image file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setPosterError('Image must be under 5MB.'); return }
+    const setUploading = variant === 'portrait' ? setUploadingPortrait : setUploadingLandscape
+    setUploading(true); setPosterError('')
+    try {
+      const url = await uploadEventPosterAdmin(event.id, file, variant)
+      if (variant === 'landscape') { setLandscapePosterUrl(url) } else { setPosterUrl(url) }
+    } catch (err: any) { setPosterError(err?.message || 'Failed to upload poster.') }
+    setUploading(false)
   }
 
   return (
@@ -3849,6 +3869,63 @@ function EditEventModal({ event, onClose, onSaved }: { event: any, onClose: () =
               </>
             )}
           </FieldRow>
+        </div>
+
+        {/* Poster Upload Section */}
+        <div className="border-t border-border pt-3 mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ImageIcon className="w-4 h-4 text-accent" />
+            <span className="text-sm font-semibold">Event Posters</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Portrait */}
+            <div>
+              <p className="text-xs text-foreground-muted mb-2">Portrait (3:4)</p>
+              <div className="aspect-[3/4] max-w-[140px] rounded-lg bg-background-tertiary border border-border overflow-hidden mb-2">
+                {posterUrl ? (
+                  <img src={posterUrl} alt="Portrait poster" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-foreground-muted">
+                    <ImageIcon className="w-8 h-8 opacity-30" />
+                  </div>
+                )}
+              </div>
+              <label className="block">
+                <div className="border border-dashed border-border rounded-lg p-2 text-center cursor-pointer hover:border-accent/50 transition-colors">
+                  {uploadingPortrait ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-accent mx-auto" />
+                  ) : (
+                    <span className="text-xs text-foreground-muted flex items-center justify-center gap-1"><Upload className="w-3 h-3" /> Upload portrait</span>
+                  )}
+                  <input type="file" accept="image/*" onChange={(e) => handlePosterUpload(e, 'portrait')} className="hidden" disabled={uploadingPortrait} />
+                </div>
+              </label>
+            </div>
+            {/* Landscape */}
+            <div>
+              <p className="text-xs text-foreground-muted mb-2">Landscape (16:9)</p>
+              <div className="aspect-video rounded-lg bg-background-tertiary border border-border overflow-hidden mb-2">
+                {landscapePosterUrl ? (
+                  <img src={landscapePosterUrl} alt="Landscape poster" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-foreground-muted">
+                    <ImageIcon className="w-8 h-8 opacity-30" />
+                  </div>
+                )}
+              </div>
+              <label className="block">
+                <div className="border border-dashed border-border rounded-lg p-2 text-center cursor-pointer hover:border-accent/50 transition-colors">
+                  {uploadingLandscape ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-accent mx-auto" />
+                  ) : (
+                    <span className="text-xs text-foreground-muted flex items-center justify-center gap-1"><Upload className="w-3 h-3" /> Upload landscape</span>
+                  )}
+                  <input type="file" accept="image/*" onChange={(e) => handlePosterUpload(e, 'landscape')} className="hidden" disabled={uploadingLandscape} />
+                </div>
+              </label>
+            </div>
+          </div>
+          {posterError && <p className="text-xs text-red-400 mt-2">{posterError}</p>}
         </div>
 
         <div className="flex gap-2 pt-2">

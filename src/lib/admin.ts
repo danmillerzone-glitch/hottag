@@ -949,6 +949,31 @@ export async function uploadPromotionLogoAdmin(promotionId: string, file: File) 
 }
 
 // ============================================
+// EVENT POSTER UPLOAD (Admin)
+// ============================================
+
+export async function uploadEventPosterAdmin(eventId: string, file: File, variant: 'portrait' | 'landscape' = 'portrait') {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()
+  const suffix = variant === 'landscape' ? '-landscape' : ''
+  const filePath = `event-posters/${eventId}${suffix}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('posters')
+    .upload(filePath, file, { upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('posters')
+    .getPublicUrl(filePath)
+
+  const urlWithBust = `${publicUrl}?v=${Date.now()}`
+  const field = variant === 'landscape' ? 'landscape_poster_url' : 'poster_url'
+  await updateEventAdmin(eventId, { [field]: urlWithBust })
+  return urlWithBust
+}
+
+// ============================================
 // PROMOTION GROUPS (Tag Teams, Trios, Stables)
 // ============================================
 
