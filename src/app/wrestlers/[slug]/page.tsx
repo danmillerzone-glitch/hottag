@@ -15,6 +15,7 @@ import MerchGallery from '@/components/MerchGallery'
 import { getHeroCSS } from '@/lib/hero-themes'
 import RecentlyViewedTracker from '@/components/RecentlyViewedTracker'
 import UpcomingEventsCarousel from '@/components/UpcomingEventsCarousel'
+import UpcomingOpponentsCarousel from '@/components/UpcomingOpponentsCarousel'
 
 function XIcon({ className }: { className?: string }) {
   return (<svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>)
@@ -145,6 +146,82 @@ async function getWrestlerPromotions(wrestlerId: string) {
   return Array.from(promoMap.values())
 }
 
+interface OpponentGroup {
+  matchTitle: string | null
+  matchType: string | null
+  eventName: string
+  eventSlug: string
+  opponents: { id: string; name: string; slug: string; photo_url: string | null; render_url: string | null; moniker: string | null; hero_style: any }[]
+}
+
+async function getUpcomingOpponents(wrestlerId: string): Promise<OpponentGroup[]> {
+  const today = getTodayHawaii()
+
+  // 1. Get this wrestler's upcoming matches with match/event metadata
+  const { data: myMatches } = await supabase
+    .from('match_participants')
+    .select('match_id, team_number, event_matches!inner(id, match_title, match_type, events!inner(id, name, slug, event_date))')
+    .eq('wrestler_id', wrestlerId)
+
+  if (!myMatches || myMatches.length === 0) return []
+
+  // Filter to upcoming events (PostgREST nested filters can be unreliable)
+  const upcoming = myMatches.filter((m: any) => m.event_matches?.events?.event_date >= today)
+  if (upcoming.length === 0) return []
+
+  const matchIds = upcoming.map((m: any) => m.match_id)
+
+  // 2. Get all other participants in those matches
+  const { data: allParticipants } = await supabase
+    .from('match_participants')
+    .select('match_id, team_number, wrestlers(id, name, slug, photo_url, render_url, moniker, hero_style)')
+    .in('match_id', matchIds)
+    .neq('wrestler_id', wrestlerId)
+
+  if (!allParticipants || allParticipants.length === 0) return []
+
+  // 3. Group opponents by match
+  const groups: OpponentGroup[] = []
+  for (const m of upcoming) {
+    const em = (m as any).event_matches
+    const evt = em?.events
+    if (!evt) continue
+
+    const matchParticipants = allParticipants.filter((p: any) => p.match_id === m.match_id)
+    if (matchParticipants.length === 0) continue
+
+    // Determine opponents: different team = opponent, or all others if multi-man (everyone same team)
+    const myTeam = m.team_number
+    const allSameTeam = matchParticipants.every((p: any) => p.team_number === myTeam)
+
+    const opponents = matchParticipants
+      .filter((p: any) => allSameTeam || p.team_number !== myTeam)
+      .map((p: any) => p.wrestlers)
+      .filter(Boolean)
+
+    if (opponents.length === 0) continue
+
+    groups.push({
+      matchTitle: em.match_title || null,
+      matchType: em.match_type || null,
+      eventName: evt.name,
+      eventSlug: evt.slug,
+      opponents,
+    })
+  }
+
+  // Sort by event date
+  groups.sort((a, b) => {
+    const aMatch = upcoming.find((m: any) => (m as any).event_matches?.events?.name === a.eventName)
+    const bMatch = upcoming.find((m: any) => (m as any).event_matches?.events?.name === b.eventName)
+    const aDate = (aMatch as any)?.event_matches?.events?.event_date || ''
+    const bDate = (bMatch as any)?.event_matches?.events?.event_date || ''
+    return aDate.localeCompare(bDate)
+  })
+
+  return groups
+}
+
 export async function generateMetadata({ params }: WrestlerPageProps) {
   const wrestler = await getWrestler(params.slug)
   if (!wrestler) return { title: 'Wrestler Not Found | Hot Tag' }
@@ -173,7 +250,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
   if (!wrestler) notFound()
 
   // Fire all independent queries in parallel (~200-500ms faster)
-  const [events, followerCount, championships, groups, wrestlerPromotions, { data: merchItems }, { data: profileVideos }, linkedProfessionalRes, { data: wrestlerAppearances }] = await Promise.all([
+  const [events, followerCount, championships, groups, wrestlerPromotions, { data: merchItems }, { data: profileVideos }, linkedProfessionalRes, { data: wrestlerAppearances }, upcomingOpponents] = await Promise.all([
     getWrestlerEvents(wrestler.id),
     getFollowerCount(wrestler.id),
     getWrestlerChampionships(wrestler.id),
@@ -202,6 +279,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
       .eq('wrestler_id', wrestler.id)
       .gte('event_date', new Date().toISOString().split('T')[0])
       .order('event_date', { ascending: true }),
+    getUpcomingOpponents(wrestler.id),
   ])
 
   const linkedProfessional = linkedProfessionalRes.data
@@ -792,6 +870,12 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
           {upcomingEvents.length > 0 && (
             <div className="mb-12">
               <UpcomingEventsCarousel events={upcomingEvents} />
+            </div>
+          )}
+
+          {upcomingOpponents.length > 0 && (
+            <div className="mb-12">
+              <UpcomingOpponentsCarousel groups={upcomingOpponents} />
             </div>
           )}
 
