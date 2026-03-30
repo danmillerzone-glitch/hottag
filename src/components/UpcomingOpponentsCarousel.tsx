@@ -53,7 +53,7 @@ export default function UpcomingOpponentsCarousel({ groups }: { groups: Opponent
 
       <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 snap-x snap-mandatory">
         {groups.map((group, gi) => (
-          <div key={gi} className="flex-shrink-0 snap-start inline-flex flex-col">
+          <div key={gi} className="flex-shrink-0 snap-start">
             {/* Overlapping card stack */}
             <div className="flex">
               {group.opponents.map((opponent, oi) => (
@@ -69,8 +69,8 @@ export default function UpcomingOpponentsCarousel({ groups }: { groups: Opponent
                 </div>
               ))}
             </div>
-            {/* Match label — wraps to fit card stack width */}
-            <Link href={`/events/${group.eventSlug}`} className="block mt-2 group/label self-stretch">
+            {/* Match label — constrained to first card's width to prevent overflow */}
+            <Link href={`/events/${group.eventSlug}`} className="block mt-2 w-[140px] sm:w-[160px] md:w-[180px] group/label">
               <p className="text-xs font-semibold text-accent group-hover/label:underline leading-tight">
                 {group.matchTitle || group.matchType || 'Match'}
               </p>
