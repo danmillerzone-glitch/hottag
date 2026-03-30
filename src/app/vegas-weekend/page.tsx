@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import { Calendar, ExternalLink, LayoutGrid, List, MapPin, Star, Ticket } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
@@ -27,10 +28,19 @@ interface VegasCollective {
 }
 
 export default function VegasWeekendPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [events, setEvents] = useState<any[]>([])
   const [collectives, setCollectives] = useState<VegasCollective[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'collectives' | 'schedule'>('collectives')
+
+  const viewMode = searchParams.get('view') === 'schedule' ? 'schedule' : 'collectives'
+  const setViewMode = (mode: 'collectives' | 'schedule') => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (mode === 'schedule') params.set('view', 'schedule')
+    else params.delete('view')
+    router.replace(`/vegas-weekend${params.size ? '?' + params.toString() : ''}`, { scroll: false })
+  }
 
   useEffect(() => {
     loadData()
