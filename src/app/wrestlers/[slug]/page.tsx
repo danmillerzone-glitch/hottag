@@ -40,9 +40,10 @@ async function getWrestler(slug: string) {
 }
 
 async function getWrestlerEvents(wrestlerId: string) {
-  const { data: ewData } = await supabase.from('event_wrestlers').select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`).eq('wrestler_id', wrestlerId)
-  const { data: mpData } = await supabase.from('match_participants').select(`event_matches (events (id, name, slug, event_date, city, state, country, promotions ( name, slug )))`).eq('wrestler_id', wrestlerId)
-  const { data: atData } = await supabase.from('event_announced_talent').select(`events (id, name, slug, event_date, city, state, country, promotions ( name, slug ))`).eq('wrestler_id', wrestlerId)
+  const eventFields = `id, name, slug, event_date, poster_url, city, state, country, promotions ( name, slug, logo_url )`
+  const { data: ewData } = await supabase.from('event_wrestlers').select(`events (${eventFields})`).eq('wrestler_id', wrestlerId)
+  const { data: mpData } = await supabase.from('match_participants').select(`event_matches (events (${eventFields}))`).eq('wrestler_id', wrestlerId)
+  const { data: atData } = await supabase.from('event_announced_talent').select(`events (${eventFields})`).eq('wrestler_id', wrestlerId)
   const eventMap = new Map<string, any>()
   for (const d of (ewData || [])) { const evt = (d as any).events; if (evt) eventMap.set(evt.id, evt) }
   for (const d of (mpData || [])) { const evt = (d as any).event_matches?.events; if (evt) eventMap.set(evt.id, evt) }
