@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import { Bell, BellRing, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useAuthModal } from '@/lib/auth-modal-context'
 import { trackEvent } from '@/lib/utils'
 
 interface FollowPromotionButtonProps {
@@ -19,7 +19,7 @@ export default function FollowPromotionButton({
   initialFollowerCount = 0 
 }: FollowPromotionButtonProps) {
   const { user } = useAuth()
-  const router = useRouter()
+  const { openAuthModal } = useAuthModal()
   const supabase = createClient()
   
   const [isFollowing, setIsFollowing] = useState(false)
@@ -48,7 +48,7 @@ export default function FollowPromotionButton({
 
   const handleFollow = async () => {
     if (!user) {
-      router.push('/signin')
+      openAuthModal('Sign in to follow this promotion')
       return
     }
 
