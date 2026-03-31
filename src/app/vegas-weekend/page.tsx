@@ -8,8 +8,8 @@ import { createClient } from '@/lib/supabase-browser'
 import { Calendar, ExternalLink, LayoutGrid, List, MapPin, Star, Ticket } from 'lucide-react'
 import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEventCard'
 
-// Vegas Weekend: April 15–19, 2025
-const VEGAS_START = '2026-04-15'
+// Vegas Weekend: April 14–19, 2026
+const VEGAS_START = '2026-04-14'
 const VEGAS_END = '2026-04-19'
 
 interface Collective {
@@ -133,7 +133,7 @@ export default function VegasWeekendPage() {
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 text-sm font-semibold mb-6 backdrop-blur-sm">
             <Star className="w-4 h-4" />
-            April 15–19, 2026
+            April 14–19, 2026
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}>
             <span className="text-yellow-400">Vegas</span> Weekend
