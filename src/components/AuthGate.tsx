@@ -5,8 +5,19 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Loader2 } from 'lucide-react'
 
-// Routes that don't require auth at all
-const PUBLIC_ROUTES = [
+// Routes that match exactly (without prefix)
+const EXACT_PUBLIC_ROUTES = new Set([
+  '/',
+  '/events',
+  '/wrestlers',
+  '/promotions',
+  '/crew',
+  '/map',
+  '/search',
+])
+
+// Routes that are public with prefix matching
+const PREFIX_PUBLIC_ROUTES = [
   '/welcome',
   '/signin',
   '/signup',
@@ -41,7 +52,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isPublic = PUBLIC_ROUTES.some(r => pathname.startsWith(r)) || isPublicSlugRoute(pathname)
+  const isPublic = EXACT_PUBLIC_ROUTES.has(pathname)
+    || PREFIX_PUBLIC_ROUTES.some(r => pathname.startsWith(r))
+    || isPublicSlugRoute(pathname)
 
   useEffect(() => {
     if (loading || onboardingLoading) return
@@ -49,9 +62,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     // Public routes — no checks needed
     if (isPublic) return
 
-    // Not logged in — send to welcome
+    // Not logged in — send to signin
     if (!user) {
-      router.replace('/welcome')
+      router.replace('/signin')
       return
     }
 
