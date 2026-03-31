@@ -472,11 +472,6 @@ export default async function EventPage({ params }: EventPageProps) {
             </div>
           </div>
 
-          {/* Disclaimer */}
-          <p className="text-xs text-foreground-muted/60 mb-8">
-            Event details are sourced from public listings and may not reflect last-minute changes. Always confirm details on the official ticket or promotion page before attending.
-          </p>
-
           {/* Description */}
           {event.description && (
             <div className="mb-8">
@@ -614,6 +609,11 @@ export default async function EventPage({ params }: EventPageProps) {
               </div>
             </div>
           )}
+
+          {/* Disclaimer */}
+          <p className="text-xs text-foreground-muted/60 mb-8">
+            Event details are sourced from public listings and may not reflect last-minute changes. Always confirm details on the official ticket or promotion page before attending.
+          </p>
 
           {/* Promotion info */}
           {allPromotions.length > 0 && (
