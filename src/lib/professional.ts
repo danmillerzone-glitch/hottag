@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase-browser'
+import { getTodayHawaii } from '@/lib/utils'
+import { searchUpcomingEvents } from '@/lib/wrestler'
 
 // ============================================
 // CLAIMS
@@ -203,5 +205,74 @@ export async function rejectWorksWithRequest(id: string) {
     .from('professional_promotions')
     .update({ status: 'rejected' })
     .eq('id', id)
+  if (error) throw error
+}
+
+// ============================================
+// SELF-ANNOUNCE AT EVENTS
+// ============================================
+
+// Re-export searchUpcomingEvents so the crew dashboard can import from one place
+export { searchUpcomingEvents }
+
+export async function getCrewSelfAnnouncements(professionalId: string) {
+  const supabase = createClient()
+  const today = getTodayHawaii()
+
+  const { data, error } = await supabase
+    .from('event_announced_crew')
+    .select(`*, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .eq('professional_id', professionalId)
+    .eq('self_announced', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching crew self-announcements:', error)
+    return []
+  }
+  return (data || []).filter((d: any) => d.events && d.events.event_date >= today)
+}
+
+export async function getCrewAnnouncedEventIds(professionalId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_crew')
+    .select('event_id')
+    .eq('professional_id', professionalId)
+
+  if (error) {
+    console.error('Error fetching crew announced event IDs:', error)
+    return []
+  }
+  return (data || []).map((d: any) => d.event_id)
+}
+
+export async function crewSelfAnnounceAtEvent(professionalId: string, eventId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('event_announced_crew')
+    .insert({
+      event_id: eventId,
+      professional_id: professionalId,
+      self_announced: true,
+      sort_order: 999,
+    })
+    .select(`*, events (id, name, slug, event_date, city, state, promotions (name, slug))`)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function removeCrewSelfAnnouncement(crewAnnouncementId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('event_announced_crew')
+    .delete()
+    .eq('id', crewAnnouncementId)
+    .eq('self_announced', true)
+
   if (error) throw error
 }
