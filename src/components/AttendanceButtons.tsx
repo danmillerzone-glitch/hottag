@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
 import { Check, Heart, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useAuthModal } from '@/lib/auth-modal-context'
 import { trackEvent } from '@/lib/utils'
 
 type AttendanceStatus = 'attending' | 'interested' | null
@@ -21,7 +21,7 @@ export default function AttendanceButtons({
   initialInterestedCount 
 }: AttendanceButtonsProps) {
   const { user } = useAuth()
-  const router = useRouter()
+  const { openAuthModal } = useAuthModal()
   const supabase = createClient()
   
   const [status, setStatus] = useState<AttendanceStatus>(null)
@@ -54,7 +54,7 @@ export default function AttendanceButtons({
 
   const handleAttendance = async (newStatus: 'attending' | 'interested') => {
     if (!user) {
-      router.push('/signin')
+      openAuthModal('Sign in to RSVP to this event')
       return
     }
 
