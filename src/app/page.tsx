@@ -9,6 +9,7 @@ import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEve
 import EventCarousel from '@/components/EventCarousel'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import NearYouSection from '@/components/NearYouSection'
+import SignupBanner from '@/components/SignupBanner'
 
 import RecommendedSection from '@/components/RecommendedSection'
 import WhatsNewSection from '@/components/WhatsNewSection'
@@ -252,6 +253,9 @@ export default function HomePage() {
       {/* Hero Section */}
       <HeroSlideshow images={heroImages} />
 
+      {/* Signup Banner for Logged-out Users */}
+      {!user && <SignupBanner />}
+
       {/* Happening Now — live events based on bell time */}
       {happeningNowEvents.length > 0 && (
         <section className="py-10 bg-gradient-to-b from-red-500/10 via-red-500/5 to-transparent">
@@ -407,23 +411,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      {!user && (
-        <section className="py-16 bg-gradient-to-r from-accent/10 to-accent-gold/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-display font-bold mb-4">
-              Join the Hot Tag Community
-            </h2>
-            <p className="text-foreground-muted mb-8 max-w-2xl mx-auto">
-              Create an account to follow wrestlers, track events you're attending, 
-              and get a personalized feed of upcoming shows.
-            </p>
-            <Link href="/signup" className="btn btn-primary">
-              Sign Up Free
-            </Link>
-          </div>
-        </section>
-      )}
     </div>
   )
 }
