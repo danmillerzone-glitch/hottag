@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase-browser'
@@ -18,7 +18,7 @@ function GoogleIcon({ className }: { className?: string }) {
   )
 }
 
-export default function SignInPage() {
+function SignInContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -29,6 +29,9 @@ export default function SignInPage() {
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const redirectParam = searchParams.get('redirect')
+  const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +44,7 @@ export default function SignInPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/')
+      router.push(redirect)
     }
   }
 
@@ -183,12 +186,20 @@ export default function SignInPage() {
 
           <p className="mt-6 text-center text-foreground-muted">
             Don't have an account?{' '}
-            <Link href="/signup" className="text-accent hover:underline">
+            <Link href={`/signup${redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-accent hover:underline">
               Sign up
             </Link>
           </p>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInContent />
+    </Suspense>
   )
 }
