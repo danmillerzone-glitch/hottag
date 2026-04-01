@@ -102,6 +102,9 @@ export default function TitleMatchesSection() {
     const cardWidth = el.querySelector(':scope > div')?.clientWidth || 500
     const distance = cardWidth + 16 // card width + gap
     el.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' })
+    // Recheck after scroll animation settles
+    setTimeout(checkScroll, 350)
+    setTimeout(checkScroll, 700)
   }
 
   // Hide section if no matches after loading
@@ -152,10 +155,10 @@ export default function TitleMatchesSection() {
             </div>
 
             {/* Left arrow */}
-            {canScrollLeft && (
+            {matches.length > 1 && (
               <button
                 onClick={() => scroll('left')}
-                className="hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-colors"
+                className={`hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-all ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-5 h-5 mx-auto" />
@@ -166,7 +169,7 @@ export default function TitleMatchesSection() {
             {matches.length > 1 && (
               <button
                 onClick={() => scroll('right')}
-                className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-colors"
+                className={`hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background-secondary border border-border shadow-lg text-foreground hover:bg-accent hover:text-white transition-all ${canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-5 h-5 mx-auto" />
