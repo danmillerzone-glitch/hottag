@@ -154,13 +154,17 @@ export default function MapRecordPage() {
             transform: scale(1.1);
           }
         }
-        /* Hide mapbox controls, attribution, and cookie banners */
+        /* Hide ALL mapbox controls and overlays */
+        .mapboxgl-ctrl-top-left,
         .mapboxgl-ctrl-top-right,
         .mapboxgl-ctrl-bottom-left,
-        .mapboxgl-ctrl-bottom-right { display: none !important; }
+        .mapboxgl-ctrl-bottom-right,
+        .mapboxgl-ctrl { display: none !important; }
+        /* Hide cookie banners, nav, footer, and any overlay elements */
         [class*="cookie" i], [id*="cookie" i],
         [class*="consent" i], [id*="consent" i],
-        [class*="CookieBanner" i], [class*="cookie-banner" i] { display: none !important; }
+        [class*="CookieBanner" i], [class*="cookie-banner" i],
+        nav, header, footer, [role="banner"], [role="navigation"] { display: none !important; }
       `}</style>
     </div>
   )
