@@ -588,10 +588,23 @@ async function main() {
     existingMap.set(key, ev)
   }
 
+  // 5b. Build cross-promotion lookup for duplicate detection: "date|city_lower" → [events]
+  const crossPromoMap = new Map()
+  for (const ev of existingEvents) {
+    const key = `${ev.event_date}|${(ev.city || '').toLowerCase()}`
+    if (!crossPromoMap.has(key)) crossPromoMap.set(key, [])
+    crossPromoMap.get(key).push(ev)
+  }
+
+  // Also load promotion names for cross-promo warnings
+  const promoNameById = new Map()
+  for (const p of allPromos) promoNameById.set(p.id, p.name)
+
   // 6. Categorize events
   const toInsert = []
   const toBackfill = []
   const skipped = []
+  const crossPromoDupes = []  // potential cross-promotion duplicates
 
   for (const event of withPromo) {
     const dupeKey = `${event.promotion_id}|${event.event_date}|${(event.city || '').toLowerCase()}`
@@ -617,8 +630,39 @@ async function main() {
         skipped.push(event)
       }
     } else {
+      // Cross-promotion duplicate check: same date + same city but different promotion
+      const crossKey = `${event.event_date}|${(event.city || '').toLowerCase()}`
+      const sameDateCity = crossPromoMap.get(crossKey) || []
+      const crossMatches = sameDateCity.filter(e => e.promotion_id !== event.promotion_id)
+      if (crossMatches.length > 0) {
+        crossPromoDupes.push({
+          event,
+          existingEvents: crossMatches.map(e => ({
+            id: e.id,
+            name: e.name,
+            venue: e.venue_name,
+            promo: promoNameById.get(e.promotion_id) || e.promotion_id,
+          })),
+        })
+      }
       toInsert.push(event)
     }
+  }
+
+  // 6b. Check for within-batch duplicates (two import lines creating events in same city on same date)
+  const batchDupes = []
+  const batchSeen = new Map()  // key → [events]
+  for (const event of toInsert) {
+    const key = `${event.event_date}|${(event.city || '').toLowerCase()}`
+    if (!batchSeen.has(key)) batchSeen.set(key, [])
+    const group = batchSeen.get(key)
+    // Check against all previously seen events at this date+city
+    for (const other of group) {
+      if (other.promotion_id !== event.promotion_id) {
+        batchDupes.push({ event1: other, event2: event })
+      }
+    }
+    group.push(event)
   }
 
   // 7. Report
@@ -627,7 +671,41 @@ async function main() {
   console.log(`  Duplicates to backfill: ${toBackfill.length}`)
   console.log(`  Duplicates (no changes): ${skipped.length}`)
   console.log(`  Unmatched promotions:   ${unmatched.size}`)
+  if (crossPromoDupes.length > 0) {
+    console.log(`  ⚠️  Cross-promo warnings: ${crossPromoDupes.length}`)
+  }
+  if (batchDupes.length > 0) {
+    console.log(`  ⚠️  Within-batch warnings: ${batchDupes.length}`)
+  }
   console.log()
+
+  // Show cross-promotion duplicate warnings
+  if (crossPromoDupes.length > 0) {
+    console.log('⚠️  POSSIBLE CROSS-PROMOTION DUPLICATES ⚠️')
+    console.log('   These events will be inserted, but similar events already exist')
+    console.log('   from DIFFERENT promotions in the same city on the same date:\n')
+    for (const d of crossPromoDupes) {
+      console.log(`   📍 ${d.event.event_date} | ${d.event.city}, ${d.event.state || d.event.country}`)
+      console.log(`      IMPORTING: "${d.event.matchedPromoName}" at ${d.event.venue_name || '?'}`)
+      for (const ex of d.existingEvents) {
+        console.log(`      EXISTS:    "${ex.promo}" — ${ex.name} at ${ex.venue || '?'}`)
+      }
+      console.log()
+    }
+  }
+
+  // Show within-batch duplicates
+  if (batchDupes.length > 0) {
+    console.log('⚠️  POSSIBLE WITHIN-BATCH DUPLICATES ⚠️')
+    console.log('   These import lines create events in the same city on the same date')
+    console.log('   from DIFFERENT promotions — could be the same show:\n')
+    for (const d of batchDupes) {
+      console.log(`   📍 ${d.event1.event_date} | ${d.event1.city}, ${d.event1.state || d.event1.country}`)
+      console.log(`      Line ${d.event1.lineNum}: "${d.event1.promotionName}" at ${d.event1.venue_name || '?'}`)
+      console.log(`      Line ${d.event2.lineNum}: "${d.event2.promotionName}" at ${d.event2.venue_name || '?'}`)
+      console.log()
+    }
+  }
 
   // Show inserts
   if (toInsert.length > 0) {
