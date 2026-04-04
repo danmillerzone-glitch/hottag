@@ -61,6 +61,22 @@ const REGION_OPTIONS = [
 
 type Tab = 'overview' | 'outreach' | 'wrestler-outreach' | 'social' | 'promo-claims' | 'wrestler-claims' | 'crew-claims' | 'events' | 'promotions' | 'wrestlers' | 'crew' | 'announcements' | 'news' | 'users' | 'merge' | 'import' | 'requests' | 'hero' | 'vegas' | 'blog' | 'title-matches'
 
+// Check if a user already has claimed pages (prevents accidental multi-grants)
+async function checkExistingClaims(userId: string): Promise<string | null> {
+  const supabase = (await import('@/lib/supabase-browser')).createClient()
+  const [w, p, c] = await Promise.all([
+    supabase.from('wrestlers').select('name').eq('claimed_by', userId),
+    supabase.from('promotions').select('name').eq('claimed_by', userId),
+    supabase.from('professionals').select('name').eq('claimed_by', userId),
+  ])
+  const parts: string[] = []
+  if (w.data?.length) parts.push(`${w.data.length} wrestler(s): ${w.data.map(x => x.name).join(', ')}`)
+  if (p.data?.length) parts.push(`${p.data.length} promotion(s): ${p.data.map(x => x.name).join(', ')}`)
+  if (c.data?.length) parts.push(`${c.data.length} crew page(s): ${c.data.map(x => x.name).join(', ')}`)
+  if (parts.length === 0) return null
+  return `⚠️ WARNING: This user already controls:\n• ${parts.join('\n• ')}\n\nApproving will give them another page.`
+}
+
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -1453,11 +1469,13 @@ function PromoClaimsTab() {
   }
 
   async function handleApprove(claimId: string) {
-    if (!confirm('Approve this claim? The user will gain control of the promotion page.')) return
+    const claim = claims.find(c => c.id === claimId)
+    const warning = claim?.user_id ? await checkExistingClaims(claim.user_id) : null
+    const msg = warning ? `${warning}\n\nApprove this promotion claim?` : 'Approve this claim? The user will gain control of the promotion page.'
+    if (!confirm(msg)) return
     setProcessing(claimId)
     await new Promise(r => setTimeout(r, 0))
     try {
-      const claim = claims.find(c => c.id === claimId)
       await approvePromotionClaim(claimId)
       if (claim?.user_email && claim?.promotions) {
         sendClaimAccessEmailFromClient({
@@ -1553,11 +1571,13 @@ function WrestlerClaimsTab() {
   }
 
   async function handleApprove(claimId: string) {
-    if (!confirm('Approve this claim?')) return
+    const claim = claims.find(c => c.id === claimId)
+    const warning = claim?.user_id ? await checkExistingClaims(claim.user_id) : null
+    const msg = warning ? `${warning}\n\nApprove this wrestler claim?` : 'Approve this claim?'
+    if (!confirm(msg)) return
     setProcessing(claimId)
     await new Promise(r => setTimeout(r, 0))
     try {
-      const claim = claims.find(c => c.id === claimId)
       console.log('[Admin] Wrestler claim data:', JSON.stringify({ id: claim?.id, user_email: claim?.user_email, wrestlers: claim?.wrestlers }, null, 2))
       await approveWrestlerClaim(claimId)
       if (claim?.user_email && claim?.wrestlers) {
@@ -2256,11 +2276,13 @@ function CrewClaimsTab() {
   }
 
   async function handleApprove(id: string) {
-    if (!confirm('Approve this claim?')) return
+    const claim = claims.find(c => c.id === id)
+    const warning = claim?.user_id ? await checkExistingClaims(claim.user_id) : null
+    const msg = warning ? `${warning}\n\nApprove this crew claim?` : 'Approve this claim?'
+    if (!confirm(msg)) return
     setProcessing(id)
     await new Promise(r => setTimeout(r, 0))
     try {
-      const claim = claims.find(c => c.id === id)
       await approveProfessionalClaim(id)
       if (claim?.user_email && claim?.professionals) {
         sendClaimAccessEmailFromClient({
@@ -4804,6 +4826,15 @@ function PageRequestsTab() {
     if (status === 'approved') {
       const req = requests.find(r => r.id === id)
       if (!req) return
+
+      // If granting access, check for existing claims and warn
+      if (grantAccess && req.requested_by) {
+        const warning = await checkExistingClaims(req.requested_by)
+        const msg = warning
+          ? `${warning}\n\nApprove & grant access for this ${req.type} page request?`
+          : `Approve & grant "${req.name}" to this user?`
+        if (!confirm(msg)) return
+      }
 
       const slug = req.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
       const claimFields = grantAccess && req.requested_by ? {
