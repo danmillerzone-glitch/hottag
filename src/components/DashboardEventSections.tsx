@@ -940,9 +940,27 @@ export function MatchCardSection({
 // MATCH ITEM
 // ============================================
 
-function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; index: number; onDelete: () => void; onReload: () => void }) {
-  const [showAddWrestler, setShowAddWrestler] = useState(false)
-  const [teamNumber, setTeamNumber] = useState(1)
+function MatchItem({
+  match,
+  index,
+  eventId,
+  rosterWrestlers,
+  isExpanded,
+  onExpand,
+  onCollapse,
+  onDelete,
+  onReload,
+}: {
+  match: EventMatch
+  index: number
+  eventId: string
+  rosterWrestlers: RosterWrestler[]
+  isExpanded: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  onDelete: () => void
+  onReload: () => void
+}) {
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(match.match_title || '')
   const [editType, setEditType] = useState(match.match_type || '')
@@ -968,11 +986,32 @@ function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; in
     setSaving(false)
   }
 
-  const handleAddWrestler = async (wrestlerId: string) => {
+  const handleAddWrestler = async (wrestlerId: string, team?: 1 | 2) => {
     try {
-      await addMatchParticipant({ match_id: match.id, wrestler_id: wrestlerId, team_number: teamNumber })
+      await addMatchParticipant({
+        match_id: match.id,
+        event_id: eventId,
+        wrestler_id: wrestlerId,
+        team_number: team ?? 1,
+      })
       onReload()
     } catch (err) { console.error('Error adding wrestler:', err) }
+  }
+
+  const handleRemoveWrestler = async (wrestlerId: string) => {
+    const participant = participants.find(p => p.wrestler_id === wrestlerId)
+    if (!participant) return
+    try {
+      await removeMatchParticipant(participant.id)
+      onReload()
+    } catch (err) { console.error('Error removing participant:', err) }
+  }
+
+  const handleSwapTeam = async (wrestlerId: string, toTeam: 1 | 2) => {
+    try {
+      await updateMatchParticipantTeam(match.id, wrestlerId, toTeam)
+      onReload()
+    } catch (err) { console.error('Error swapping team:', err) }
   }
 
   const handleRemoveParticipant = async (participantId: string) => {
@@ -1079,25 +1118,35 @@ function MatchItem({ match, index, onDelete, onReload }: { match: EventMatch; in
         )}
       </div>
 
-      {showAddWrestler ? (
-        <div className="mt-3">
-          {(match.match_type === 'Tag Team' || match.match_type === '6-Man Tag' || match.match_type === '8-Man Tag') && (
-            <div className="mb-2">
-              <select value={teamNumber} onChange={(e) => setTeamNumber(parseInt(e.target.value))}
-                className="px-2 py-1.5 rounded-lg bg-background border border-border text-sm text-foreground outline-none">
-                <option value={1}>Team 1</option>
-                <option value={2}>Team 2</option>
-              </select>
-            </div>
-          )}
-          <WrestlerSearchBox
-            onSelect={handleAddWrestler}
-            onClose={() => setShowAddWrestler(false)}
-            excludeIds={participants.map(p => p.wrestler_id)}
+      {isExpanded ? (
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-foreground-muted">Tap to add. Tap again to remove.</span>
+            <button
+              type="button"
+              onClick={onCollapse}
+              className="text-xs text-foreground-muted hover:text-foreground"
+            >
+              Done
+            </button>
+          </div>
+          <EventWrestlerPicker
+            rosterWrestlers={rosterWrestlers}
+            selectedIds={participants.map(p => p.wrestler_id)}
+            mode="match"
+            matchTeams={participants.map(p => ({ wrestlerId: p.wrestler_id, team: (p.team_number === 2 ? 2 : 1) as 1 | 2 }))}
+            showTeamToggle={match.match_type === 'Tag Team' || match.match_type === '6-Man Tag' || match.match_type === '8-Man Tag'}
+            onAdd={handleAddWrestler}
+            onRemove={handleRemoveWrestler}
+            onSwap={handleSwapTeam}
           />
         </div>
       ) : (
-        <button onClick={() => setShowAddWrestler(true)} className="mt-3 text-sm text-accent hover:text-accent-hover flex items-center gap-1 transition-colors">
+        <button
+          type="button"
+          onClick={onExpand}
+          className="mt-3 w-full px-3 py-2 rounded-lg border border-dashed border-border hover:border-accent text-sm text-accent hover:text-accent-hover flex items-center justify-center gap-1 transition-colors"
+        >
           <Plus className="w-3.5 h-3.5" /> Add wrestler
         </button>
       )}
