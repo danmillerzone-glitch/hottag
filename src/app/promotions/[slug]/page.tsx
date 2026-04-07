@@ -328,7 +328,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                   promotionName={promotion.name}
                   initialFollowerCount={followerCount}
                 />
-                <QRCodeButton url={`https://www.hottag.app/promotions/${promotion.slug}`} name={promotion.name} />
+                <QRCodeButton url={`https://www.hottag.app/promotions/${promotion.slug}`} name={promotion.name} logoUrl={promotion.logo_url} logoFit="logo" />
                 <ShareButton
                   title={`${promotion.name} | Hot Tag`}
                   text={`Check out ${promotion.name} on Hot Tag`}
