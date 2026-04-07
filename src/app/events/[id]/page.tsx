@@ -325,7 +325,7 @@ export default async function EventPage({ params }: EventPageProps) {
               {event.name}
             </h1>
             <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
-              <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} />
+              <QRCodeButton url={`https://www.hottag.app/events/${event.id}`} name={event.name} logoUrl={promotion?.logo_url ?? undefined} logoFit="logo" />
               <ShareButton
                 title={event.name}
                 text={`Check out ${event.name}${promotion ? ` by ${promotion.name}` : ''} on ${formatEventDateFull(event.event_date)}${event.city ? ` in ${event.city}` : ''}${hashtag ? ` #${hashtag}` : ''}`}
