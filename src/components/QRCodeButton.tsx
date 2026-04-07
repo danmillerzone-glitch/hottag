@@ -29,11 +29,46 @@ function QRCodeModal({ url, name, logoUrl, logoFit, onClose }: QRCodeModalProps)
     async function loadImage(src: string): Promise<HTMLImageElement | null> {
       return new Promise((resolve) => {
         const img = new Image()
-        img.crossOrigin = 'anonymous'
+        // Only set crossOrigin for absolute cross-origin URLs. Setting it on
+        // same-origin requests can cause loads to fail when the server doesn't
+        // emit CORS headers (Next.js static file server doesn't by default).
+        if (/^https?:\/\//.test(src)) {
+          img.crossOrigin = 'anonymous'
+        }
         img.onload = () => resolve(img)
         img.onerror = () => resolve(null)
         img.src = src
       })
+    }
+
+    function wrapNameTwoLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+      if (ctx.measureText(text).width <= maxWidth) return [text]
+
+      const words = text.split(/\s+/).filter(Boolean)
+      let line1 = ''
+      let idx = 0
+      for (; idx < words.length; idx++) {
+        const test = line1 ? `${line1} ${words[idx]}` : words[idx]
+        if (ctx.measureText(test).width > maxWidth) break
+        line1 = test
+      }
+
+      // Edge case: first word itself is wider than maxWidth
+      if (!line1) {
+        line1 = words[0] ?? text
+        idx = 1
+      }
+
+      let line2 = words.slice(idx).join(' ')
+      const originalLine2 = line2
+      while (line2.length > 0 && ctx.measureText(line2 + '…').width > maxWidth) {
+        line2 = line2.slice(0, -1)
+      }
+      if (line2.length < originalLine2.length) {
+        line2 = line2.trimEnd() + '…'
+      }
+
+      return [line1, line2]
     }
 
     async function generateCard() {
@@ -142,12 +177,17 @@ function QRCodeModal({ url, name, logoUrl, logoFit, onClose }: QRCodeModalProps)
       ctx.roundRect(380, 820, 40, 4, 2)
       ctx.fill()
 
-      // 10. Entity name
+      // 10. Entity name (1-2 lines, word-wrapped, ellipsis on overflow)
       ctx.font = '900 36px "Space Grotesk", "Inter", system-ui, sans-serif'
       ctx.fillStyle = '#ffffff'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillText(name, 400, 848)
+      const nameLines = wrapNameTwoLines(ctx, name, 700)
+      const nameLineHeight = 42
+      const nameStartY = nameLines.length === 1 ? 848 : 828
+      nameLines.forEach((line, i) => {
+        ctx.fillText(line, 400, nameStartY + i * nameLineHeight)
+      })
 
       // 11. URL (strip https:// for display)
       const displayUrl = url.replace(/^https?:\/\//, '')
@@ -155,7 +195,8 @@ function QRCodeModal({ url, name, logoUrl, logoFit, onClose }: QRCodeModalProps)
       ctx.fillStyle = '#9ca3af'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillText(displayUrl, 400, 900)
+      const urlY = nameStartY + nameLines.length * nameLineHeight + 10
+      ctx.fillText(displayUrl, 400, urlY)
     }
 
     generateCard()
