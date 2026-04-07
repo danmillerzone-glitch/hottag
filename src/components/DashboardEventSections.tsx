@@ -4,13 +4,17 @@ import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import {
   updateEvent, getEventMatches, createMatch, deleteMatch, updateMatch, addMatchParticipant, removeMatchParticipant,
+  updateMatchParticipantTeam,
   searchWrestlers, uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
   getAnnouncedTalent, addAnnouncedTalent, removeAnnouncedTalent, updateAnnouncedTalent,
+  getMatchParticipationForWrestler,
   getAnnouncedCrew, addAnnouncedCrew, removeAnnouncedCrew, updateAnnouncedCrew, searchProfessionals,
   getEventWrestlersLinked, removeEventWrestlerLink,
   type EventMatch, type StreamingLink, type AnnouncedTalent,
 } from '@/lib/promoter'
 import { ROLE_LABELS } from '@/lib/supabase'
+import EventWrestlerPicker from '@/components/EventWrestlerPicker'
+import type { RosterWrestler } from '@/lib/promoter'
 import {
   Loader2, Save, Ticket, Video, FileText, ImageIcon, Plus, Trash2, Search, X,
   ExternalLink, Upload, Check, Trophy, User, Swords, Megaphone, Edit3,
@@ -603,39 +607,69 @@ export function PosterSection({ event, eventId, onUpdate }: { event: any; eventI
 // ANNOUNCED TALENT SECTION
 // ============================================
 
-export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId: string; talent: AnnouncedTalent[]; onUpdate: (t: AnnouncedTalent[]) => void }) {
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [searching, setSearching] = useState(false)
-
-  const handleSearch = useCallback(async (query: string) => {
-    if (query.length < 2) { setSearchResults([]); return }
-    setSearching(true)
-    const results = await searchWrestlers(query)
-    const existingIds = talent.map(t => t.wrestler_id)
-    setSearchResults(results.filter((w: any) => !existingIds.includes(w.id)))
-    setSearching(false)
-  }, [talent])
-
-  useEffect(() => {
-    const timer = setTimeout(() => handleSearch(searchQuery), 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery, handleSearch])
-
+export function AnnouncedTalentSection({
+  eventId,
+  talent,
+  rosterWrestlers,
+  onUpdate,
+}: {
+  eventId: string
+  talent: AnnouncedTalent[]
+  rosterWrestlers: RosterWrestler[]
+  onUpdate: (t: AnnouncedTalent[]) => void
+}) {
   const handleAdd = async (wrestlerId: string) => {
     try {
-      const added = await addAnnouncedTalent({ event_id: eventId, wrestler_id: wrestlerId, sort_order: talent.length })
+      const added = await addAnnouncedTalent({
+        event_id: eventId,
+        wrestler_id: wrestlerId,
+        sort_order: talent.length,
+      })
       onUpdate([...talent, added])
-      setSearchQuery(''); setSearchResults([])
     } catch (err: any) {
       if (err?.code !== '23505') console.error('Error adding talent:', err)
     }
   }
 
+  // Cascade-confirm: if the wrestler is in any match, ask before removing.
+  const handleRemoveByWrestlerId = async (wrestlerId: string) => {
+    const talentRow = talent.find(t => t.wrestler_id === wrestlerId)
+    if (!talentRow) return
+
+    try {
+      const matchParticipation = await getMatchParticipationForWrestler(eventId, wrestlerId)
+      if (matchParticipation.length > 0) {
+        const matchLabels = matchParticipation
+          .map(m => `Match #${m.matchOrder ?? '?'}: ${m.matchTitle || `Match ${m.matchOrder ?? ''}`}`)
+          .join('\n')
+        const ok = window.confirm(
+          `${talentRow.wrestlers?.name || 'This wrestler'} is currently in:\n\n${matchLabels}\n\nRemoving them from Announced Talent will also remove them from the match. Continue?`
+        )
+        if (!ok) return
+
+        // Delete all match_participants rows for this wrestler in this event's matches
+        const supabase = (await import('@/lib/supabase-browser')).createClient()
+        for (const m of matchParticipation) {
+          await supabase
+            .from('match_participants')
+            .delete()
+            .eq('match_id', m.matchId)
+            .eq('wrestler_id', wrestlerId)
+        }
+      }
+
+      await removeAnnouncedTalent(talentRow.id)
+      onUpdate(talent.filter(t => t.id !== talentRow.id))
+    } catch (err) {
+      console.error('Error removing talent:', err)
+    }
+  }
+
+  // Existing trash-button handler (unchanged behavior path: directly remove by talent.id)
   const handleRemove = async (talentId: string) => {
-    try { await removeAnnouncedTalent(talentId); onUpdate(talent.filter(t => t.id !== talentId)) }
-    catch (err) { console.error('Error removing talent:', err) }
+    const t = talent.find(x => x.id === talentId)
+    if (!t) return
+    await handleRemoveByWrestlerId(t.wrestler_id)
   }
 
   const handleMove = async (index: number, direction: 'up' | 'down') => {
@@ -667,14 +701,22 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
           <h2 className="text-lg font-display font-bold">Announced Talent</h2>
           <span className="text-sm text-foreground-muted">({talent.length})</span>
         </div>
-        <button onClick={() => setShowSearch(true)} className="btn btn-primary text-sm">
-          <Plus className="w-4 h-4 mr-1.5" /> Add Talent
-        </button>
       </div>
 
       <p className="text-xs text-foreground-muted mb-4">
-        Add wrestlers who have been announced for this event but don't have specific matches yet.
+        Tap a roster wrestler to add. Tap again to remove. Search the field for any wrestler in Hot Tag.
       </p>
+
+      {/* Always-visible picker above the announced list */}
+      <div className="mb-4">
+        <EventWrestlerPicker
+          rosterWrestlers={rosterWrestlers}
+          selectedIds={talent.map(t => t.wrestler_id)}
+          mode="announced"
+          onAdd={handleAdd}
+          onRemove={handleRemoveByWrestlerId}
+        />
+      </div>
 
       {talent.length > 0 ? (
         <div className="space-y-2 mb-4">
@@ -719,14 +761,8 @@ export function AnnouncedTalentSection({ eventId, talent, onUpdate }: { eventId:
             </div>
           ))}
         </div>
-      ) : !showSearch && <p className="text-sm text-foreground-muted mb-4">No talent announced yet.</p>}
-
-      {showSearch && (
-        <WrestlerSearchBox
-          onSelect={handleAdd}
-          onClose={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]) }}
-          excludeIds={talent.map(t => t.wrestler_id)}
-        />
+      ) : (
+        <p className="text-sm text-foreground-muted mb-4">No talent announced yet.</p>
       )}
     </section>
   )
