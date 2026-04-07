@@ -7,7 +7,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   getEventForEditing, getEventMatches, getStreamingLinks, getAnnouncedTalent,
-  type EventMatch, type StreamingLink, type AnnouncedTalent,
+  getRosterForEventPromotions,
+  type EventMatch, type StreamingLink, type AnnouncedTalent, type RosterWrestler,
 } from '@/lib/promoter'
 import { Loader2, ArrowLeft, ExternalLink, AlertCircle, X } from 'lucide-react'
 import { formatEventDateFull, formatLocation } from '@/lib/utils'
@@ -26,6 +27,7 @@ export default function ManageEventPage() {
   const [matches, setMatches] = useState<EventMatch[]>([])
   const [streamingLinks, setStreamingLinks] = useState<StreamingLink[]>([])
   const [announcedTalent, setAnnouncedTalent] = useState<AnnouncedTalent[]>([])
+  const [rosterWrestlers, setRosterWrestlers] = useState<RosterWrestler[]>([])
   const [coPromotions, setCoPromotions] = useState<any[]>([])
   const [promoSearch, setPromoSearch] = useState('')
   const [promoResults, setPromoResults] = useState<any[]>([])
@@ -77,12 +79,16 @@ export default function ManageEventPage() {
       setEvent(data)
       setCoPromotions(data.event_promotions || [])
       setAuthorized(true)
-      const [eventMatches, links, talent] = await Promise.all([
-        getEventMatches(eventId), getStreamingLinks(eventId), getAnnouncedTalent(eventId),
+      const [eventMatches, links, talent, roster] = await Promise.all([
+        getEventMatches(eventId),
+        getStreamingLinks(eventId),
+        getAnnouncedTalent(eventId),
+        getRosterForEventPromotions(eventId),
       ])
       setMatches(eventMatches)
       setStreamingLinks(links)
       setAnnouncedTalent(talent)
+      setRosterWrestlers(roster)
     } catch (err) { console.error('Error loading event:', err) }
     setLoading(false)
   }
@@ -216,9 +222,19 @@ export default function ManageEventPage() {
 
         <EventTagsSection event={event} onUpdate={setEvent} />
         <PosterSection event={event} eventId={eventId} onUpdate={setEvent} />
-        <AnnouncedTalentSection eventId={eventId} talent={announcedTalent} onUpdate={setAnnouncedTalent} />
+        <AnnouncedTalentSection
+          eventId={eventId}
+          talent={announcedTalent}
+          rosterWrestlers={rosterWrestlers}
+          onUpdate={setAnnouncedTalent}
+        />
         <AnnouncedCrewSection eventId={eventId} />
-        <MatchCardSection eventId={eventId} matches={matches} onUpdate={setMatches} />
+        <MatchCardSection
+          eventId={eventId}
+          matches={matches}
+          rosterWrestlers={rosterWrestlers}
+          onUpdate={setMatches}
+        />
         <LinkedWrestlersSection eventId={eventId} />
 
         <div className="text-center pt-4">
