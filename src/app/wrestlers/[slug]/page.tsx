@@ -388,7 +388,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                     url={`https://www.hottag.app/wrestlers/${wrestler.slug}`}
                   />
                   <div className="flex items-center gap-1">
-                    <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
+                    <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} logoUrl={wrestler.photo_url} logoFit="photo" />
                     {socialIcons.map((link, i) => (
                       <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                         className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors">
@@ -512,7 +512,7 @@ export default async function WrestlerPage({ params }: WrestlerPageProps) {
                 {/* Social icons + QR — own row on mobile */}
                 {(socialIcons.length > 0 || true) && (
                   <div className="flex items-center gap-1 flex-wrap mb-3">
-                    <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} />
+                    <QRCodeButton url={`https://www.hottag.app/wrestlers/${wrestler.slug}`} name={wrestler.name} logoUrl={wrestler.photo_url} logoFit="photo" />
                     {socialIcons.map((link, i) => (
                       <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                         className="p-2 rounded-lg text-foreground-muted hover:text-accent transition-colors">
