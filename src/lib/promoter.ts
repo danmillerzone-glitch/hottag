@@ -466,14 +466,20 @@ export async function deleteMatch(matchId: string) {
 
 export async function addMatchParticipant(data: {
   match_id: string
+  event_id: string
   wrestler_id: string
   team_number?: number
 }) {
   const supabase = createClient()
 
+  // 1. Insert the match participant (primary intent)
   const { data: participant, error } = await supabase
     .from('match_participants')
-    .insert(data)
+    .insert({
+      match_id: data.match_id,
+      wrestler_id: data.wrestler_id,
+      team_number: data.team_number,
+    })
     .select(`
       *,
       wrestlers (id, name, slug, photo_url)
@@ -481,6 +487,36 @@ export async function addMatchParticipant(data: {
     .single()
 
   if (error) throw error
+
+  // 2. Maintain the invariant: every match participant must also be in
+  //    event_announced_talent for that event. Idempotent — succeeds-or-noops.
+  //    We do not roll back step 1 if this fails; the participant insert is the
+  //    user's primary intent and the backfill migration is a safety net.
+  try {
+    // Compute the next sort_order for this event
+    const { data: existing } = await supabase
+      .from('event_announced_talent')
+      .select('sort_order')
+      .eq('event_id', data.event_id)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+    const nextSortOrder = existing && existing.length > 0 ? (existing[0].sort_order + 1) : 0
+
+    await supabase
+      .from('event_announced_talent')
+      .upsert(
+        {
+          event_id: data.event_id,
+          wrestler_id: data.wrestler_id,
+          sort_order: nextSortOrder,
+          self_announced: false,
+        },
+        { onConflict: 'event_id,wrestler_id', ignoreDuplicates: true }
+      )
+  } catch (upsertErr) {
+    console.error('Failed to upsert announced talent (non-fatal):', upsertErr)
+  }
+
   return participant
 }
 
@@ -521,6 +557,26 @@ export async function getMatchParticipationForWrestler(
     matchTitle: m.match_title,
     matchOrder: m.match_order,
   }))
+}
+
+/**
+ * Move a wrestler between team 1 and team 2 in a match. Used when the user
+ * taps a wrestler tile that's already in the match but on the other team —
+ * this is a one-tap swap rather than remove+add.
+ */
+export async function updateMatchParticipantTeam(
+  matchId: string,
+  wrestlerId: string,
+  teamNumber: 1 | 2
+) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('match_participants')
+    .update({ team_number: teamNumber })
+    .eq('match_id', matchId)
+    .eq('wrestler_id', wrestlerId)
+
+  if (error) throw error
 }
 
 // ============================================
