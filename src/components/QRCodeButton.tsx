@@ -171,25 +171,27 @@ function QRCodeModal({ url, name, logoUrl, logoFit, onClose }: QRCodeModalProps)
         ctx.restore()
       }
 
-      // 9. Orange accent stripe
+      // 9. Measure name layout first so the accent stripe can sit above it
+      ctx.font = '900 36px "Space Grotesk", "Inter", system-ui, sans-serif'
+      const nameLines = wrapNameTwoLines(ctx, name, 700)
+      const nameLineHeight = 42
+      const nameStartY = nameLines.length === 1 ? 848 : 820
+
+      // 10. Orange accent stripe (24px above the first name line)
       ctx.fillStyle = '#ff6b35'
       ctx.beginPath()
-      ctx.roundRect(380, 820, 40, 4, 2)
+      ctx.roundRect(380, nameStartY - 24, 40, 4, 2)
       ctx.fill()
 
-      // 10. Entity name (1-2 lines, word-wrapped, ellipsis on overflow)
-      ctx.font = '900 36px "Space Grotesk", "Inter", system-ui, sans-serif'
+      // 11. Entity name (1-2 lines, word-wrapped, ellipsis on overflow)
       ctx.fillStyle = '#ffffff'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      const nameLines = wrapNameTwoLines(ctx, name, 700)
-      const nameLineHeight = 42
-      const nameStartY = nameLines.length === 1 ? 848 : 828
       nameLines.forEach((line, i) => {
         ctx.fillText(line, 400, nameStartY + i * nameLineHeight)
       })
 
-      // 11. URL (strip https:// for display)
+      // 12. URL (strip https:// for display)
       const displayUrl = url.replace(/^https?:\/\//, '')
       ctx.font = '400 18px "Inter", system-ui, sans-serif'
       ctx.fillStyle = '#9ca3af'
