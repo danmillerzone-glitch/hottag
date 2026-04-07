@@ -190,7 +190,7 @@ export default async function CrewProfilePage({ params }: CrewPageProps) {
                 <FollowProfessionalButton professionalId={pro.id} professionalName={pro.name} initialFollowerCount={followerCount || 0} />
                 <ShareButton title={`${pro.name} | Hot Tag`} text={`Check out ${pro.name} on Hot Tag`} url={`https://www.hottag.app/crew/${pro.slug}`} />
                 <div className="flex items-center gap-1">
-                  <QRCodeButton url={`https://www.hottag.app/crew/${pro.slug}`} name={pro.name} />
+                  <QRCodeButton url={`https://www.hottag.app/crew/${pro.slug}`} name={pro.name} logoUrl={pro.photo_url} logoFit="photo" />
                   {socialIcons.map((link, i) => (
                     <a key={i} href={link.href} target={link.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer"
                       className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors">
