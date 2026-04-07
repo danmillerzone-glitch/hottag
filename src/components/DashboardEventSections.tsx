@@ -5,7 +5,7 @@ import Image from 'next/image'
 import {
   updateEvent, getEventMatches, createMatch, deleteMatch, updateMatch, addMatchParticipant, removeMatchParticipant,
   updateMatchParticipantTeam,
-  searchWrestlers, uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
+  uploadEventPoster, getStreamingLinks, addStreamingLink, deleteStreamingLink,
   getAnnouncedTalent, addAnnouncedTalent, removeAnnouncedTalent, updateAnnouncedTalent,
   getMatchParticipationForWrestler,
   getAnnouncedCrew, addAnnouncedCrew, removeAnnouncedCrew, updateAnnouncedCrew, searchProfessionals,
@@ -1149,68 +1149,6 @@ function MatchItem({
         >
           <Plus className="w-3.5 h-3.5" /> Add wrestler
         </button>
-      )}
-    </div>
-  )
-}
-
-// ============================================
-// SHARED WRESTLER SEARCH BOX
-// ============================================
-
-function WrestlerSearchBox({ onSelect, onClose, excludeIds }: { onSelect: (id: string) => void; onClose: () => void; excludeIds: string[] }) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
-  const [searching, setSearching] = useState(false)
-
-  const handleSearch = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults([]); return }
-    setSearching(true)
-    const data = await searchWrestlers(q)
-    setResults(data.filter((w: any) => !excludeIds.includes(w.id)))
-    setSearching(false)
-  }, [excludeIds])
-
-  useEffect(() => {
-    const timer = setTimeout(() => handleSearch(query), 300)
-    return () => clearTimeout(timer)
-  }, [query, handleSearch])
-
-  return (
-    <div className="p-3 rounded-lg bg-background-tertiary border border-border">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search wrestlers..." autoFocus
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-foreground-muted/50 focus:border-accent outline-none transition-colors text-sm" />
-        </div>
-        <button onClick={onClose} className="p-2 rounded hover:bg-background">
-          <X className="w-4 h-4 text-foreground-muted" />
-        </button>
-      </div>
-      {results.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-y-auto">
-          {results.map((wrestler: any) => (
-            <button key={wrestler.id} onClick={() => { onSelect(wrestler.id); setQuery(''); setResults([]) }}
-              className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left text-sm">
-              {wrestler.photo_url ? (
-                <Image src={wrestler.photo_url} alt={wrestler.name} width={24} height={24} className="w-6 h-6 rounded-lg object-cover object-top" unoptimized />
-              ) : (
-                <User className="w-5 h-5 text-foreground-muted" />
-              )}
-              <span>{wrestler.name}</span>
-              {wrestler.hometown && <span className="text-xs text-foreground-muted ml-auto">{wrestler.hometown}</span>}
-            </button>
-          ))}
-        </div>
-      )}
-      {query.length >= 2 && results.length === 0 && !searching && (
-        <p className="text-xs text-foreground-muted text-center py-2">No wrestlers found.</p>
-      )}
-      {searching && (
-        <div className="flex items-center justify-center py-2">
-          <Loader2 className="w-4 h-4 animate-spin text-foreground-muted" />
-        </div>
       )}
     </div>
   )
