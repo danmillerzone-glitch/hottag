@@ -86,6 +86,13 @@ export interface AnnouncedTalent {
   }
 }
 
+export interface RosterWrestler {
+  id: string
+  name: string
+  slug: string
+  photo_url: string | null
+}
+
 export interface PromoterDashboardData {
   promotion: any
   upcomingEvents: any[]
@@ -1099,6 +1106,53 @@ export async function removeFromRoster(memberId: string) {
     .eq('id', memberId)
 
   if (error) throw error
+}
+
+/**
+ * Returns the union of active rosters across all promotions linked to an event.
+ * For co-promoted shows, this is the deduplicated set of every co-promoter's
+ * active roster. Sorted alphabetically by wrestler name.
+ */
+export async function getRosterForEventPromotions(eventId: string): Promise<RosterWrestler[]> {
+  const supabase = createClient()
+
+  // Step 1: get all promotion IDs linked to this event
+  const { data: eventPromos, error: epError } = await supabase
+    .from('event_promotions')
+    .select('promotion_id')
+    .eq('event_id', eventId)
+
+  if (epError) {
+    console.error('Error fetching event promotions:', epError)
+    return []
+  }
+
+  const promotionIds = (eventPromos || []).map((ep: any) => ep.promotion_id)
+  if (promotionIds.length === 0) return []
+
+  // Step 2: get active roster members across all those promotions
+  const { data, error } = await supabase
+    .from('wrestler_promotions')
+    .select('wrestlers (id, name, slug, photo_url)')
+    .in('promotion_id', promotionIds)
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('Error fetching event roster:', error)
+    return []
+  }
+
+  // Step 3: dedupe by wrestler ID and sort alphabetically
+  const seen = new Set<string>()
+  const unique: RosterWrestler[] = []
+  for (const row of (data || []) as any[]) {
+    const w = row.wrestlers
+    if (!w || seen.has(w.id)) continue
+    seen.add(w.id)
+    unique.push(w as RosterWrestler)
+  }
+  unique.sort((a, b) => a.name.localeCompare(b.name))
+  return unique
 }
 
 export async function redeemPromotionClaimCode(code: string) {
