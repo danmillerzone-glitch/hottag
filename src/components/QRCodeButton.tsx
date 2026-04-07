@@ -2,84 +2,174 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { QrCode, Download, Copy, Check, X } from 'lucide-react'
+import QRCode from 'qrcode'
+
+type LogoFit = 'photo' | 'logo'
+
+const FALLBACK_LOGO_URL = '/logo-mark.png'
 
 interface QRCodeModalProps {
   url: string
   name: string
+  logoUrl?: string
+  logoFit?: LogoFit
   onClose: () => void
 }
 
-function QRCodeModal({ url, name, onClose }: QRCodeModalProps) {
+function QRCodeModal({ url, name, logoUrl, logoFit, onClose }: QRCodeModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isMountedRef = useRef(true)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    generateQR()
-  }, [url])
-
-  function generateQR() {
+    isMountedRef.current = true
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
 
-    // Use the QR code generation library via CDN
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-    script.onload = () => {
-      // Clear canvas
-      const size = 800
-      canvas.width = size
-      canvas.height = size + 100
-
-      // Create temp div for QR generation
-      const tempDiv = document.createElement('div')
-      tempDiv.style.display = 'none'
-      document.body.appendChild(tempDiv)
-
-      // @ts-ignore
-      const qr = new QRCode(tempDiv, {
-        text: url,
-        width: size,
-        height: size,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: 2, // QRCode.CorrectLevel.H
+    async function loadImage(src: string): Promise<HTMLImageElement | null> {
+      return new Promise((resolve) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve(img)
+        img.onerror = () => resolve(null)
+        img.src = src
       })
-
-      // Wait for QR to render then draw on our canvas
-      setTimeout(() => {
-        const qrCanvas = tempDiv.querySelector('canvas')
-        if (qrCanvas && ctx) {
-          // White background
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-          // Draw QR
-          ctx.drawImage(qrCanvas, 0, 0, size, size)
-
-          // Draw name below
-          ctx.fillStyle = '#000000'
-          ctx.font = 'bold 36px Inter, system-ui, sans-serif'
-          ctx.textAlign = 'center'
-          ctx.fillText(name, size / 2, size + 50)
-
-          // Draw URL
-          ctx.font = '22px Inter, system-ui, sans-serif'
-          ctx.fillStyle = '#666666'
-          ctx.fillText(url, size / 2, size + 85)
-        }
-        document.body.removeChild(tempDiv)
-      }, 100)
     }
-    document.head.appendChild(script)
-  }
+
+    async function generateCard() {
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      // 2. Canvas dimensions
+      canvas.width = 800
+      canvas.height = 1000
+
+      // 3. Card chrome
+      ctx.fillStyle = '#14181c'
+      ctx.beginPath()
+      ctx.roundRect(0, 0, 800, 1000, 24)
+      ctx.fill()
+
+      ctx.strokeStyle = '#2d333b'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.roundRect(0.5, 0.5, 799, 999, 24)
+      ctx.stroke()
+
+      // 4. Generate QR onto a temporary canvas
+      const qrCanvas = document.createElement('canvas')
+      try {
+        await QRCode.toCanvas(qrCanvas, url, {
+          errorCorrectionLevel: 'H',
+          margin: 0,
+          width: 632,
+          color: { dark: '#14181c', light: '#ffffff' },
+        })
+      } catch (err) {
+        console.error('QR generation failed:', err)
+        return
+      }
+      if (!isMountedRef.current) return
+
+      // 5. White QR tile
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.roundRect(56, 56, 688, 688, 16)
+      ctx.fill()
+
+      // 6. Composite the QR
+      ctx.drawImage(qrCanvas, 84, 84)
+
+      // 7. Center logo container
+      // Drop shadow (same size, 2px down, no horizontal offset)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)'
+      ctx.beginPath()
+      ctx.roundRect(337, 339, 126, 126, 12)
+      ctx.fill()
+
+      // White container
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.roundRect(337, 337, 126, 126, 12)
+      ctx.fill()
+
+      // 8. Load and draw inner logo content
+      let img = logoUrl ? await loadImage(logoUrl) : null
+      if (!isMountedRef.current) return
+
+      let effectiveFit: LogoFit = logoFit ?? 'logo'
+      if (img === null) {
+        img = await loadImage(FALLBACK_LOGO_URL)
+        if (!isMountedRef.current) return
+        effectiveFit = 'logo'
+      }
+
+      if (img) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.roundRect(343, 343, 114, 114, 8)
+        ctx.clip()
+
+        if (effectiveFit === 'photo') {
+          // Cover-crop, top-anchored
+          const scale = Math.max(114 / img.width, 114 / img.height)
+          const dw = img.width * scale
+          const dh = img.height * scale
+          const dx = 343 + (114 - dw) / 2
+          const dy = 343
+          ctx.drawImage(img, dx, dy, dw, dh)
+        } else {
+          // Contain-fit, centered on white
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(343, 343, 114, 114)
+          const pad = 2
+          const box = 114 - pad * 2
+          const scale = Math.min(box / img.width, box / img.height)
+          const dw = img.width * scale
+          const dh = img.height * scale
+          const dx = 343 + (114 - dw) / 2
+          const dy = 343 + (114 - dh) / 2
+          ctx.drawImage(img, dx, dy, dw, dh)
+        }
+
+        ctx.restore()
+      }
+
+      // 9. Orange accent stripe
+      ctx.fillStyle = '#ff6b35'
+      ctx.beginPath()
+      ctx.roundRect(380, 820, 40, 4, 2)
+      ctx.fill()
+
+      // 10. Entity name
+      ctx.font = '900 36px "Space Grotesk", "Inter", system-ui, sans-serif'
+      ctx.fillStyle = '#ffffff'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(name, 400, 848)
+
+      // 11. URL (strip https:// for display)
+      const displayUrl = url.replace(/^https?:\/\//, '')
+      ctx.font = '400 18px "Inter", system-ui, sans-serif'
+      ctx.fillStyle = '#9ca3af'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(displayUrl, 400, 900)
+    }
+
+    generateCard()
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [url, name, logoUrl, logoFit])
 
   function handleDownload() {
     const canvas = canvasRef.current
     if (!canvas) return
     const link = document.createElement('a')
-    link.download = `${name.toLowerCase().replace(/\s+/g, '-')}-qr-code.png`
+    link.download = `${name.toLowerCase().replace(/\s+/g, '-')}-hot-tag.png`
     link.href = canvas.toDataURL('image/png')
     link.click()
   }
@@ -114,11 +204,11 @@ function QRCodeModal({ url, name, onClose }: QRCodeModalProps) {
 
         <div className="p-5 space-y-4">
           <div className="bg-white rounded-xl p-4 flex items-center justify-center">
-            <canvas ref={canvasRef} className="w-full max-w-[250px] aspect-square" aria-label={`QR code linking to ${name}`} />
+            <canvas ref={canvasRef} className="w-full max-w-[280px] aspect-[4/5]" aria-label={`QR code linking to ${name}`} />
           </div>
 
           <p className="text-xs text-foreground-muted text-center">
-            Print on merch, 8×10s, business cards, or flyers
+            Download to print, share, or stick on merch
           </p>
 
           <div className="flex gap-2">
@@ -136,7 +226,17 @@ function QRCodeModal({ url, name, onClose }: QRCodeModalProps) {
   )
 }
 
-export default function QRCodeButton({ url, name }: { url: string; name: string }) {
+export default function QRCodeButton({
+  url,
+  name,
+  logoUrl,
+  logoFit,
+}: {
+  url: string
+  name: string
+  logoUrl?: string
+  logoFit?: LogoFit
+}) {
   const [showModal, setShowModal] = useState(false)
 
   return (
@@ -144,7 +244,7 @@ export default function QRCodeButton({ url, name }: { url: string; name: string 
       <button onClick={() => setShowModal(true)} aria-label={`Show QR code for ${name}`} className="p-2 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent/10 transition-colors" title="QR Code">
         <QrCode className="w-4 h-4" />
       </button>
-      {showModal && <QRCodeModal url={url} name={name} onClose={() => setShowModal(false)} />}
+      {showModal && <QRCodeModal url={url} name={name} logoUrl={logoUrl} logoFit={logoFit} onClose={() => setShowModal(false)} />}
     </>
   )
 }
