@@ -772,7 +772,17 @@ export function AnnouncedTalentSection({
 // MATCH CARD SECTION
 // ============================================
 
-export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: string; matches: EventMatch[]; onUpdate: (m: EventMatch[]) => void }) {
+export function MatchCardSection({
+  eventId,
+  matches,
+  rosterWrestlers,
+  onUpdate,
+}: {
+  eventId: string
+  matches: EventMatch[]
+  rosterWrestlers: RosterWrestler[]
+  onUpdate: (m: EventMatch[]) => void
+}) {
   const [showAddMatch, setShowAddMatch] = useState(false)
   const [newMatchTitle, setNewMatchTitle] = useState('')
   const [newMatchType, setNewMatchType] = useState('')
@@ -780,6 +790,7 @@ export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: stri
   const [isTitleMatch, setIsTitleMatch] = useState(false)
   const [championshipName, setChampionshipName] = useState('')
   const [addingMatch, setAddingMatch] = useState(false)
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
 
   const handleAddMatch = async () => {
     setAddingMatch(true)
@@ -846,7 +857,17 @@ export function MatchCardSection({ eventId, matches, onUpdate }: { eventId: stri
                 </button>
               </div>
               <div className="flex-1">
-                <MatchItem match={match} index={index} onDelete={() => handleDeleteMatch(match.id)} onReload={handleReloadMatches} />
+                <MatchItem
+                  match={match}
+                  index={index}
+                  eventId={eventId}
+                  rosterWrestlers={rosterWrestlers}
+                  isExpanded={expandedMatchId === match.id}
+                  onExpand={() => setExpandedMatchId(match.id)}
+                  onCollapse={() => setExpandedMatchId(null)}
+                  onDelete={() => handleDeleteMatch(match.id)}
+                  onReload={handleReloadMatches}
+                />
               </div>
             </div>
           ))}
