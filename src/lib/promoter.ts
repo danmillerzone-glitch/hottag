@@ -494,6 +494,35 @@ export async function removeMatchParticipant(participantId: string) {
   if (error) throw error
 }
 
+/**
+ * Returns the matches in a given event that have the wrestler as a participant.
+ * Used by the cascade-confirm flow when removing announced talent.
+ */
+export async function getMatchParticipationForWrestler(
+  eventId: string,
+  wrestlerId: string
+): Promise<{ matchId: string; matchTitle: string | null; matchOrder: number | null }[]> {
+  const supabase = createClient()
+
+  // Get all matches for this event with their participants filtered to this wrestler
+  const { data, error } = await supabase
+    .from('event_matches')
+    .select('id, match_title, match_order, match_participants!inner(wrestler_id)')
+    .eq('event_id', eventId)
+    .eq('match_participants.wrestler_id', wrestlerId)
+
+  if (error) {
+    console.error('Error fetching wrestler match participation:', error)
+    return []
+  }
+
+  return (data || []).map((m: any) => ({
+    matchId: m.id,
+    matchTitle: m.match_title,
+    matchOrder: m.match_order,
+  }))
+}
+
 // ============================================
 // PROMOTION PROFILE MANAGEMENT
 // ============================================
