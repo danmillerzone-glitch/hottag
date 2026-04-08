@@ -9,6 +9,7 @@ import PosterEventCard, { PosterEventCardSkeleton } from '@/components/PosterEve
 import EventCarousel from '@/components/EventCarousel'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import NearYouSection from '@/components/NearYouSection'
+import RandomSpotlightSection from '@/components/RandomSpotlightSection'
 import SignupBanner from '@/components/SignupBanner'
 
 import RecommendedSection from '@/components/RecommendedSection'
@@ -370,6 +371,9 @@ export default function HomePage() {
 
       {/* Near You - geolocation based */}
       <NearYouSection />
+
+      {/* Random Spotlight - random verified wrestler or promotion */}
+      <RandomSpotlightSection />
 
       {/* Recommended For You - logged in only */}
       {!authLoading && user && <RecommendedSection />}
