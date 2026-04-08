@@ -3364,18 +3364,30 @@ function EditPromotionModal({ promo, onClose, onSaved }: { promo: any, onClose: 
 
 function PromotionAdminsSection({ promotionId, claimedBy }: { promotionId: string, claimedBy?: string }) {
   const [admins, setAdmins] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [loaded, setLoaded] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [newUserId, setNewUserId] = useState('')
   const [newRole, setNewRole] = useState('editor')
   const [adding, setAdding] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      const data = await getPromotionAdmins(promotionId)
+      if (!cancelled) {
+        setAdmins(data)
+        setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [promotionId])
 
   async function loadAdmins() {
     setLoading(true)
     const data = await getPromotionAdmins(promotionId)
     setAdmins(data)
     setLoading(false)
-    setLoaded(true)
   }
 
   async function handleAdd() {
@@ -3406,28 +3418,73 @@ function PromotionAdminsSection({ promotionId, claimedBy }: { promotionId: strin
     catch (err: any) { alert(`Error: ${err.message}`) }
   }
 
+  async function copyUuid(uuid: string, key: string) {
+    try {
+      await navigator.clipboard.writeText(uuid)
+      setCopied(key)
+      setTimeout(() => setCopied(c => (c === key ? null : c)), 1200)
+    } catch {}
+  }
+
+  const ownerInAdmins = claimedBy ? admins.some(a => a.user_id === claimedBy) : true
+
   return (
     <div className="border-t border-border pt-3 mt-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-foreground-muted">Dashboard Access</p>
-        {!loaded && (
-          <button onClick={loadAdmins} disabled={loading} className="text-xs text-accent hover:underline">
-            {loading ? 'Loading...' : 'Show'}
-          </button>
-        )}
+      <p className="text-sm font-medium text-foreground-muted mb-2">Dashboard Access</p>
+
+      {/* Promotion ID (always shown) */}
+      <div className="flex items-center gap-2 text-sm bg-background-tertiary rounded px-3 py-2 mb-2">
+        <span className="text-xs bg-foreground/10 text-foreground-muted px-1.5 py-0.5 rounded shrink-0">promotion.id</span>
+        <code
+          className="text-xs flex-1 text-foreground-muted font-mono break-all cursor-pointer hover:text-foreground"
+          onClick={() => copyUuid(promotionId, `promo-${promotionId}`)}
+          title="Click to copy"
+        >
+          {promotionId}
+        </code>
+        {copied === `promo-${promotionId}` && <span className="text-xs text-accent shrink-0">copied</span>}
       </div>
-      {loaded && (
+
+      {loading && <p className="text-xs text-foreground-muted">Loading access list...</p>}
+
+      {!loading && (
         <div className="space-y-2">
-          {admins.length === 0 && <p className="text-xs text-foreground-muted">No additional admins</p>}
+          {/* Owner row (always shown if claimed_by exists, even when not in promotion_admins) */}
+          {claimedBy && !ownerInAdmins && (
+            <div className="flex items-center gap-2 text-sm bg-background-tertiary rounded px-3 py-2">
+              <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded shrink-0">owner</span>
+              <code
+                className="text-xs flex-1 text-foreground-muted font-mono break-all cursor-pointer hover:text-foreground"
+                onClick={() => copyUuid(claimedBy, `owner-${claimedBy}`)}
+                title="Click to copy"
+              >
+                {claimedBy}
+              </code>
+              {copied === `owner-${claimedBy}` && <span className="text-xs text-accent shrink-0">copied</span>}
+              <span className="text-xs text-foreground-muted italic shrink-0">claimed_by</span>
+            </div>
+          )}
+
+          {!claimedBy && admins.length === 0 && (
+            <p className="text-xs text-foreground-muted">Unclaimed — no users have access</p>
+          )}
+
           {admins.map(admin => (
             <div key={admin.id} className="flex items-center gap-2 text-sm bg-background-tertiary rounded px-3 py-2">
-              <code className="text-xs flex-1 truncate text-foreground-muted">{admin.user_id}</code>
-              {admin.user_id === claimedBy && <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded">owner</span>}
-              <select value={admin.role} onChange={e => handleRoleChange(admin.id, e.target.value)} className="text-xs bg-background border border-border rounded px-1.5 py-0.5">
+              {admin.user_id === claimedBy && <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded shrink-0">owner</span>}
+              <code
+                className="text-xs flex-1 text-foreground-muted font-mono break-all cursor-pointer hover:text-foreground"
+                onClick={() => copyUuid(admin.user_id, `admin-${admin.id}`)}
+                title="Click to copy"
+              >
+                {admin.user_id}
+              </code>
+              {copied === `admin-${admin.id}` && <span className="text-xs text-accent shrink-0">copied</span>}
+              <select value={admin.role} onChange={e => handleRoleChange(admin.id, e.target.value)} className="text-xs bg-background border border-border rounded px-1.5 py-0.5 shrink-0">
                 <option value="editor">editor</option>
                 <option value="admin">admin</option>
               </select>
-              <button onClick={() => handleRemove(admin.id, admin.user_id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded" title="Remove"><X className="w-3.5 h-3.5" /></button>
+              <button onClick={() => handleRemove(admin.id, admin.user_id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded shrink-0" title="Remove"><X className="w-3.5 h-3.5" /></button>
             </div>
           ))}
           <div className="flex gap-2 mt-2">
@@ -6225,13 +6282,22 @@ function TitleMatchesTab() {
 
     if (error) console.error('TitleMatchesTab query error:', error)
 
-    // Sort client-side: featured matches first (by sort_order), then unfeatured by event_date
+    // Sort client-side: featured matches first (by sort_order), then unfeatured by event_date.
+    // Tiebreaker by match.id keeps order deterministic when sort_orders are tied, which
+    // matters because Supabase does not guarantee row order without an ORDER BY and MVCC
+    // reshuffles updated rows.
     const sorted = (data || []).sort((a: any, b: any) => {
       const aFeatured = a.featured_title_match ? 1 : 0
       const bFeatured = b.featured_title_match ? 1 : 0
       if (aFeatured !== bFeatured) return bFeatured - aFeatured // featured first
-      if (aFeatured && bFeatured) return (a.featured_sort_order || 0) - (b.featured_sort_order || 0)
-      return (a.events?.event_date || '').localeCompare(b.events?.event_date || '')
+      if (aFeatured && bFeatured) {
+        const orderDiff = (a.featured_sort_order || 0) - (b.featured_sort_order || 0)
+        if (orderDiff !== 0) return orderDiff
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+      }
+      const dateDiff = (a.events?.event_date || '').localeCompare(b.events?.event_date || '')
+      if (dateDiff !== 0) return dateDiff
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     })
 
     setMatches(sorted)
@@ -6254,29 +6320,39 @@ function TitleMatchesTab() {
   }
 
   const toggleFeatured = async (matchId: string, currentValue: boolean) => {
-    await adminUpdate(matchId, { featured_title_match: !currentValue })
-    // If unfeaturing, also reset sort order
     if (currentValue) {
-      await adminUpdate(matchId, { featured_sort_order: 0 })
+      // Unfeaturing: clear flag and reset sort order
+      await adminUpdate(matchId, { featured_title_match: false, featured_sort_order: 0 })
+    } else {
+      // Featuring: append at end so newly featured matches get a unique sort_order.
+      // Without this, multiple newly-featured matches would all share sort_order = 0,
+      // causing ties that make reordering behave unpredictably.
+      const maxOrder = matches
+        .filter(m => m.featured_title_match)
+        .reduce((max, m) => Math.max(max, m.featured_sort_order || 0), 0)
+      await adminUpdate(matchId, { featured_title_match: true, featured_sort_order: maxOrder + 1 })
     }
     fetchMatches()
   }
 
   const moveFeatured = async (matchId: string, direction: 'up' | 'down') => {
-    const featured = matches
-      .filter(m => m.featured_title_match)
-      .sort((a, b) => (a.featured_sort_order || 0) - (b.featured_sort_order || 0))
+    // Use the same ordering the user sees in the rendered list — the `matches` state
+    // is already sorted by fetchMatches, so filtering preserves that order.
+    const featured = matches.filter(m => m.featured_title_match)
     const idx = featured.findIndex(m => m.id === matchId)
     if (idx < 0) return
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
     if (swapIdx < 0 || swapIdx >= featured.length) return
 
-    const currentOrder = featured[idx].featured_sort_order || 0
-    const swapOrder = featured[swapIdx].featured_sort_order || 0
-    await Promise.all([
-      adminUpdate(featured[idx].id, { featured_sort_order: swapOrder }),
-      adminUpdate(featured[swapIdx].id, { featured_sort_order: currentOrder }),
-    ])
+    // Swap the two items, then write densely-packed sort orders [1, 2, 3, ...] for
+    // every featured match. Normalizing like this eliminates ties, which is the root
+    // cause of matches jumping positions (Supabase has no ORDER BY, so tied rows come
+    // back in non-deterministic MVCC-influenced order after updates).
+    const reordered = [...featured]
+    ;[reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]]
+    await Promise.all(
+      reordered.map((m, i) => adminUpdate(m.id, { featured_sort_order: i + 1 }))
+    )
     fetchMatches()
   }
 
