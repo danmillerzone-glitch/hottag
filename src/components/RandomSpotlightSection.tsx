@@ -1,5 +1,6 @@
 'use client'
 
+import type React from 'react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -81,6 +82,49 @@ type SpotlightPromotion = {
 }
 
 type SpotlightEntity = SpotlightWrestler | SpotlightPromotion
+
+// ───────── Helpers ─────────
+const FLAGS_BASE_URL =
+  'https://floznswkfodjuigfzkki.supabase.co/storage/v1/object/public/flags'
+
+function truncateBio(text: string, max = 220): string {
+  if (text.length <= max) return text
+  const slice = text.slice(0, max)
+  const lastSpace = slice.lastIndexOf(' ')
+  return (lastSpace > 0 ? slice.slice(0, lastSpace) : slice).trimEnd() + '…'
+}
+
+function promotionLocation(p: SpotlightPromotion): string | null {
+  // Prefer region, else city+state, else city or country alone
+  if (p.region && p.region.trim()) return p.region
+  if (p.city && p.state) return `${p.city}, ${p.state}`
+  if (p.city) return p.city
+  if (p.country) return p.country
+  return null
+}
+
+type SocialLink = { href: string; icon: React.ComponentType<{ className?: string }>; label: string }
+
+function wrestlerSocialLinks(w: SpotlightWrestler): SocialLink[] {
+  const links: SocialLink[] = []
+  if (w.twitter_handle) links.push({ href: `https://x.com/${w.twitter_handle}`, icon: XIcon, label: `${w.name} on X` })
+  if (w.instagram_handle) links.push({ href: `https://instagram.com/${w.instagram_handle}`, icon: Instagram, label: `${w.name} on Instagram` })
+  if (w.tiktok_handle) links.push({ href: `https://tiktok.com/@${w.tiktok_handle}`, icon: TikTokIcon, label: `${w.name} on TikTok` })
+  if (w.youtube_url) links.push({ href: w.youtube_url, icon: Youtube, label: `${w.name} on YouTube` })
+  if (w.website) links.push({ href: w.website, icon: Globe, label: `${w.name} website` })
+  return links
+}
+
+function promotionSocialLinks(p: SpotlightPromotion): SocialLink[] {
+  const links: SocialLink[] = []
+  if (p.twitter_handle) links.push({ href: `https://x.com/${p.twitter_handle}`, icon: XIcon, label: `${p.name} on X` })
+  if (p.instagram_handle) links.push({ href: `https://instagram.com/${p.instagram_handle}`, icon: Instagram, label: `${p.name} on Instagram` })
+  if (p.tiktok_handle) links.push({ href: `https://tiktok.com/@${p.tiktok_handle}`, icon: TikTokIcon, label: `${p.name} on TikTok` })
+  if (p.youtube_url) links.push({ href: p.youtube_url, icon: Youtube, label: `${p.name} on YouTube` })
+  if (p.facebook_url) links.push({ href: p.facebook_url, icon: Facebook, label: `${p.name} on Facebook` })
+  if (p.website) links.push({ href: p.website, icon: Globe, label: `${p.name} website` })
+  return links
+}
 
 // ───────── Component ─────────
 export default function RandomSpotlightSection() {
@@ -234,6 +278,23 @@ export default function RandomSpotlightSection() {
     }
   }, [])
 
+  const handleShuffle = () => {
+    setIndex((prev) => {
+      const next = prev + 1
+      if (next < pool.length) return next
+      // Wrapped past the end — reshuffle in place and reset to 0.
+      setPool((curr) => {
+        const copy = [...curr]
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[copy[i], copy[j]] = [copy[j], copy[i]]
+        }
+        return copy
+      })
+      return 0
+    })
+  }
+
   if (loading) {
     return (
       <section className="py-10" aria-label="Random spotlight">
@@ -260,6 +321,190 @@ export default function RandomSpotlightSection() {
 
   if (pool.length === 0) return null
 
-  // TODO(Task 3): render the card
-  return null
+  const entity = pool[index]
+  const isWrestler = entity.type === 'wrestler'
+
+  // Compute hero background for wrestler image slot
+  const heroCSS = isWrestler ? getHeroCSS(entity.hero_style || null) : null
+  const hasTheme = isWrestler && !!entity.hero_style
+
+  const wrestlerImage = isWrestler ? (entity.render_url || entity.photo_url) : null
+  const socials = isWrestler ? wrestlerSocialLinks(entity) : promotionSocialLinks(entity)
+
+  const bio = isWrestler ? entity.bio : (entity as SpotlightPromotion).description
+  const detailHref = isWrestler
+    ? `/wrestlers/${entity.slug}`
+    : `/promotions/${(entity as SpotlightPromotion).slug}`
+
+  return (
+    <section className="py-10" aria-label="Random spotlight">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-display font-bold flex items-center gap-2">
+            <Shuffle className="w-6 h-6 text-accent" />
+            Random Spotlight
+          </h2>
+        </div>
+
+        <div className="bg-background-secondary rounded-2xl border border-border p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+            {/* ───── Image slot ───── */}
+            <div className="w-full max-w-xs mx-auto md:mx-0 md:w-60 flex-shrink-0">
+              <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-background-tertiary">
+                {isWrestler ? (
+                  <>
+                    {/* Themed background */}
+                    {hasTheme && heroCSS && (
+                      <div className="absolute inset-0 z-0">
+                        {entity.hero_style?.type === 'flag' ? (
+                          <img
+                            src={`${FLAGS_BASE_URL}/${entity.hero_style.value.toLowerCase()}.jpg`}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover opacity-60"
+                          />
+                        ) : (
+                          <>
+                            <div
+                              className="absolute inset-0"
+                              style={{ background: heroCSS.background, opacity: 0.5 }}
+                            />
+                            {heroCSS.texture && (
+                              <div
+                                className="absolute inset-0"
+                                style={{ background: heroCSS.texture, opacity: 0.3 }}
+                              />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {wrestlerImage ? (
+                      <Image
+                        src={wrestlerImage}
+                        alt={entity.name}
+                        fill
+                        className={`${entity.render_url ? 'object-contain object-bottom' : 'object-cover'} relative z-[1]`}
+                        sizes="(max-width: 768px) 280px, 240px"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-12 h-12 text-foreground-muted/30" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Promotion logo frame */
+                  <div className="absolute inset-0 bg-gradient-to-br from-background-tertiary to-background-secondary flex items-center justify-center p-8">
+                    <Image
+                      src={(entity as SpotlightPromotion).logo_url}
+                      alt={entity.name}
+                      width={240}
+                      height={240}
+                      className="max-w-[70%] max-h-[70%] object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ───── Text block ───── */}
+            <div className="flex-1 min-w-0 flex flex-col gap-3">
+              <div className="flex items-center gap-1.5 text-xs tracking-wider uppercase text-foreground-muted">
+                {isWrestler ? 'WRESTLER' : 'PROMOTION'}
+                <span>·</span>
+                <span className="flex items-center gap-1 text-accent">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  verified
+                </span>
+              </div>
+
+              <Link
+                href={detailHref}
+                className="text-2xl md:text-3xl font-display font-bold text-foreground hover:text-accent transition-colors truncate"
+              >
+                {entity.name}
+              </Link>
+
+              {isWrestler && entity.moniker && (
+                <p className="text-base md:text-lg italic text-foreground-muted truncate">
+                  &ldquo;{entity.moniker}&rdquo;
+                </p>
+              )}
+
+              <p className="text-sm text-foreground-muted leading-relaxed">
+                {truncateBio(bio)}
+              </p>
+
+              {/* Meta chips */}
+              <div className="flex flex-wrap gap-2">
+                {isWrestler && entity.hometown && (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-background-tertiary text-foreground-muted">
+                    <MapPin className="w-3 h-3" />
+                    {entity.hometown}
+                  </span>
+                )}
+                {isWrestler && entity.wrestling_style && entity.wrestling_style.length > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-background-tertiary text-foreground-muted">
+                    <Activity className="w-3 h-3" />
+                    {entity.wrestling_style
+                      .slice(0, 2)
+                      .map((s) => WRESTLING_STYLE_LABELS[s] || s)
+                      .join(' · ')}
+                  </span>
+                )}
+                {!isWrestler && (() => {
+                  const loc = promotionLocation(entity as SpotlightPromotion)
+                  if (!loc) return null
+                  const Icon = (entity as SpotlightPromotion).region ? Globe : MapPin
+                  return (
+                    <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-background-tertiary text-foreground-muted">
+                      <Icon className="w-3 h-3" />
+                      {loc}
+                    </span>
+                  )
+                })()}
+              </div>
+
+              {/* Social icons */}
+              {socials.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {socials.map((s) => {
+                    const Icon = s.icon
+                    return (
+                      <a
+                        key={s.href}
+                        href={s.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={s.label}
+                        className="w-9 h-9 rounded-full bg-background-tertiary hover:bg-accent/20 hover:text-accent text-foreground-muted flex items-center justify-center transition-colors"
+                      >
+                        <Icon className="w-4 h-4" />
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-auto pt-2">
+                <Link href={detailHref} className="btn btn-primary flex-1 sm:flex-none justify-center">
+                  Visit Page →
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleShuffle}
+                  className="btn btn-secondary flex-1 sm:flex-none justify-center"
+                  aria-label="Show another random wrestler or promotion"
+                >
+                  <Shuffle className="w-4 h-4 mr-1.5" />
+                  Shuffle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
