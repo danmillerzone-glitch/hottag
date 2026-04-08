@@ -89,8 +89,149 @@ export default function RandomSpotlightSection() {
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    // TODO(Task 2): fetch data
-    setLoading(false)
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const supabase = createClient()
+        const today = getTodayHawaii()
+
+        // ─── Step 1: Resolve IDs of entities with upcoming events ─────────
+        // Three queries in parallel. event_wrestlers and event_announced_talent
+        // both link wrestlers to events; we union their wrestler_ids.
+        const [promoEventsRes, ewRes, atRes] = await Promise.all([
+          supabase
+            .from('events')
+            .select('promotion_id')
+            .gte('event_date', today)
+            .eq('status', 'upcoming')
+            .not('promotion_id', 'is', null),
+          supabase
+            .from('event_wrestlers')
+            .select('wrestler_id, events!inner(event_date, status)')
+            .gte('events.event_date', today)
+            .eq('events.status', 'upcoming'),
+          supabase
+            .from('event_announced_talent')
+            .select('wrestler_id, events!inner(event_date, status)')
+            .gte('events.event_date', today)
+            .eq('events.status', 'upcoming'),
+        ])
+
+        if (cancelled) return
+
+        const promotionIdsWithEvents = Array.from(
+          new Set(
+            (promoEventsRes.data || [])
+              .map((e: any) => e.promotion_id)
+              .filter(Boolean)
+          )
+        ) as string[]
+
+        const wrestlerIdSet = new Set<string>()
+        for (const row of ewRes.data || []) {
+          if ((row as any).wrestler_id) wrestlerIdSet.add((row as any).wrestler_id)
+        }
+        for (const row of atRes.data || []) {
+          if ((row as any).wrestler_id) wrestlerIdSet.add((row as any).wrestler_id)
+        }
+        const wrestlerIdsWithEvents = Array.from(wrestlerIdSet)
+
+        // If neither pool has any upcoming-event participants, bail early.
+        if (wrestlerIdsWithEvents.length === 0 && promotionIdsWithEvents.length === 0) {
+          setLoading(false)
+          return
+        }
+
+        // ─── Step 2: Fetch eligible entities in parallel ──────────────────
+        // Client-side filters in Step 3 handle empty bios and social-link
+        // presence; we do NOT chain multiple .or() calls here — PostgREST
+        // handles chained .or() poorly and it is a known footgun.
+        const [wrestlersRes, promotionsRes] = await Promise.all([
+          wrestlerIdsWithEvents.length > 0
+            ? supabase
+                .from('wrestlers')
+                .select(
+                  'id, name, slug, photo_url, render_url, hero_style, moniker, bio, hometown, wrestling_style, twitter_handle, instagram_handle, tiktok_handle, youtube_url, website, bluesky_handle'
+                )
+                .eq('verification_status', 'verified')
+                .not('claimed_by', 'is', null)
+                .not('bio', 'is', null)
+                .or('photo_url.not.is.null,render_url.not.is.null')
+                .in('id', wrestlerIdsWithEvents)
+            : Promise.resolve({ data: [] as any[], error: null }),
+          promotionIdsWithEvents.length > 0
+            ? supabase
+                .from('promotions')
+                .select(
+                  'id, name, slug, logo_url, description, region, city, state, country, twitter_handle, instagram_handle, tiktok_handle, facebook_url, youtube_url, website, bluesky_handle'
+                )
+                .eq('verification_status', 'verified')
+                .not('claimed_by', 'is', null)
+                .not('logo_url', 'is', null)
+                .not('description', 'is', null)
+                .in('id', promotionIdsWithEvents)
+            : Promise.resolve({ data: [] as any[], error: null }),
+        ])
+
+        if (cancelled) return
+
+        // ─── Step 3: Merge, client-side filter, type-tag, Fisher-Yates ────
+        const hasText = (s: string | null | undefined) =>
+          !!s && s.trim().length > 0
+
+        // Wrestlers table has no facebook_url column; promotions does.
+        const wrestlerHasSocial = (w: any) =>
+          !!(
+            w.twitter_handle ||
+            w.instagram_handle ||
+            w.tiktok_handle ||
+            w.youtube_url ||
+            w.website ||
+            w.bluesky_handle
+          )
+
+        const promotionHasSocial = (p: any) =>
+          !!(
+            p.twitter_handle ||
+            p.instagram_handle ||
+            p.tiktok_handle ||
+            p.facebook_url ||
+            p.youtube_url ||
+            p.website ||
+            p.bluesky_handle
+          )
+
+        const merged: SpotlightEntity[] = [
+          ...((wrestlersRes.data || []) as any[])
+            .filter((w) => hasText(w.bio) && wrestlerHasSocial(w))
+            .map<SpotlightWrestler>((w) => ({ type: 'wrestler' as const, ...w })),
+          ...((promotionsRes.data || []) as any[])
+            .filter((p) => hasText(p.description) && promotionHasSocial(p))
+            .map<SpotlightPromotion>((p) => ({ type: 'promotion' as const, ...p })),
+        ]
+
+        // Fisher-Yates shuffle in place. 5 lines, used once, not lifted.
+        for (let i = merged.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[merged[i], merged[j]] = [merged[j], merged[i]]
+        }
+
+        if (cancelled) return
+        setPool(merged)
+        setIndex(0)
+        setLoading(false)
+      } catch (err) {
+        // Silent failure — the homepage is more important than this section.
+        // eslint-disable-next-line no-console
+        console.error('[RandomSpotlight] fetch failed', err)
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   if (loading) {
