@@ -279,20 +279,19 @@ export default function RandomSpotlightSection() {
   }, [])
 
   const handleShuffle = () => {
-    setIndex((prev) => {
-      const next = prev + 1
-      if (next < pool.length) return next
-      // Wrapped past the end — reshuffle in place and reset to 0.
-      setPool((curr) => {
-        const copy = [...curr]
-        for (let i = copy.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1))
-          ;[copy[i], copy[j]] = [copy[j], copy[i]]
-        }
-        return copy
-      })
-      return 0
-    })
+    if (pool.length === 0) return
+    if (index + 1 < pool.length) {
+      setIndex(index + 1)
+      return
+    }
+    // Wrapped past the end — reshuffle in place and reset to 0.
+    const copy = [...pool]
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    setPool(copy)
+    setIndex(0)
   }
 
   if (loading) {
