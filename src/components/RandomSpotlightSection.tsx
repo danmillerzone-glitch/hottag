@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { getHeroCSS, type HeroStyle } from '@/lib/hero-themes'
 import { WRESTLING_STYLE_LABELS } from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-browser'
-import { getTodayHawaii } from '@/lib/utils'
+import { getTodayHawaii, formatEventDate, formatLocation } from '@/lib/utils'
 import {
   Shuffle,
   CheckCircle2,
@@ -18,6 +18,8 @@ import {
   Youtube,
   Facebook,
   User,
+  Crown,
+  Calendar,
 } from 'lucide-react'
 
 // ───────── Inline social icons (match wrestler page pattern) ─────────
@@ -41,6 +43,21 @@ function TikTokIcon({ className }: { className?: string }) {
 }
 
 // ───────── Types ─────────
+type SpotlightEvent = {
+  id: string
+  name: string
+  event_date: string
+  city: string | null
+  state: string | null
+  country: string | null
+  venue_name: string | null
+}
+
+type SpotlightChampionship = {
+  name: string
+  promotionSlug: string
+}
+
 type SpotlightWrestler = {
   type: 'wrestler'
   id: string
@@ -59,6 +76,8 @@ type SpotlightWrestler = {
   youtube_url: string | null
   website: string | null
   bluesky_handle: string | null
+  championships: SpotlightChampionship[]
+  nextEvent: SpotlightEvent | null
 }
 
 type SpotlightPromotion = {
@@ -79,6 +98,7 @@ type SpotlightPromotion = {
   youtube_url: string | null
   website: string | null
   bluesky_handle: string | null
+  nextEvent: SpotlightEvent | null
 }
 
 type SpotlightEntity = SpotlightWrestler | SpotlightPromotion
@@ -95,11 +115,11 @@ function truncateBio(text: string, max = 220): string {
 }
 
 function promotionLocation(p: SpotlightPromotion): string | null {
-  // Prefer region, else city+state, else city or country alone
-  if (p.region && p.region.trim()) return p.region
+  // Prefer specific place (city+state > city > country); fall back to scene region
   if (p.city && p.state) return `${p.city}, ${p.state}`
   if (p.city) return p.city
   if (p.country) return p.country
+  if (p.region && p.region.trim()) return p.region
   return null
 }
 
@@ -140,46 +160,69 @@ export default function RandomSpotlightSection() {
         const supabase = createClient()
         const today = getTodayHawaii()
 
-        // ─── Step 1: Resolve IDs of entities with upcoming events ─────────
+        // ─── Step 1: Resolve entities with upcoming events + capture next event ─
         // Three queries in parallel. event_wrestlers and event_announced_talent
-        // both link wrestlers to events; we union their wrestler_ids.
+        // both link wrestlers to events; we union their wrestler_ids. We select
+        // full event details so we can surface "Next Event" without another round-trip.
+        const eventCols = 'id, name, event_date, city, state, country, venue_name'
         const [promoEventsRes, ewRes, atRes] = await Promise.all([
           supabase
             .from('events')
-            .select('promotion_id')
+            .select(`${eventCols}, promotion_id`)
             .gte('event_date', today)
             .eq('status', 'upcoming')
             .not('promotion_id', 'is', null),
           supabase
             .from('event_wrestlers')
-            .select('wrestler_id, events!inner(event_date, status)')
+            .select(`wrestler_id, events!inner(${eventCols}, status)`)
             .gte('events.event_date', today)
             .eq('events.status', 'upcoming'),
           supabase
             .from('event_announced_talent')
-            .select('wrestler_id, events!inner(event_date, status)')
+            .select(`wrestler_id, events!inner(${eventCols}, status)`)
             .gte('events.event_date', today)
             .eq('events.status', 'upcoming'),
         ])
 
         if (cancelled) return
 
-        const promotionIdsWithEvents = Array.from(
-          new Set(
-            (promoEventsRes.data || [])
-              .map((e: any) => e.promotion_id)
-              .filter(Boolean)
-          )
-        ) as string[]
+        // Reduce to earliest upcoming event per entity. String compare is safe
+        // for YYYY-MM-DD dates — lexicographic order matches chronological order.
+        const toSpotlightEvent = (ev: any): SpotlightEvent => ({
+          id: ev.id,
+          name: ev.name,
+          event_date: ev.event_date,
+          city: ev.city,
+          state: ev.state,
+          country: ev.country,
+          venue_name: ev.venue_name,
+        })
 
-        const wrestlerIdSet = new Set<string>()
-        for (const row of ewRes.data || []) {
-          if ((row as any).wrestler_id) wrestlerIdSet.add((row as any).wrestler_id)
+        const nextEventByPromo = new Map<string, SpotlightEvent>()
+        for (const ev of (promoEventsRes.data || []) as any[]) {
+          if (!ev.promotion_id) continue
+          const existing = nextEventByPromo.get(ev.promotion_id)
+          if (!existing || ev.event_date < existing.event_date) {
+            nextEventByPromo.set(ev.promotion_id, toSpotlightEvent(ev))
+          }
         }
-        for (const row of atRes.data || []) {
-          if ((row as any).wrestler_id) wrestlerIdSet.add((row as any).wrestler_id)
+
+        const nextEventByWrestler = new Map<string, SpotlightEvent>()
+        const pushWrestlerEvent = (wrestlerId: string, ev: any) => {
+          const existing = nextEventByWrestler.get(wrestlerId)
+          if (!existing || ev.event_date < existing.event_date) {
+            nextEventByWrestler.set(wrestlerId, toSpotlightEvent(ev))
+          }
         }
-        const wrestlerIdsWithEvents = Array.from(wrestlerIdSet)
+        for (const row of (ewRes.data || []) as any[]) {
+          if (row.wrestler_id && row.events) pushWrestlerEvent(row.wrestler_id, row.events)
+        }
+        for (const row of (atRes.data || []) as any[]) {
+          if (row.wrestler_id && row.events) pushWrestlerEvent(row.wrestler_id, row.events)
+        }
+
+        const promotionIdsWithEvents = Array.from(nextEventByPromo.keys())
+        const wrestlerIdsWithEvents = Array.from(nextEventByWrestler.keys())
 
         // If neither pool has any upcoming-event participants, bail early.
         if (wrestlerIdsWithEvents.length === 0 && promotionIdsWithEvents.length === 0) {
@@ -187,11 +230,14 @@ export default function RandomSpotlightSection() {
           return
         }
 
-        // ─── Step 2: Fetch eligible entities in parallel ──────────────────
+        // ─── Step 2: Fetch eligible entities + championships in parallel ──
         // Client-side filters in Step 3 handle empty bios and social-link
         // presence; we do NOT chain multiple .or() calls here — PostgREST
         // handles chained .or() poorly and it is a known footgun.
-        const [wrestlersRes, promotionsRes] = await Promise.all([
+        // Championships come from two queries (current_champion_id and
+        // current_champion_2_id) because .or() + .in() combined is also fragile.
+        const emptyRes = Promise.resolve({ data: [] as any[], error: null })
+        const [wrestlersRes, promotionsRes, champs1Res, champs2Res] = await Promise.all([
           wrestlerIdsWithEvents.length > 0
             ? supabase
                 .from('wrestlers')
@@ -203,7 +249,7 @@ export default function RandomSpotlightSection() {
                 .not('bio', 'is', null)
                 .or('photo_url.not.is.null,render_url.not.is.null')
                 .in('id', wrestlerIdsWithEvents)
-            : Promise.resolve({ data: [] as any[], error: null }),
+            : emptyRes,
           promotionIdsWithEvents.length > 0
             ? supabase
                 .from('promotions')
@@ -215,10 +261,45 @@ export default function RandomSpotlightSection() {
                 .not('logo_url', 'is', null)
                 .not('description', 'is', null)
                 .in('id', promotionIdsWithEvents)
-            : Promise.resolve({ data: [] as any[], error: null }),
+            : emptyRes,
+          wrestlerIdsWithEvents.length > 0
+            ? supabase
+                .from('promotion_championships')
+                .select('name, short_name, current_champion_id, promotions(slug)')
+                .eq('is_active', true)
+                .in('current_champion_id', wrestlerIdsWithEvents)
+            : emptyRes,
+          wrestlerIdsWithEvents.length > 0
+            ? supabase
+                .from('promotion_championships')
+                .select('name, short_name, current_champion_2_id, promotions(slug)')
+                .eq('is_active', true)
+                .in('current_champion_2_id', wrestlerIdsWithEvents)
+            : emptyRes,
         ])
 
         if (cancelled) return
+
+        // Build wrestlerId → championships map (deduped on name, short_name wins).
+        // Skip rows missing a promotion slug — a title chip with no link target
+        // would be confusing; we'd rather omit it.
+        const champsByWrestler = new Map<string, SpotlightChampionship[]>()
+        const addChamp = (
+          wrestlerId: string | null | undefined,
+          name: string | null | undefined,
+          promotionSlug: string | null | undefined
+        ) => {
+          if (!wrestlerId || !name || !promotionSlug) return
+          const arr = champsByWrestler.get(wrestlerId) || []
+          if (!arr.some((c) => c.name === name)) arr.push({ name, promotionSlug })
+          champsByWrestler.set(wrestlerId, arr)
+        }
+        for (const row of (champs1Res.data || []) as any[]) {
+          addChamp(row.current_champion_id, row.short_name || row.name, row.promotions?.slug)
+        }
+        for (const row of (champs2Res.data || []) as any[]) {
+          addChamp(row.current_champion_2_id, row.short_name || row.name, row.promotions?.slug)
+        }
 
         // ─── Step 3: Merge, client-side filter, type-tag, Fisher-Yates ────
         const hasText = (s: string | null | undefined) =>
@@ -249,10 +330,19 @@ export default function RandomSpotlightSection() {
         const merged: SpotlightEntity[] = [
           ...((wrestlersRes.data || []) as any[])
             .filter((w) => hasText(w.bio) && wrestlerHasSocial(w))
-            .map<SpotlightWrestler>((w) => ({ type: 'wrestler' as const, ...w })),
+            .map<SpotlightWrestler>((w) => ({
+              type: 'wrestler' as const,
+              ...w,
+              championships: champsByWrestler.get(w.id) || [],
+              nextEvent: nextEventByWrestler.get(w.id) || null,
+            })),
           ...((promotionsRes.data || []) as any[])
             .filter((p) => hasText(p.description) && promotionHasSocial(p))
-            .map<SpotlightPromotion>((p) => ({ type: 'promotion' as const, ...p })),
+            .map<SpotlightPromotion>((p) => ({
+              type: 'promotion' as const,
+              ...p,
+              nextEvent: nextEventByPromo.get(p.id) || null,
+            })),
         ]
 
         // Fisher-Yates shuffle in place. 5 lines, used once, not lifted.
@@ -296,11 +386,11 @@ export default function RandomSpotlightSection() {
 
   if (loading) {
     return (
-      <section className="py-10" aria-label="Random spotlight">
+      <section className="py-10" aria-label="Discover">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2 mb-6">
             <Shuffle className="w-6 h-6 text-accent" />
-            Random Spotlight
+            Discover
           </h2>
           <div className="bg-background-secondary rounded-2xl border border-border p-6 md:p-8 animate-pulse">
             <div className="flex flex-col md:flex-row gap-6">
@@ -336,12 +426,12 @@ export default function RandomSpotlightSection() {
     : `/promotions/${(entity as SpotlightPromotion).slug}`
 
   return (
-    <section className="py-10" aria-label="Random spotlight">
+    <section className="py-10" aria-label="Discover">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold flex items-center gap-2">
             <Shuffle className="w-6 h-6 text-accent" />
-            Random Spotlight
+            Discover
           </h2>
         </div>
 
@@ -392,14 +482,14 @@ export default function RandomSpotlightSection() {
                     )}
                   </>
                 ) : (
-                  /* Promotion logo frame */
-                  <div className="absolute inset-0 bg-gradient-to-br from-background-tertiary to-background-secondary flex items-center justify-center p-8">
+                  /* Promotion logo frame — logo fills full card width */
+                  <div className="absolute inset-0 bg-gradient-to-br from-background-tertiary to-background-secondary flex items-center justify-center">
                     <Image
                       src={(entity as SpotlightPromotion).logo_url}
                       alt={entity.name}
-                      width={240}
-                      height={240}
-                      className="max-w-[70%] max-h-[70%] object-contain"
+                      width={480}
+                      height={480}
+                      className="w-full h-auto max-h-full object-contain"
                     />
                   </div>
                 )}
@@ -411,7 +501,7 @@ export default function RandomSpotlightSection() {
               <div className="flex items-center gap-1.5 text-xs tracking-wider uppercase text-foreground-muted">
                 {isWrestler ? 'WRESTLER' : 'PROMOTION'}
                 <span>·</span>
-                <span className="flex items-center gap-1 text-accent">
+                <span className="flex items-center gap-1 text-attending">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   verified
                 </span>
@@ -425,9 +515,24 @@ export default function RandomSpotlightSection() {
               </Link>
 
               {isWrestler && entity.moniker && (
-                <p className="text-base md:text-lg italic text-foreground-muted truncate">
+                <p className="text-base md:text-lg italic text-accent truncate">
                   &ldquo;{entity.moniker}&rdquo;
                 </p>
+              )}
+
+              {isWrestler && entity.championships.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {entity.championships.map((champ) => (
+                    <Link
+                      key={`${champ.promotionSlug}-${champ.name}`}
+                      href={`/promotions/${champ.promotionSlug}`}
+                      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-[#ffd700]/15 hover:bg-[#ffd700]/25 border border-[#ffd700] text-[#ffd700] font-bold transition-colors"
+                    >
+                      <Crown className="w-3 h-3" />
+                      {champ.name}
+                    </Link>
+                  ))}
+                </div>
               )}
 
               <p className="text-sm text-foreground-muted leading-relaxed">
@@ -452,9 +557,11 @@ export default function RandomSpotlightSection() {
                   </span>
                 )}
                 {!isWrestler && (() => {
-                  const loc = promotionLocation(entity as SpotlightPromotion)
+                  const p = entity as SpotlightPromotion
+                  const loc = promotionLocation(p)
                   if (!loc) return null
-                  const Icon = (entity as SpotlightPromotion).region ? Globe : MapPin
+                  // Globe only when we fell through to the scene region (no city/country)
+                  const Icon = !p.city && !p.country && p.region ? Globe : MapPin
                   return (
                     <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-background-tertiary text-foreground-muted">
                       <Icon className="w-3 h-3" />
@@ -483,6 +590,41 @@ export default function RandomSpotlightSection() {
                     )
                   })}
                 </div>
+              )}
+
+              {/* Next event block */}
+              {entity.nextEvent && (
+                <Link
+                  href={`/events/${entity.nextEvent.id}`}
+                  className="group flex items-center gap-3 px-3 py-2.5 rounded-lg bg-background-tertiary/60 hover:bg-background-tertiary border border-border hover:border-accent/50 transition-colors"
+                >
+                  <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] uppercase tracking-wider text-foreground-muted mb-0.5">
+                      Next Event
+                    </div>
+                    <div className="text-sm text-foreground group-hover:text-accent font-medium truncate transition-colors">
+                      {formatEventDate(entity.nextEvent.event_date)} · {entity.nextEvent.name}
+                    </div>
+                    {(entity.nextEvent.venue_name ||
+                      entity.nextEvent.city ||
+                      entity.nextEvent.state ||
+                      entity.nextEvent.country) && (
+                      <div className="text-xs text-foreground-muted truncate">
+                        {[
+                          entity.nextEvent.venue_name,
+                          formatLocation(
+                            entity.nextEvent.city,
+                            entity.nextEvent.state,
+                            entity.nextEvent.country
+                          ),
+                        ]
+                          .filter((s) => s && s !== 'TBA')
+                          .join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                </Link>
               )}
 
               {/* Action buttons */}

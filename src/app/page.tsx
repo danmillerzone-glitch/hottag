@@ -372,7 +372,7 @@ export default function HomePage() {
       {/* Near You - geolocation based */}
       <NearYouSection />
 
-      {/* Random Spotlight - random verified wrestler or promotion */}
+      {/* Discover - random verified wrestler or promotion */}
       <RandomSpotlightSection />
 
       {/* Recommended For You - logged in only */}
