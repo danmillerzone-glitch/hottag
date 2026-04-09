@@ -303,10 +303,10 @@ export default function ProfilePage() {
                 >
                   <div className="flex-shrink-0 w-14 text-center">
                     <div className="text-accent font-bold text-sm">
-                      {new Date(item.events.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                      {new Date(item.events.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}
                     </div>
                     <div className="text-xl font-bold">
-                      {new Date(item.events.event_date).getDate()}
+                      {new Date(item.events.event_date + 'T12:00:00').getDate()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -343,10 +343,10 @@ export default function ProfilePage() {
                 >
                   <div className="flex-shrink-0 w-14 text-center">
                     <div className="text-accent font-bold text-sm">
-                      {new Date(item.events.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                      {new Date(item.events.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}
                     </div>
                     <div className="text-xl font-bold">
-                      {new Date(item.events.event_date).getDate()}
+                      {new Date(item.events.event_date + 'T12:00:00').getDate()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -385,10 +385,10 @@ export default function ProfilePage() {
                 >
                   <div className="flex-shrink-0 w-14 text-center">
                     <div className="text-foreground-muted font-bold text-sm">
-                      {new Date(item.events.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                      {new Date(item.events.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}
                     </div>
                     <div className="text-xl font-bold text-foreground-muted">
-                      {new Date(item.events.event_date).getDate()}
+                      {new Date(item.events.event_date + 'T12:00:00').getDate()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">

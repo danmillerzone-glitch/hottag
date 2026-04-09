@@ -85,9 +85,11 @@ function SearchContent() {
 
           events.forEach((e: any) => {
             const coPromoters = promoMap.get(e.id) || []
-            const promoNames = e.promotions?.name
-              ? [e.promotions.name, ...coPromoters.map((ep: any) => ep.promotions?.name).filter(Boolean)].join(' x ')
-              : coPromoters.map((ep: any) => ep.promotions?.name).filter(Boolean).join(' x ')
+            const allNames = [
+              e.promotions?.name,
+              ...coPromoters.map((ep: any) => ep.promotions?.name),
+            ].filter(Boolean)
+            const promoNames = Array.from(new Set(allNames)).join(' x ')
 
             allResults.push({
               type: 'event',
@@ -180,7 +182,7 @@ function SearchContent() {
   const promotionCount = results.filter(r => r.type === 'promotion').length
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr + 'T12:00:00')
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 

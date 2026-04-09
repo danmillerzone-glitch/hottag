@@ -509,7 +509,24 @@ async function main() {
     if (COMMIT) {
       console.log('Creating promotions...')
       let created = 0
+      let reused = 0
       for (const [name, info] of promoInfo) {
+        // Guard: check DB for existing promotion with same name (case-insensitive)
+        // This prevents duplicates when matchPromotion() didn't catch it due to slug differences
+        const { data: existing } = await supabase
+          .from('promotions')
+          .select('id, name, slug')
+          .ilike('name', name)
+          .limit(1)
+
+        if (existing && existing.length > 0) {
+          reused++
+          console.log(`  ↩ ${name} — already exists as "${existing[0].name}" (${existing[0].slug}), reusing`)
+          promoByName.set(name.toLowerCase(), existing[0])
+          promoBySlug.set(existing[0].slug, existing[0])
+          continue
+        }
+
         const slug = generateSlug(name)
         const region = getRegion(info.country, info.state)
         const row = {
@@ -539,7 +556,7 @@ async function main() {
           promoBySlug.set(slug, newPromo)
         }
       }
-      console.log(`Created ${created}/${promoInfo.size} promotions.\n`)
+      console.log(`Created ${created}/${promoInfo.size} promotions${reused ? ` (${reused} reused existing)` : ''}.\n`)
 
       // Re-match previously unmatched events
       for (const event of parsed) {
@@ -785,11 +802,18 @@ async function main() {
         }
       }
 
-      const { error } = await supabase.from('events').insert(row)
+      const { data: inserted, error } = await supabase.from('events').insert(row).select('id').single()
       if (error) {
         console.error(`  ✗ ${eventName}: ${error.message}`)
       } else {
         insertCount++
+        // Also insert into event_promotions junction table (promotion pages query through this)
+        if (event.promotion_id) {
+          await supabase.from('event_promotions').upsert(
+            { event_id: inserted.id, promotion_id: event.promotion_id },
+            { onConflict: 'event_id,promotion_id', ignoreDuplicates: true }
+          )
+        }
         console.log(`  ✓ ${eventName} (${event.event_date})`)
       }
     }

@@ -133,7 +133,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
   // Group events by month
   const eventsByMonth: Record<string, any[]> = {}
   events.forEach((event: any) => {
-    const month = new Date(event.event_date).toLocaleDateString('en-US', { 
+    const month = new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', {
       month: 'long', 
       year: 'numeric' 
     })

@@ -368,7 +368,13 @@ async function main() {
   const recentIdx = process.argv.indexOf('--recent')
   const recentDays = recentIdx !== -1 ? parseInt(process.argv[recentIdx + 1] || '10') : 0
 
-  if (recentDays > 0) {
+  // Parse --name "Promotion Name" flag (scrape a single promotion by name)
+  const nameIdx = process.argv.indexOf('--name')
+  const singleName = nameIdx !== -1 ? process.argv[nameIdx + 1] : null
+
+  if (singleName) {
+    console.log(`\n🏆 Championship Scraper (single: ${singleName})\n`)
+  } else if (recentDays > 0) {
     console.log(`\n🏆 Championship Scraper (promotions with events in last ${recentDays} days)\n`)
   } else {
     console.log('\n🏆 Batch Championship Scraper (all promotions)\n')
@@ -376,7 +382,15 @@ async function main() {
 
   let promotions
 
-  if (recentDays > 0) {
+  if (singleName) {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('id, name, slug, cagematch_id')
+      .not('cagematch_id', 'is', null)
+      .ilike('name', `%${singleName}%`)
+    if (error) { console.error('Error:', error); process.exit(1) }
+    promotions = data
+  } else if (recentDays > 0) {
     // Find promotions that had events in the last N days
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - recentDays)
