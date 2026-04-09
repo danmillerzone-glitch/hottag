@@ -504,18 +504,18 @@ export default function RandomSpotlightSection() {
                 </span>
               </div>
 
-              <Link
-                href={detailHref}
-                className="text-2xl md:text-3xl font-display font-bold text-foreground hover:text-accent transition-colors truncate"
-              >
-                {entity.name}
-              </Link>
-
               {isWrestler && entity.moniker && (
-                <p className="text-base md:text-lg italic text-accent truncate">
+                <p className="text-sm md:text-base italic text-accent truncate -mb-2">
                   &ldquo;{entity.moniker}&rdquo;
                 </p>
               )}
+
+              <Link
+                href={detailHref}
+                className="text-xl md:text-2xl font-display font-bold text-foreground hover:text-accent transition-colors truncate"
+              >
+                {entity.name}
+              </Link>
 
               {isWrestler && entity.championships.length > 0 && (
                 <div className="flex flex-wrap gap-2">
