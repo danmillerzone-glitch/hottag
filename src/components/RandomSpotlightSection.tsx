@@ -160,12 +160,47 @@ export default function RandomSpotlightSection() {
         const supabase = createClient()
         const today = getTodayHawaii()
 
-        // ─── Step 1: Resolve entities with upcoming events + capture next event ─
-        // Three queries in parallel. event_wrestlers and event_announced_talent
-        // both link wrestlers to events; we union their wrestler_ids. We select
-        // full event details so we can surface "Next Event" without another round-trip.
+        // ─── Step 1: Fetch verified+claimed entities, championships, and the
+        // event lookups for "Next Event" enrichment — all in parallel.
+        //
+        // We deliberately do NOT pre-filter entities by "has upcoming event":
+        //   1. The verified+claimed pool is small (~100 wrestlers, ~22 promos),
+        //      so feature-gating it on event presence cuts the pool in half
+        //      and excludes wrestlers whose shows haven't been scraped yet.
+        //   2. Passing hundreds of UUIDs to .in() blows past the HTTP header
+        //      size limit and silently returns 0 rows. We learned this the
+        //      hard way — a previous version had .in('id', wrestlerIdsWithEvents)
+        //      which dropped wrestlers from the pool entirely in production.
+        //
+        // Active championships are also fetched unfiltered (only ~50–100 rows
+        // across all promotions) and joined to wrestlers client-side.
         const eventCols = 'id, name, event_date, city, state, country, venue_name'
-        const [promoEventsRes, ewRes, atRes] = await Promise.all([
+        const [
+          wrestlersRes,
+          promotionsRes,
+          promoEventsRes,
+          ewRes,
+          atRes,
+          champs1Res,
+          champs2Res,
+        ] = await Promise.all([
+          supabase
+            .from('wrestlers')
+            .select(
+              'id, name, slug, photo_url, render_url, hero_style, moniker, bio, hometown, wrestling_style, twitter_handle, instagram_handle, tiktok_handle, youtube_url, website, bluesky_handle'
+            )
+            .eq('verification_status', 'verified')
+            .not('claimed_by', 'is', null)
+            .not('bio', 'is', null),
+          supabase
+            .from('promotions')
+            .select(
+              'id, name, slug, logo_url, description, region, city, state, country, twitter_handle, instagram_handle, tiktok_handle, facebook_url, youtube_url, website, bluesky_handle'
+            )
+            .eq('verification_status', 'verified')
+            .not('claimed_by', 'is', null)
+            .not('logo_url', 'is', null)
+            .not('description', 'is', null),
           supabase
             .from('events')
             .select(`${eventCols}, promotion_id`)
@@ -182,10 +217,21 @@ export default function RandomSpotlightSection() {
             .select(`wrestler_id, events!inner(${eventCols}, status)`)
             .gte('events.event_date', today)
             .eq('events.status', 'upcoming'),
+          supabase
+            .from('promotion_championships')
+            .select('name, short_name, current_champion_id, promotions(slug)')
+            .eq('is_active', true)
+            .not('current_champion_id', 'is', null),
+          supabase
+            .from('promotion_championships')
+            .select('name, short_name, current_champion_2_id, promotions(slug)')
+            .eq('is_active', true)
+            .not('current_champion_2_id', 'is', null),
         ])
 
         if (cancelled) return
 
+        // ─── Step 2: Build next-event lookup maps ─────────────────────────
         // Reduce to earliest upcoming event per entity. String compare is safe
         // for YYYY-MM-DD dates — lexicographic order matches chronological order.
         const toSpotlightEvent = (ev: any): SpotlightEvent => ({
@@ -221,66 +267,8 @@ export default function RandomSpotlightSection() {
           if (row.wrestler_id && row.events) pushWrestlerEvent(row.wrestler_id, row.events)
         }
 
-        const promotionIdsWithEvents = Array.from(nextEventByPromo.keys())
-        const wrestlerIdsWithEvents = Array.from(nextEventByWrestler.keys())
-
-        // If neither pool has any upcoming-event participants, bail early.
-        if (wrestlerIdsWithEvents.length === 0 && promotionIdsWithEvents.length === 0) {
-          setLoading(false)
-          return
-        }
-
-        // ─── Step 2: Fetch eligible entities + championships in parallel ──
-        // Client-side filters in Step 3 handle empty bios and social-link
-        // presence; we do NOT chain multiple .or() calls here — PostgREST
-        // handles chained .or() poorly and it is a known footgun.
-        // Championships come from two queries (current_champion_id and
-        // current_champion_2_id) because .or() + .in() combined is also fragile.
-        const emptyRes = Promise.resolve({ data: [] as any[], error: null })
-        const [wrestlersRes, promotionsRes, champs1Res, champs2Res] = await Promise.all([
-          wrestlerIdsWithEvents.length > 0
-            ? supabase
-                .from('wrestlers')
-                .select(
-                  'id, name, slug, photo_url, render_url, hero_style, moniker, bio, hometown, wrestling_style, twitter_handle, instagram_handle, tiktok_handle, youtube_url, website, bluesky_handle'
-                )
-                .eq('verification_status', 'verified')
-                .not('claimed_by', 'is', null)
-                .not('bio', 'is', null)
-                .or('photo_url.not.is.null,render_url.not.is.null')
-                .in('id', wrestlerIdsWithEvents)
-            : emptyRes,
-          promotionIdsWithEvents.length > 0
-            ? supabase
-                .from('promotions')
-                .select(
-                  'id, name, slug, logo_url, description, region, city, state, country, twitter_handle, instagram_handle, tiktok_handle, facebook_url, youtube_url, website, bluesky_handle'
-                )
-                .eq('verification_status', 'verified')
-                .not('claimed_by', 'is', null)
-                .not('logo_url', 'is', null)
-                .not('description', 'is', null)
-                .in('id', promotionIdsWithEvents)
-            : emptyRes,
-          wrestlerIdsWithEvents.length > 0
-            ? supabase
-                .from('promotion_championships')
-                .select('name, short_name, current_champion_id, promotions(slug)')
-                .eq('is_active', true)
-                .in('current_champion_id', wrestlerIdsWithEvents)
-            : emptyRes,
-          wrestlerIdsWithEvents.length > 0
-            ? supabase
-                .from('promotion_championships')
-                .select('name, short_name, current_champion_2_id, promotions(slug)')
-                .eq('is_active', true)
-                .in('current_champion_2_id', wrestlerIdsWithEvents)
-            : emptyRes,
-        ])
-
-        if (cancelled) return
-
-        // Build wrestlerId → championships map (deduped on name, short_name wins).
+        // ─── Step 3: Build championships map ──────────────────────────────
+        // Wrestler-id → championships, deduped on name, short_name wins.
         // Skip rows missing a promotion slug — a title chip with no link target
         // would be confusing; we'd rather omit it.
         const champsByWrestler = new Map<string, SpotlightChampionship[]>()
@@ -301,7 +289,11 @@ export default function RandomSpotlightSection() {
           addChamp(row.current_champion_2_id, row.short_name || row.name, row.promotions?.slug)
         }
 
-        // ─── Step 3: Merge, client-side filter, type-tag, Fisher-Yates ────
+        // ─── Step 4: Merge, client-side filter, type-tag, Fisher-Yates ────
+        // Photo/render and social-link presence are checked client-side rather
+        // than in the SQL query because PostgREST's .or() syntax is fragile
+        // (especially when chained with .in()) and the entity sets are small
+        // enough that filtering 100 rows in JS is free.
         const hasText = (s: string | null | undefined) =>
           !!s && s.trim().length > 0
 
@@ -329,7 +321,12 @@ export default function RandomSpotlightSection() {
 
         const merged: SpotlightEntity[] = [
           ...((wrestlersRes.data || []) as any[])
-            .filter((w) => hasText(w.bio) && wrestlerHasSocial(w))
+            .filter(
+              (w) =>
+                (w.photo_url || w.render_url) &&
+                hasText(w.bio) &&
+                wrestlerHasSocial(w)
+            )
             .map<SpotlightWrestler>((w) => ({
               type: 'wrestler' as const,
               ...w,
