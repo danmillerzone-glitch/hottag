@@ -647,6 +647,25 @@ async function main() {
         skipped.push(event)
       }
     } else {
+      // Same-promotion same-date check (regardless of city — catches city name variants like "Kobe" vs "Tarumi-ku")
+      const samePromoSameDate = existingEvents.filter(e =>
+        e.promotion_id === event.promotion_id && e.event_date === event.event_date
+      )
+      if (samePromoSameDate.length > 0) {
+        crossPromoDupes.push({
+          event,
+          existingEvents: samePromoSameDate.map(e => ({
+            id: e.id,
+            name: e.name,
+            venue: e.venue_name,
+            promo: promoNameById.get(e.promotion_id) || e.promotion_id,
+          })),
+          reason: 'same-promo-same-date',
+        })
+        skipped.push(event)
+        continue
+      }
+
       // Cross-promotion duplicate check: same date + same city but different promotion
       const crossKey = `${event.event_date}|${(event.city || '').toLowerCase()}`
       const sameDateCity = crossPromoMap.get(crossKey) || []
@@ -660,7 +679,11 @@ async function main() {
             venue: e.venue_name,
             promo: promoNameById.get(e.promotion_id) || e.promotion_id,
           })),
+          reason: 'cross-promo-same-city',
         })
+        // Block insertion by default — these are likely dupes from mismatched promotion IDs
+        skipped.push(event)
+        continue
       }
       toInsert.push(event)
     }
@@ -689,23 +712,23 @@ async function main() {
   console.log(`  Duplicates (no changes): ${skipped.length}`)
   console.log(`  Unmatched promotions:   ${unmatched.size}`)
   if (crossPromoDupes.length > 0) {
-    console.log(`  ⚠️  Cross-promo warnings: ${crossPromoDupes.length}`)
+    console.log(`  ⚠️  Blocked (likely dupes): ${crossPromoDupes.length}`)
   }
   if (batchDupes.length > 0) {
     console.log(`  ⚠️  Within-batch warnings: ${batchDupes.length}`)
   }
   console.log()
 
-  // Show cross-promotion duplicate warnings
+  // Show blocked duplicate warnings
   if (crossPromoDupes.length > 0) {
-    console.log('⚠️  POSSIBLE CROSS-PROMOTION DUPLICATES ⚠️')
-    console.log('   These events will be inserted, but similar events already exist')
-    console.log('   from DIFFERENT promotions in the same city on the same date:\n')
+    console.log('🚫 BLOCKED — LIKELY DUPLICATES (not inserted)')
+    console.log('   These events were SKIPPED because similar events already exist.\n')
     for (const d of crossPromoDupes) {
-      console.log(`   📍 ${d.event.event_date} | ${d.event.city}, ${d.event.state || d.event.country}`)
-      console.log(`      IMPORTING: "${d.event.matchedPromoName}" at ${d.event.venue_name || '?'}`)
+      const reason = d.reason === 'same-promo-same-date' ? 'SAME PROMO + DATE' : 'SAME CITY + DATE (diff promo)'
+      console.log(`   📍 ${d.event.event_date} | ${d.event.city}, ${d.event.state || d.event.country} [${reason}]`)
+      console.log(`      BLOCKED: "${d.event.matchedPromoName} - ${d.event.city}"`)
       for (const ex of d.existingEvents) {
-        console.log(`      EXISTS:    "${ex.promo}" — ${ex.name} at ${ex.venue || '?'}`)
+        console.log(`      EXISTS:  "${ex.promo}" — ${ex.name} at ${ex.venue || '?'}`)
       }
       console.log()
     }
