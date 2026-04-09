@@ -128,9 +128,18 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
       <div className="space-y-4">
         {matches.map((match, index) => {
           const participants = match.match_participants || []
-          const team1 = participants.filter(p => p.team_number === 1)
-          const team2 = participants.filter(p => p.team_number === 2)
-          const hasTeams = team2.length > 0
+          // Group by team_number; team_number 0/null = "no team" (singles, battle royal).
+          // Render one column per team with VS separators between them, supporting up to 4 teams.
+          const teamGroupsMap = new Map<number, typeof participants>()
+          for (const p of participants) {
+            const t = p.team_number ?? 0
+            if (!teamGroupsMap.has(t)) teamGroupsMap.set(t, [])
+            teamGroupsMap.get(t)!.push(p)
+          }
+          const teamGroups = Array.from(teamGroupsMap.entries())
+            .filter(([t]) => t > 0)
+            .sort(([a], [b]) => a - b)
+          const hasTeams = teamGroups.length >= 2
 
           return (
             <div
@@ -160,22 +169,21 @@ export default function MatchCard({ eventId, championMap = {} }: { eventId: stri
 
               {/* Participants with hero cards */}
               {hasTeams ? (
-                <div className="flex items-start justify-center gap-4 sm:gap-8">
-                  <div className="flex flex-wrap justify-end gap-3">
-                    {team1.map((p) => (
-                      <WrestlerHeroCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
-                    ))}
-                  </div>
-                  
-                  <div className="flex-shrink-0 pt-8 sm:pt-10">
-                    <span className="text-lg font-bold text-accent">VS</span>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-3">
-                    {team2.map((p) => (
-                      <WrestlerHeroCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
-                    ))}
-                  </div>
+                <div className="flex items-start justify-center flex-wrap gap-4 sm:gap-6">
+                  {teamGroups.map(([teamNum, members], gi) => (
+                    <div key={teamNum} className="flex items-start gap-4 sm:gap-6">
+                      {gi > 0 && (
+                        <div className="flex-shrink-0 pt-8 sm:pt-10">
+                          <span className="text-lg font-bold text-accent">VS</span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-3">
+                        {members.map((p) => (
+                          <WrestlerHeroCard key={p.id} wrestler={p.wrestlers} championTitle={championMap[p.wrestlers.id]} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="flex flex-wrap items-start justify-center gap-3">

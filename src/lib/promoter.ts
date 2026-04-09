@@ -560,14 +560,14 @@ export async function getMatchParticipationForWrestler(
 }
 
 /**
- * Move a wrestler between team 1 and team 2 in a match. Used when the user
- * taps a wrestler tile that's already in the match but on the other team —
- * this is a one-tap swap rather than remove+add.
+ * Move a wrestler to a different team within a match. Used when the user
+ * taps a wrestler tile that's already in the match but on a different team —
+ * this is a one-tap swap rather than remove+add. Supports N teams (1..4).
  */
 export async function updateMatchParticipantTeam(
   matchId: string,
   wrestlerId: string,
-  teamNumber: 1 | 2
+  teamNumber: number
 ) {
   const supabase = createClient()
   const { error } = await supabase

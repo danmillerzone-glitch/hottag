@@ -986,7 +986,7 @@ function MatchItem({
     setSaving(false)
   }
 
-  const handleAddWrestler = async (wrestlerId: string, team?: 1 | 2) => {
+  const handleAddWrestler = async (wrestlerId: string, team?: number) => {
     try {
       await addMatchParticipant({
         match_id: match.id,
@@ -1007,7 +1007,7 @@ function MatchItem({
     } catch (err) { console.error('Error removing participant:', err) }
   }
 
-  const handleSwapTeam = async (wrestlerId: string, toTeam: 1 | 2) => {
+  const handleSwapTeam = async (wrestlerId: string, toTeam: number) => {
     try {
       await updateMatchParticipantTeam(match.id, wrestlerId, toTeam)
       onReload()
@@ -1019,9 +1019,22 @@ function MatchItem({
     catch (err) { console.error('Error removing participant:', err) }
   }
 
-  const team1 = participants.filter(p => p.team_number === 1)
-  const team2 = participants.filter(p => p.team_number === 2)
-  const hasTeams = team2.length > 0
+  // Group participants by team_number. team_number 0/null/undefined = "no team"
+  // (singles, battle royal, etc). Otherwise we render one chip group per team
+  // with VS separators between groups, supporting up to 4 teams.
+  const teamGroups = (() => {
+    const groups = new Map<number, typeof participants>()
+    for (const p of participants) {
+      const t = p.team_number ?? 0
+      if (!groups.has(t)) groups.set(t, [])
+      groups.get(t)!.push(p)
+    }
+    return Array.from(groups.entries())
+      .filter(([t]) => t > 0)
+      .sort(([a], [b]) => a - b)
+  })()
+  const hasTeams = teamGroups.length >= 2
+  const noTeamParticipants = participants.filter(p => !p.team_number)
 
   const renderParticipant = (p: any) => (
     <div key={p.id} className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background border border-border text-sm group">
@@ -1107,14 +1120,24 @@ function MatchItem({
       </div>
 
       <div className="space-y-2">
-        <div className="flex flex-wrap gap-2">
-          {(hasTeams ? team1 : participants).map(renderParticipant)}
-        </div>
-        {hasTeams && (
+        {hasTeams ? (
           <>
-            <div className="text-center text-xs font-bold text-accent">VS</div>
-            <div className="flex flex-wrap gap-2">{team2.map(renderParticipant)}</div>
+            {teamGroups.map(([teamNum, members], idx) => (
+              <div key={teamNum}>
+                {idx > 0 && <div className="text-center text-xs font-bold text-accent my-2">VS</div>}
+                <div className="flex flex-wrap gap-2">{members.map(renderParticipant)}</div>
+              </div>
+            ))}
+            {noTeamParticipants.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1 border-t border-border/50">
+                {noTeamParticipants.map(renderParticipant)}
+              </div>
+            )}
           </>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {participants.map(renderParticipant)}
+          </div>
         )}
       </div>
 
@@ -1134,7 +1157,7 @@ function MatchItem({
             rosterWrestlers={rosterWrestlers}
             selectedIds={participants.map(p => p.wrestler_id)}
             mode="match"
-            matchTeams={participants.map(p => ({ wrestlerId: p.wrestler_id, team: (p.team_number === 2 ? 2 : 1) as 1 | 2 }))}
+            matchTeams={participants.map(p => ({ wrestlerId: p.wrestler_id, team: p.team_number || 1 }))}
             showTeamToggle={match.match_type === 'Tag Team' || match.match_type === '6-Man Tag' || match.match_type === '8-Man Tag'}
             onAdd={handleAddWrestler}
             onRemove={handleRemoveWrestler}

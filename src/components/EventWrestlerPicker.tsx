@@ -9,7 +9,7 @@ export type EventWrestlerPickerMode = 'announced' | 'match'
 
 export interface MatchTeamMember {
   wrestlerId: string
-  team: 1 | 2
+  team: number
 }
 
 export interface EventWrestlerPickerProps {
@@ -18,13 +18,52 @@ export interface EventWrestlerPickerProps {
   mode: EventWrestlerPickerMode
   matchTeams?: MatchTeamMember[]
   showTeamToggle?: boolean
-  onAdd: (wrestlerId: string, team?: 1 | 2) => void
+  onAdd: (wrestlerId: string, team?: number) => void
   onRemove: (wrestlerId: string) => void
-  onSwap?: (wrestlerId: string, toTeam: 1 | 2) => void
+  onSwap?: (wrestlerId: string, toTeam: number) => void
   emptyRosterHref?: string
 }
 
-type TileState = 'neutral' | 'added' | 'team1' | 'team2'
+const MAX_TEAMS = 4
+
+// Color palette per team. Tailwind needs static class names, so each entry is a
+// literal string and we look up by team number.
+const TEAM_STYLES: Record<number, {
+  btnActive: string
+  btnInactive: string
+  tile: string
+  badge: string
+  label: string
+}> = {
+  1: {
+    btnActive: 'bg-blue-500 text-white',
+    btnInactive: 'bg-background border border-border text-foreground-muted hover:text-foreground',
+    tile: 'bg-blue-500/15 border border-blue-400 text-foreground',
+    badge: 'bg-blue-500',
+    label: 'Team 1',
+  },
+  2: {
+    btnActive: 'bg-red-500 text-white',
+    btnInactive: 'bg-background border border-border text-foreground-muted hover:text-foreground',
+    tile: 'bg-red-500/15 border border-red-400 text-foreground',
+    badge: 'bg-red-500',
+    label: 'Team 2',
+  },
+  3: {
+    btnActive: 'bg-emerald-500 text-white',
+    btnInactive: 'bg-background border border-border text-foreground-muted hover:text-foreground',
+    tile: 'bg-emerald-500/15 border border-emerald-400 text-foreground',
+    badge: 'bg-emerald-500',
+    label: 'Team 3',
+  },
+  4: {
+    btnActive: 'bg-purple-500 text-white',
+    btnInactive: 'bg-background border border-border text-foreground-muted hover:text-foreground',
+    tile: 'bg-purple-500/15 border border-purple-400 text-foreground',
+    badge: 'bg-purple-500',
+    label: 'Team 4',
+  },
+}
 
 export default function EventWrestlerPicker({
   rosterWrestlers,
@@ -40,14 +79,28 @@ export default function EventWrestlerPicker({
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<RosterWrestler[]>([])
   const [searching, setSearching] = useState(false)
-  const [selectedTeam, setSelectedTeam] = useState<1 | 2>(1)
+  const [selectedTeam, setSelectedTeam] = useState<number>(1)
+  // Default visible team count is 2; user can grow it via "+ Team" up to MAX_TEAMS.
+  const [extraTeamCount, setExtraTeamCount] = useState<number>(2)
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
   const teamMap = useMemo(() => {
-    const m = new Map<string, 1 | 2>()
+    const m = new Map<string, number>()
     for (const t of matchTeams) m.set(t.wrestlerId, t.team)
     return m
   }, [matchTeams])
+
+  // Visible team count grows automatically with existing participants AND
+  // with the user's "+ Team" clicks. Always at least 2 (a tag match), capped at MAX_TEAMS.
+  const teamCount = useMemo(() => {
+    const maxInUse = matchTeams.reduce((m, t) => Math.max(m, t.team), 1)
+    return Math.min(MAX_TEAMS, Math.max(2, maxInUse, extraTeamCount))
+  }, [matchTeams, extraTeamCount])
+
+  // Clamp selectedTeam if teamCount shrinks (e.g. removing the last wrestler from a team)
+  useEffect(() => {
+    if (selectedTeam > teamCount) setSelectedTeam(teamCount)
+  }, [selectedTeam, teamCount])
 
   // Debounced wrestler search (matches existing 300ms / 2-char threshold)
   const handleSearch = useCallback(async (q: string) => {
@@ -70,30 +123,26 @@ export default function EventWrestlerPicker({
     [searchResults, rosterIdSet]
   )
 
-  // Determine what visual state a tile should have for a given wrestler
-  const getTileState = (wrestlerId: string): TileState => {
-    if (mode === 'announced') {
-      return selectedSet.has(wrestlerId) ? 'added' : 'neutral'
-    }
-    // match mode
-    if (!selectedSet.has(wrestlerId)) return 'neutral'
+  // Returns the team number for a tile, or 0 for "added but no team", or null for neutral
+  const getTileTeam = (wrestlerId: string): number | 0 | null => {
+    if (!selectedSet.has(wrestlerId)) return null
+    if (mode === 'announced') return 0
     if (showTeamToggle) {
       const team = teamMap.get(wrestlerId)
-      if (team === 1) return 'team1'
-      if (team === 2) return 'team2'
+      return team ?? 0
     }
-    return 'added' // singles, battle royal, etc.
+    return 0
   }
 
   const handleTileTap = (wrestlerId: string) => {
-    const state = getTileState(wrestlerId)
+    const tileTeam = getTileTeam(wrestlerId)
     if (mode === 'announced') {
-      if (state === 'added') onRemove(wrestlerId)
+      if (tileTeam !== null) onRemove(wrestlerId)
       else onAdd(wrestlerId)
       return
     }
     // match mode
-    if (state === 'neutral') {
+    if (tileTeam === null) {
       onAdd(wrestlerId, showTeamToggle ? selectedTeam : undefined)
       return
     }
@@ -110,27 +159,35 @@ export default function EventWrestlerPicker({
     onRemove(wrestlerId)
   }
 
+  const handleAddTeam = () => {
+    setExtraTeamCount(c => Math.min(MAX_TEAMS, Math.max(c, teamCount) + 1))
+  }
+
   const renderTile = (w: RosterWrestler) => {
-    const state = getTileState(w.id)
-    const stateClasses: Record<TileState, string> = {
-      neutral: 'bg-background border border-border hover:border-accent/50 text-foreground',
-      added: 'bg-accent/15 border border-accent text-foreground',
-      team1: 'bg-blue-500/15 border border-blue-400 text-foreground',
-      team2: 'bg-red-500/15 border border-red-400 text-foreground',
-    }
+    const tileTeam = getTileTeam(w.id)
+    const teamStyle = tileTeam && tileTeam > 0 ? TEAM_STYLES[tileTeam] : null
+    const tileClasses = (() => {
+      if (tileTeam === null) return 'bg-background border border-border hover:border-accent/50 text-foreground'
+      if (teamStyle) return teamStyle.tile
+      return 'bg-accent/15 border border-accent text-foreground'
+    })()
     const iconForState = () => {
-      if (state === 'neutral') return <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-background-tertiary rounded-full p-0.5 text-foreground-muted" />
-      if (state === 'added') return <Check className="w-3 h-3 absolute -top-1 -right-1 bg-accent text-background rounded-full p-0.5" />
-      if (state === 'team1') return <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[9px] font-bold text-white flex items-center justify-center">1</span>
-      if (state === 'team2') return <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">2</span>
-      return null
+      if (tileTeam === null) return <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-background-tertiary rounded-full p-0.5 text-foreground-muted" />
+      if (teamStyle) {
+        return (
+          <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${teamStyle.badge} text-[9px] font-bold text-white flex items-center justify-center`}>
+            {tileTeam}
+          </span>
+        )
+      }
+      return <Check className="w-3 h-3 absolute -top-1 -right-1 bg-accent text-background rounded-full p-0.5" />
     }
     return (
       <button
         key={w.id}
         type="button"
         onClick={() => handleTileTap(w.id)}
-        className={`relative flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors ${stateClasses[state]}`}
+        className={`relative flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors ${tileClasses}`}
       >
         <span className="relative shrink-0">
           {w.photo_url ? (
@@ -158,22 +215,32 @@ export default function EventWrestlerPicker({
     <div className="rounded-lg bg-background-tertiary border border-border p-3 space-y-3">
       {/* Team toggle (match mode + tag-style only) */}
       {mode === 'match' && showTeamToggle && (
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center flex-wrap gap-2 text-xs">
           <span className="text-foreground-muted">NEXT TAP →</span>
-          <button
-            type="button"
-            onClick={() => setSelectedTeam(1)}
-            className={`px-2 py-1 rounded font-bold transition-colors ${selectedTeam === 1 ? 'bg-blue-500 text-white' : 'bg-background border border-border text-foreground-muted hover:text-foreground'}`}
-          >
-            🔵 Team 1
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedTeam(2)}
-            className={`px-2 py-1 rounded font-bold transition-colors ${selectedTeam === 2 ? 'bg-red-500 text-white' : 'bg-background border border-border text-foreground-muted hover:text-foreground'}`}
-          >
-            🔴 Team 2
-          </button>
+          {Array.from({ length: teamCount }, (_, i) => i + 1).map(n => {
+            const style = TEAM_STYLES[n]
+            const isActive = selectedTeam === n
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setSelectedTeam(n)}
+                className={`px-2 py-1 rounded font-bold transition-colors ${isActive ? style.btnActive : style.btnInactive}`}
+              >
+                {style.label}
+              </button>
+            )
+          })}
+          {teamCount < MAX_TEAMS && (
+            <button
+              type="button"
+              onClick={handleAddTeam}
+              className="px-2 py-1 rounded font-bold border border-dashed border-border text-foreground-muted hover:text-foreground hover:border-accent/50 transition-colors flex items-center gap-1"
+              title="Add another team (up to 4)"
+            >
+              <Plus className="w-3 h-3" /> Team
+            </button>
+          )}
         </div>
       )}
 
