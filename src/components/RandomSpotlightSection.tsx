@@ -17,6 +17,7 @@ import {
   Instagram,
   Youtube,
   Facebook,
+  Mail,
   User,
   Crown,
   Calendar,
@@ -76,6 +77,7 @@ type SpotlightWrestler = {
   youtube_url: string | null
   website: string | null
   bluesky_handle: string | null
+  booking_email: string | null
   championships: SpotlightChampionship[]
   nextEvent: SpotlightEvent | null
 }
@@ -98,6 +100,7 @@ type SpotlightPromotion = {
   youtube_url: string | null
   website: string | null
   bluesky_handle: string | null
+  booking_email: string | null
   nextEvent: SpotlightEvent | null
 }
 
@@ -132,6 +135,7 @@ function wrestlerSocialLinks(w: SpotlightWrestler): SocialLink[] {
   if (w.tiktok_handle) links.push({ href: `https://tiktok.com/@${w.tiktok_handle}`, icon: TikTokIcon, label: `${w.name} on TikTok` })
   if (w.youtube_url) links.push({ href: w.youtube_url, icon: Youtube, label: `${w.name} on YouTube` })
   if (w.website) links.push({ href: w.website, icon: Globe, label: `${w.name} website` })
+  if (w.booking_email) links.push({ href: `mailto:${w.booking_email}`, icon: Mail, label: `Email ${w.name}` })
   return links
 }
 
@@ -143,6 +147,7 @@ function promotionSocialLinks(p: SpotlightPromotion): SocialLink[] {
   if (p.youtube_url) links.push({ href: p.youtube_url, icon: Youtube, label: `${p.name} on YouTube` })
   if (p.facebook_url) links.push({ href: p.facebook_url, icon: Facebook, label: `${p.name} on Facebook` })
   if (p.website) links.push({ href: p.website, icon: Globe, label: `${p.name} website` })
+  if (p.booking_email) links.push({ href: `mailto:${p.booking_email}`, icon: Mail, label: `Email ${p.name}` })
   return links
 }
 
@@ -187,7 +192,7 @@ export default function RandomSpotlightSection() {
           supabase
             .from('wrestlers')
             .select(
-              'id, name, slug, photo_url, render_url, hero_style, moniker, bio, hometown, wrestling_style, twitter_handle, instagram_handle, tiktok_handle, youtube_url, website, bluesky_handle'
+              'id, name, slug, photo_url, render_url, hero_style, moniker, bio, hometown, wrestling_style, twitter_handle, instagram_handle, tiktok_handle, youtube_url, website, bluesky_handle, booking_email'
             )
             .eq('verification_status', 'verified')
             .not('claimed_by', 'is', null)
@@ -195,7 +200,7 @@ export default function RandomSpotlightSection() {
           supabase
             .from('promotions')
             .select(
-              'id, name, slug, logo_url, description, region, city, state, country, twitter_handle, instagram_handle, tiktok_handle, facebook_url, youtube_url, website, bluesky_handle'
+              'id, name, slug, logo_url, description, region, city, state, country, twitter_handle, instagram_handle, tiktok_handle, facebook_url, youtube_url, website, bluesky_handle, booking_email'
             )
             .eq('verification_status', 'verified')
             .not('claimed_by', 'is', null)
@@ -305,7 +310,8 @@ export default function RandomSpotlightSection() {
             w.tiktok_handle ||
             w.youtube_url ||
             w.website ||
-            w.bluesky_handle
+            w.bluesky_handle ||
+            w.booking_email
           )
 
         const promotionHasSocial = (p: any) =>
@@ -316,7 +322,8 @@ export default function RandomSpotlightSection() {
             p.facebook_url ||
             p.youtube_url ||
             p.website ||
-            p.bluesky_handle
+            p.bluesky_handle ||
+            p.booking_email
           )
 
         const merged: SpotlightEntity[] = [
