@@ -91,7 +91,7 @@ export default function NearYouSection({ defaultRadius = 100 }: NearYouProps) {
     if (!allEvents) return []
     return allEvents
       .filter((e: any) => e.distance <= radius)
-      .sort((a: any, b: any) => a.distance - b.distance)
+      .sort((a: any, b: any) => a.event_date.localeCompare(b.event_date))
   }, [allEvents, radius])
 
   // Don't show section if location was granted but no events exist at all (even at max radius)
