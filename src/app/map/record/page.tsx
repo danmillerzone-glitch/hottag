@@ -16,6 +16,7 @@ const REGIONS: Record<string, { center: [number, number]; zoom: number; label: s
   midwest:   { center: [-89.0, 41.0],   zoom: 5.5,  label: 'Midwest' },
   texas:     { center: [-99.0, 31.5],   zoom: 5.5,  label: 'Texas & Southwest' },
   westcoast: { center: [-120.5, 37.5],  zoom: 5.5,  label: 'West Coast' },
+  vegas:     { center: [-115.14, 36.17], zoom: 9,    label: 'Las Vegas' },
   europe:    { center: [-1.5, 52.5],    zoom: 4.5,  label: 'UK & Europe' },
   japan:     { center: [138.0, 36.5],   zoom: 5.5,  label: 'Japan' },
 }
@@ -61,17 +62,17 @@ export default function MapRecordPage() {
 
       const allEvents = data || []
 
-      // Filter to "this weekend" only (Friday–Sunday)
+      // Filter to this week's show window: Wednesday through Sunday
       const todayDate = new Date(today + 'T12:00:00')
       const dayOfWeek = todayDate.getDay() // 0=Sun, 6=Sat
-      const fri = new Date(todayDate)
-      if (dayOfWeek < 5) fri.setDate(fri.getDate() + (5 - dayOfWeek))
-      else if (dayOfWeek > 5) fri.setDate(fri.getDate() - (dayOfWeek - 5))
-      const sun = new Date(fri)
-      sun.setDate(sun.getDate() + 2)
-      const friStr = fri.toISOString().slice(0, 10)
+      const wed = new Date(todayDate)
+      if (dayOfWeek < 3) wed.setDate(wed.getDate() + (3 - dayOfWeek))
+      else if (dayOfWeek > 3) wed.setDate(wed.getDate() - (dayOfWeek - 3))
+      const sun = new Date(wed)
+      sun.setDate(sun.getDate() + 4)
+      const wedStr = wed.toISOString().slice(0, 10)
       const sunStr = sun.toISOString().slice(0, 10)
-      const events = allEvents.filter(e => e.event_date >= friStr && e.event_date <= sunStr)
+      const events = allEvents.filter(e => e.event_date >= wedStr && e.event_date <= sunStr)
 
       const pinSize = 32
       const pinOpacity = 1.0
