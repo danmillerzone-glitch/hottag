@@ -16,7 +16,7 @@ const REGIONS: Record<string, { center: [number, number]; zoom: number; label: s
   midwest:   { center: [-89.0, 41.0],   zoom: 5.5,  label: 'Midwest' },
   texas:     { center: [-99.0, 31.5],   zoom: 5.5,  label: 'Texas & Southwest' },
   westcoast: { center: [-120.5, 37.5],  zoom: 5.5,  label: 'West Coast' },
-  vegas:     { center: [-115.14, 36.17], zoom: 9,    label: 'Las Vegas' },
+  vegas:     { center: [-115.14, 36.17], zoom: 10.5, label: 'Las Vegas' },
   europe:    { center: [-1.5, 52.5],    zoom: 4.5,  label: 'UK & Europe' },
   japan:     { center: [138.0, 36.5],   zoom: 5.5,  label: 'Japan' },
 }

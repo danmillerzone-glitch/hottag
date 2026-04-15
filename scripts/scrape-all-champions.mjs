@@ -245,6 +245,16 @@ async function scrapePromotion(promotion) {
   let created = 0, updated = 0, skipped = 0
 
   for (const title of championships) {
+    // Skip titles belonging to other major promotions (e.g. TNA/NWA/WWE titles defended
+    // at indie shows). Must be checked BEFORE creating wrestlers or touching rosters,
+    // otherwise foreign champions (e.g. Jeff Hardy holding a TNA title at an ACTION show)
+    // get added to the host promotion's roster.
+    if (isForeignTitle(title.name, promotion.name)) {
+      skipped++
+      console.log(`    ⏭️  Skipped (foreign title): ${title.name}`)
+      continue
+    }
+
     // Match by cagematch_name first, then by name (case-insensitive)
     const cmNameLower = title.name.toLowerCase()
     let match = existing.find(c => c.cagematch_name && c.cagematch_name.toLowerCase() === cmNameLower)
@@ -326,10 +336,6 @@ async function scrapePromotion(promotion) {
         // Never create new championships with vacant title holders
         skipped++
         console.log(`    ⏭️  Skipped (vacant): ${title.name}`)
-      } else if (isForeignTitle(title.name, promotion.name)) {
-        // Skip titles from other major promotions (e.g. NWA/TNA titles defended at indie shows)
-        skipped++
-        console.log(`    ⏭️  Skipped (foreign title): ${title.name}`)
       } else {
         const { error: insertError } = await supabase
           .from('promotion_championships')
